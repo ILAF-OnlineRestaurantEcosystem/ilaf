@@ -4,6 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4ece1">
+  <script>
+    // المظهر قبل ما تنرسم الصفحة: فاتح / غامق / تلقائي حسب الجهاز
+    try {
+      var t = localStorage.getItem('cm.theme') || 'auto';
+      var dark = t === 'dark' || (t === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    } catch (e) { /* */ }
+  </script>
   <title>كافي محمد — اطلب من طاولتك</title>
   <meta name="description" content="اطلب من طاولتك مباشرة، وخلّينا نساعدك تختار.">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -13,6 +21,7 @@
   <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/brand.css">
   <link rel="stylesheet" href="/css/app.css">
+  <link rel="stylesheet" href="/css/theme.css">
 </head>
 <body class="app-body">
   <div class="phone" id="phone">
@@ -34,6 +43,7 @@
         <div class="keypad" id="keypad"></div>
         <button class="btn btn-brass btn-block" type="button" id="pickConfirm">ابدأ الطلب</button>
       </div>
+      <button class="track-link" type="button" id="welcomeTrack" data-go="track" hidden></button>
       <div class="welcome-back" id="welcomeBack" hidden>
         <p class="back-title">أهلين من جديد 👋</p>
         <p class="back-line" id="backLine"></p>
@@ -67,6 +77,7 @@
       <label class="search"><span data-icon="search"></span><input class="search-input" id="homeSearch" type="search" placeholder="ابحث في المنيو…" aria-label="ابحث في المنيو"></label>
       <div id="homeResults" hidden></div>
       <div id="homeMain">
+        <button class="track-banner" type="button" id="homeTrack" data-go="track" hidden></button>
         <div class="cat-grid" id="catGrid"></div>
         <button class="helper-card" type="button" data-go="helper">
           <span class="helper-ic" data-icon="sparkle"></span>
@@ -127,6 +138,12 @@
       <div id="sentBody"></div>
     </section>
 
+    <!-- تابع طلبي: طلبات هالجهاز على طاولته المفتوحة -->
+    <section class="screen s-track" data-screen="track" aria-label="تابع طلبي">
+      <header class="topnav"><button class="icon-btn" type="button" data-back aria-label="رجوع"></button><h1 class="topnav-title">تابع طلبي</h1><span></span></header>
+      <div id="trackBody"></div>
+    </section>
+
     <!-- 9. فاتورة الطاولة -->
     <section class="screen s-bill" data-screen="bill" aria-label="فاتورة الطاولة">
       <header class="appbar" data-appbar></header>
@@ -159,6 +176,19 @@
       <div class="sheet-grip"></div>
       <div class="sheet-body" id="itemBody"></div>
       <div class="sheet-foot" id="itemFoot"></div>
+    </section>
+
+    <!-- الطاولة مشغولة -->
+    <section class="sheet" id="busySheet" role="dialog" aria-modal="true" aria-labelledby="busyTitle" aria-hidden="true">
+      <div class="sheet-grip"></div>
+      <div class="sheet-head"><h2 class="sheet-title" id="busyTitle"></h2><button class="icon-btn" data-close-sheet type="button" aria-label="إغلاق" data-icon="close"></button></div>
+      <div class="sheet-body">
+        <p class="muted" style="margin-bottom:14px">في ناس قاعدين عليها هلق وطالبين. إذا إنت قاعد معهم كمّل، وطلبك بينضاف على نفس فاتورتهم. إذا لأ، شيّك على الرقم المكتوب على طاولتك.</p>
+        <div class="stack">
+          <button class="btn btn-brass btn-block" type="button" data-busy="join">أنا قاعد معهم، كمّل</button>
+          <button class="btn btn-ghost btn-block" type="button" data-busy="other">بختار طاولة ثانية</button>
+        </div>
+      </div>
     </section>
 
     <!-- نداء النادل -->

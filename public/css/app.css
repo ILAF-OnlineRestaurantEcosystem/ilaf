@@ -456,3 +456,24 @@
   padding: 10px 14px; border-radius: 16px; background: var(--brass); color: var(--on-brass); font-size: 13px; line-height: 1.5; box-shadow: var(--shadow-deep);
 }
 .pending-bar svg { width: 20px; height: 20px; flex: none; }
+
+/* تابع طلبي */
+.track-link { display: inline-flex; align-items: center; gap: 8px; margin-top: 4px; padding: 9px 16px; border-radius: 999px; font-size: 14px; font-weight: 600; color: var(--brass-hi); background: var(--gold-soft); }
+.track-link svg { width: 18px; height: 18px; }
+.track-banner { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; width: 100%; padding: 14px 16px; border-radius: 20px; text-align: start; background: var(--brass); color: var(--on-brass); box-shadow: var(--shadow-card); }
+.track-banner > svg { width: 24px; height: 24px; }
+.track-banner strong { display: block; font-weight: 700; }
+.track-banner small { display: block; font-size: 12.5px; opacity: .85; }
+.track-banner .chev svg { width: 18px; height: 18px; }
+.track-card { display: grid; gap: 6px; width: 100%; padding: 14px 16px; border-radius: 20px; text-align: start; background: var(--tide); box-shadow: var(--shadow-card), inset 0 0 0 1px var(--line); }
+.track-card.is-pending { box-shadow: inset 0 0 0 1.5px var(--amber); }
+.track-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.track-head strong { font-size: 16px; }
+.track-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 4px; }
+.track-steps i { height: 6px; border-radius: 9px; background: rgba(var(--tint), .14); }
+.track-steps i.on { background: var(--brass); }
+.track-now { font-size: 14px; font-weight: 600; color: var(--brass-hi); }
+.track-items { font-size: 12.5px; color: var(--foam-3); }
+.track-note { margin: 0; padding: 10px 14px; border-radius: 14px; background: var(--gold-soft); color: var(--foam-2); font-size: 13px; text-align: center; }
+#trackBody { display: flex; flex-direction: column; gap: 12px; }
+.pick-zone.busy { color: var(--coral); font-weight: 600; }

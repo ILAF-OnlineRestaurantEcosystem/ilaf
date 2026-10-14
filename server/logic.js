@@ -105,7 +105,10 @@ export function dayStart() {
   return new Date(db().settings.dayOpenedAt ?? new Date(new Date().setHours(0, 0, 0, 0)));
 }
 
-export function createOrder({ table, lines, note, source }) {
+/** معرّف الجهاز اللي بيبعته جوال الزبون (عشوائي ومحفوظ عنده) — ما في موقع بيقدر يقرأ IP أو MAC الجهاز بشكل موثوق */
+export const cleanDevice = (v) => (/^[a-z0-9]{8,40}$/.test(String(v ?? '')) ? String(v) : null);
+
+export function createOrder({ table, lines, note, source, device }) {
   const d = db();
   const tableNo = Number(table);
   const t = d.tables.find((x) => x.number === tableNo);
@@ -127,6 +130,7 @@ export function createOrder({ table, lines, note, source }) {
     note: String(note ?? '').slice(0, 200).trim(),
     status: 'new',
     source: source === 'barista' ? 'barista' : 'menu',
+    device: cleanDevice(device), // "تابع طلبي": بينمسح لما الكاشير يسكّر الطاولة
     createdAt: iso,
     updatedAt: iso,
     history: [{ status: 'new', at: iso }],
@@ -184,11 +188,36 @@ export function closeTable(n) {
   const t = d.tables.find((x) => x.number === Number(n));
   const open = d.orders.filter((o) => o.table === Number(n) && OPEN_STATUSES.includes(o.status));
   for (const o of open) setOrderStatus(o.id, 'paid');
+  // الطاولة تسكّرت: بننسى أجهزة الزباين اللي طلبوا عليها، فـ"تابع طلبي" بيرجع فاضي عندهم
+  for (const o of d.orders) if (o.table === Number(n) && (open.includes(o) || (t?.sessionId && o.sessionId === t.sessionId))) delete o.device;
   if (t) { t.sessionId = null; t.sessionAt = null; }
   const hadCalls = d.calls.some((c) => c.table === Number(n));
   d.calls = d.calls.filter((c) => c.table !== Number(n));
   save();
   return { closed: open, hadCalls };
+}
+
+/** "تابع طلبي": طلبات هالجهاز اللي لسا طاولتها مفتوحة (الأحدث أولاً) */
+export function deviceOrders(device) {
+  const id = cleanDevice(device);
+  if (!id) throw new HttpError(400, 'معرّف الجهاز غير صالح.');
+  const d = db();
+  const since = Date.now() - 24 * 3600_000;
+  return d.orders
+    .filter((o) => o.device === id && new Date(o.createdAt).getTime() >= since)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, 20)
+    .map(publicOrder);
+}
+
+/** الطاولة مشغولة؟ (عليها طلبات مفتوحة) وإذا مشغولة، هل الزبون نفسه من القاعدين عليها */
+export function tableOccupancy(n, { device = null, session = null } = {}) {
+  const d = db();
+  const t = d.tables.find((x) => x.number === Number(n));
+  const open = d.orders.filter((o) => o.table === Number(n) && OPEN_STATUSES.includes(o.status));
+  const id = cleanDevice(device);
+  const mine = open.length > 0 && ((id && open.some((o) => o.device === id)) || (Boolean(session) && t?.sessionId === session));
+  return { busy: open.length > 0, mine: Boolean(mine) };
 }
 
 /** فاتورة الطاولة الحالية للزبون (كل طلبات الجلسة المفتوحة) */

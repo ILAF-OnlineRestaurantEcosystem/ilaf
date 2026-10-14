@@ -3,7 +3,7 @@
 import { db, save, uid, replaceAll } from './db.js';
 import {
   publicMenu, createOrder, setOrderStatus, publicOrder, tableInsight, stats,
-  setLinePrice, closeTable, tableBill, currentDay, closeDay, months, monthReport, maintain,
+  setLinePrice, closeTable, tableBill, currentDay, closeDay, months, monthReport, maintain, deviceOrders, tableOccupancy,
   OPEN_STATUSES, HttpError,
 } from './logic.js';
 import { currentWeather, geocode } from './weather.js';
@@ -108,17 +108,20 @@ const route = (method, pattern, fn, { admin = false } = {}) => {
 // الزبون
 route('GET', '/menu', () => publicMenu());
 route('GET', '/weather', () => currentWeather());
-route('GET', '/tables/:n', ({ p }) => {
+route('GET', '/tables/:n', ({ p, q }) => {
   const info = tableInsight(p.n);
   if (!info) throw new HttpError(404, `ما في طاولة رقم ${p.n}.`);
   return {
     number: info.number, zone: info.zone?.name ?? '', seats: info.seats,
     top: info.topAtTable.map((x) => ({ id: x.id, name: x.name })),
+    // مشغولة = عليها طلبات مفتوحة؛ mine = الزبون نفسه من القاعدين عليها
+    ...tableOccupancy(info.number, { device: q.get('device'), session: str(q.get('session'), 40) }),
   };
 });
+route('GET', '/devices/:id/orders', ({ p }) => deviceOrders(p.id));
 route('GET', '/tables/:n/bill', ({ p }) => tableBill(p.n));
 route('POST', '/orders', ({ body }) => {
-  const order = createOrder({ table: body?.table, lines: body?.lines, note: body?.note, source: body?.source });
+  const order = createOrder({ table: body?.table, lines: body?.lines, note: body?.note, source: body?.source, device: body?.device });
   return { status: 201, data: publicOrder(order), events: [toAdmin('order:new', order)] };
 });
 route('GET', '/orders/:id', ({ p }) => {

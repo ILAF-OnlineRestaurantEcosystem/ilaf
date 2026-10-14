@@ -104,8 +104,9 @@ const fail = (r) => Object.assign(new Error(r.data?.error || 'صار خطأ، ج
 const CUSTOMER_ROUTES = [
   ['GET', /^\/menu$/], ['GET', /^\/weather$/], ['GET', /^\/tables\/\d{1,3}$/], ['GET', /^\/tables\/\d{1,3}\/bill$/],
   ['GET', /^\/orders\/[\w-]{1,40}$/], ['POST', /^\/orders$/], ['POST', /^\/tables\/\d{1,3}\/call$/], ['POST', /^\/barista$/],
+  ['GET', /^\/devices\/[a-z0-9]{8,40}\/orders$/],
 ];
-const isCustomerRoute = (method, path) => CUSTOMER_ROUTES.some(([m, re]) => m === method && re.test(path));
+const isCustomerRoute = (method, path) => CUSTOMER_ROUTES.some(([m, re]) => m === method && re.test(String(path).split('?')[0]));
 const LIMITS = [['POST', /^\/orders$/, 10], ['POST', /\/call$/, 6], ['POST', /^\/barista$/, 20]];
 const OFFLINE_MSG = 'ما قدرنا نوصل للكاشير هلق 😕 تأكد من الإنترنت وجرب كمان مرة.';
 
@@ -180,7 +181,7 @@ async function viaRelay(method, path, body) {
     }
     if (!err.offline) throw err;
     // القائمة والطقس ورقم الطاولة ونديم بالوضع الأساسي بيشتغلوا محلياً، أما الفاتورة فلازم الكاشير
-    if ((method === 'GET' && /^\/(menu|weather|tables\/\d+)$/.test(path)) || path === '/barista') {
+    if ((method === 'GET' && /^\/(menu|weather|tables\/\d+)$/.test(path.split('?')[0])) || path === '/barista') {
       const r = await local(method, path, body);
       if (r.status >= 400) throw fail(r);
       return clone(r.data);

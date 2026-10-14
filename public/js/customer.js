@@ -1,4 +1,4 @@
-import { $, $$, esc, api, moneyText, toast, openSheet, closeSheet, reducedMotion, revealOnScroll, chime, SUGAR, STATUS } from './common.js';
+import { $, $$, esc, api, moneyText, toast, openSheet, closeSheet, reducedMotion, revealOnScroll, chime, SUGAR, STATUS, THEMES, themePref, setTheme } from './common.js';
 import { brandLogo, fitLogo, brandMark, dallahIcon, artTile, itemArt, icon, weatherIcon, leavesArt } from './art.js';
 import { recommend, MOODS, SWEETNESS, PEOPLE } from './chooser.js';
 
@@ -6,6 +6,18 @@ const LS = {
   get(k, d) { try { return JSON.parse(localStorage.getItem('cm.' + k)) ?? d; } catch { return d; } },
   set(k, v) { try { localStorage.setItem('cm.' + k, JSON.stringify(v)); } catch { /* التخزين اختياري */ } },
 };
+
+// معرّف هالجهاز: بيربط طلباته فيه لـ"تابع طلبي" (الموقع ما بيقدر يقرأ IP أو MAC، وكل زباين الواي فاي إلهم نفس الـ IP)
+// السيرفر بينساه لما الكاشير يسكّر الطاولة
+const DEVICE = (() => {
+  let v = LS.get('device', '');
+  if (!/^[a-z0-9]{12,40}$/.test(v)) {
+    v = Array.from(crypto.getRandomValues(new Uint8Array(14)), (x) => 'abcdefghijkmnpqrstuvwxyz23456789'[x % 32]).join('');
+    LS.set('device', v);
+  }
+  return v;
+})();
+const tableUrl = (n) => `/tables/${n}?device=${DEVICE}${state.session?.sessionId ? `&session=${encodeURIComponent(state.session.sessionId)}` : ''}`;
 
 const state = {
   pending: LS.get('pending', []), // طلبات محفوظة لسا ما استلمها الكاشير
@@ -60,7 +72,7 @@ function onHash() {
   const { name, param } = parseHash();
   if (name === 'orders') { go('bill'); return; }
   // ما في اشي قبل رقم الطاولة
-  if (!state.table && !['welcome'].includes(name)) { go('welcome'); return; }
+  if (!state.table && !['welcome', 'track', 'sent'].includes(name)) { go('welcome'); return; }
   if (!name || !document.querySelector(`[data-screen="${name}"]`)) { go(state.table ? 'home' : 'welcome'); return; }
   const h = location.hash;
   let dir = 'fwd';
@@ -73,7 +85,7 @@ function render(name, param, dir) {
   ({
     welcome: renderWelcome, table: renderTable, home: renderHome, category: () => renderCategory(param),
     helper: renderHelper, result: renderResult, cart: renderCart, sent: () => renderSent(param),
-    bill: renderBill, more: renderMore,
+    bill: renderBill, more: renderMore, track: renderTrack,
   })[name]?.();
   if (prev) {
     prev.classList.remove('is-active', 'enter-fwd', 'enter-back');
@@ -101,8 +113,8 @@ function initTable() {
   if (saved && Date.now() - saved.at < 6 * 3600 * 1000) state.table = saved.n;
   else { state.session = null; LS.set('session', null); }
 }
-async function setTable(n, { silent = true } = {}) {
-  const info = await api(`/tables/${n}`);
+async function setTable(n, { silent = true, info: ready = null } = {}) {
+  const info = ready ?? await api(tableUrl(n));
   state.table = info.number;
   state.tableZone = info.zone;
   state.tableTop = info.top ?? [];
@@ -162,6 +174,7 @@ function renderWelcome() {
     welcomePlayed = true;
   }
   $('#welcomeTitle').textContent = `أهلاً فيك في ${s.cafeName}`;
+  updateWelcomeTrack();
   // زبون راجع وعنده طاولة محفوظة: منسأله إذا لسا عليها بدل ما يكتب الرقم من جديد
   const returning = state.table && !state.forceAsk && (state.session || state.cart.length);
   $('#welcomeAsk').hidden = !!returning;
@@ -187,7 +200,7 @@ function tableArtSvg(n) {
     <g class="rays" stroke-width="2.6">
       <path class="ray" d="M54 22l12 10M146 22l-12 10M40 58h14M160 58h-14M100 6v-2"/>
     </g>
-    <circle cx="100" cy="52" r="30" fill="#fbf6ef"/>
+    <circle cx="100" cy="52" r="30" style="fill: var(--tide)"/>
     <text x="100" y="62" text-anchor="middle" font-family="Alexandria, sans-serif" font-size="28" font-weight="700" fill="currentColor" stroke="none">${n ? pad2(n) : '؟'}</text>
     <path d="M30 104h140" stroke-width="7"/>
     <path d="M44 104l-10 56M156 104l10 56M70 104l-4 40M130 104l4 40" stroke-width="5"/>
@@ -215,15 +228,35 @@ function updatePick() {
   if (!n) return;
   if (n > state.menu.tableCount) { z.textContent = `الطاولات من 1 لـ ${state.menu.tableCount}`; z.classList.add('err'); return; }
   zoneTimer = setTimeout(async () => {
-    try { const info = await api(`/tables/${n}`); if (Number(pickDraft) === n) z.textContent = info.zone; } catch { /* */ }
+    try {
+      const info = await api(tableUrl(n));
+      if (Number(pickDraft) !== n) return;
+      const busy = info.busy && !info.mine && state.table !== n;
+      z.textContent = busy ? `${info.zone} · مشغولة هلق` : info.zone;
+      z.classList.toggle('busy', busy);
+    } catch { /* */ }
   }, 180);
 }
 async function confirmPick() {
   const n = Number(pickDraft);
   if (!n || n > state.menu.tableCount) { toast('اكتب رقم طاولتك أول', 'err'); return; }
   try {
+    const info = await api(tableUrl(n));
+    // عليها ناس طالبين ومش إنت منهم: منسأل قبل ما نكمّل
+    if (info.busy && !info.mine && state.table !== n) {
+      busyPick = { n, info };
+      $('#busyTitle').textContent = `طاولة ${pad2(n)} مشغولة هلق 👀`;
+      openSheet($('#busySheet'));
+      return;
+    }
+    await finishPick(n, info);
+  } catch (err) { toast(err.message, 'err'); }
+}
+let busyPick = null;
+async function finishPick(n, info) {
+  try {
     const changed = state.table !== n;
-    await setTable(n);
+    await setTable(n, { info });
     if (changed) { state.session = null; LS.set('session', null); }
     state.forceAsk = false;
     const then = pickThen; pickThen = null;
@@ -241,6 +274,7 @@ function needTable(then) {
 // ───────── 3. القائمة ─────────
 function renderHome() {
   renderAppbar($('[data-screen="home"] [data-appbar]'));
+  renderHomeTrack();
   const { categories, items, offers, popular } = state.menu;
   const w = state.weather;
   $('#greet').innerHTML = w?.ok
@@ -519,6 +553,7 @@ async function placeOrder(btn) {
         table: state.table,
         note: $('#orderNote')?.value ?? '',
         source: state.cart.some((l) => l.via === 'barista') ? 'barista' : 'menu',
+        device: DEVICE,
         lines: state.cart.map((l) => ({ kind: l.kind, id: l.id, qty: l.qty, note: l.note, options: l.sugar ? { sugar: l.sugar } : {} })),
       },
     });
@@ -554,6 +589,7 @@ function renderPending() {
   LS.set('pending', state.pending);
   const bar = $('#pendingBar');
   bar.hidden = !state.pending.length;
+  if (current?.dataset.screen === 'home') renderHomeTrack();
   if (!state.pending.length) return;
   const count = state.pending.reduce((s, p) => s + p.count, 0);
   const total = state.pending.reduce((s, p) => s + p.total, 0);
@@ -618,7 +654,7 @@ function renderSent(id) {
 function trackOrder(order) {
   const i = state.orders.findIndex((o) => o.id === order.id);
   if (i >= 0) state.orders[i] = order; else state.orders.push(order);
-  LS.set('orders', state.orders.map((o) => ({ id: o.id, at: o.createdAt })));
+  saveOrders();
   if (order.sessionId && order.table === state.table && !['paid', 'cancelled'].includes(order.status)) {
     state.session = { table: order.table, sessionId: order.sessionId };
     LS.set('session', state.session);
@@ -626,26 +662,50 @@ function trackOrder(order) {
   socket?.emit('track', [order.id]);
   $('#billDot').hidden = !state.session;
 }
+/** نسخة صغيرة من طلبات هالجهاز (بتبيّن بـ"تابع طلبي" إذا الكاشير مش متصل) */
+function saveOrders() {
+  LS.set('orders', state.orders.filter((o) => o.status !== 'paid').map((o) => ({
+    id: o.id, at: o.createdAt, no: o.no, table: o.table, status: o.status, total: o.total, sessionId: o.sessionId,
+    lines: o.lines.map((l) => ({ qty: l.qty, name: l.name })),
+  })));
+}
+const cachedOrders = () => LS.get('orders', []).filter((o) => o.no && Date.now() - new Date(o.at).getTime() < 24 * 3600 * 1000);
+/** طلبات هالجهاز اللي لسا طاولتها مفتوحة */
+function openOrders() {
+  const live = state.orders.filter((o) => o.status !== 'paid');
+  return live.length ? live : cachedOrders().filter((o) => o.status !== 'paid');
+}
 async function restoreOrders() {
-  const saved = LS.get('orders', []).filter((o) => Date.now() - new Date(o.at).getTime() < 12 * 3600 * 1000);
-  for (const s of saved) {
-    try { state.orders.push(await api(`/orders/${s.id}`)); } catch { /* */ }
-  }
-  LS.set('orders', state.orders.map((o) => ({ id: o.id, at: o.createdAt })));
+  try {
+    // من السيرفر: طلبات هالجهاز على طاولته المفتوحة (لما الكاشير يسكّر الطاولة بيرجع فاضي)
+    state.orders = await api(`/devices/${DEVICE}/orders`);
+    saveOrders();
+  } catch { /* الكاشير مش متصل: بتضل النسخة المحفوظة */ }
   socket?.emit('track', state.orders.map((o) => o.id));
   if (state.table) await loadBill().catch(() => {});
+  const scr = current?.dataset.screen;
+  if (scr === 'home') renderHomeTrack();
+  if (scr === 'welcome') updateWelcomeTrack();
+}
+function updateWelcomeTrack() {
+  const open = openOrders().filter((o) => o.status !== 'cancelled');
+  $('#welcomeTrack').hidden = !open.length && !state.pending.length;
+  $('#welcomeTrack').innerHTML = `${icon('clock')}تابع طلبي${open.length ? ` <b>(${open.length})</b>` : ''}`;
 }
 function latestOrder() { return [...state.orders].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]; }
 function onOrderUpdate(o) {
   const prev = state.orders.find((x) => x.id === o.id);
   trackOrder(o);
   const scr = current?.dataset.screen;
+  if (scr === 'track') drawTrack(openOrders());
+  if (scr === 'home') renderHomeTrack();
   if (scr === 'sent' && parseHash().param === o.id) renderSent(o.id);
   if (o.status === 'paid' && state.session?.sessionId === o.sessionId) {
     // الكاشير سكّر الطاولة: الفاتورة انتهت
     if (state.paidNotice !== o.sessionId) { state.paidNotice = o.sessionId; toast('تم الدفع، شكراً لزيارتك 🌿', 'ok'); }
     state.session = null;
     LS.set('session', null);
+    saveOrders(); // المدفوع ما بيتحفظ، فـ"تابع طلبي" بيرجع فاضي
     $('#billDot').hidden = true;
   }
   if (scr === 'bill') renderBill();
@@ -706,6 +766,7 @@ function renderMore() {
   renderAppbar($('[data-screen="more"] [data-appbar]'));
   const row = (ic, title, sub, attrs, cls = '') => `<button class="row-btn" type="button" ${attrs}><span class="row-ic ${cls}">${icon(ic)}</span><span><strong>${title}</strong><small>${sub}</small></span><span class="chev">${icon('chev')}</span></button>`;
   $('#moreRows').innerHTML = [
+    row('clock', 'تابع طلبي', 'حالة طلباتك من هالجهاز لحظة بلحظة', 'data-go="track"', 'gold'),
     row('bell', 'نادِ نادل', 'بتضوي طاولتك عند الكاشير وبيجيك حدا', 'data-open-waiter', 'coral'),
     row('receipt', 'اطلب الحساب', 'النادل بيجيك مع الفاتورة', 'data-call-now="bill"'),
     row('sparkle', `اسأل ${esc(S().baristaName)}`, 'الباريستا الذكي: اسأله عن أي مشروب', 'data-open-chat', 'gold'),
@@ -713,10 +774,69 @@ function renderMore() {
     row('table', 'غيّر الطاولة', state.table ? `إنت هلأ على طاولة ${pad2(state.table)}` : 'لسا ما اخترت طاولة', 'data-change-table'),
     row('clipboard', 'فاتورة الطاولة', 'كل طلباتك والمجموع', 'data-go="bill"'),
   ].join('');
+  // المظهر
+  $('#moreRows').insertAdjacentHTML('beforeend', themePicker());
   const w = state.weather;
   $('#about').innerHTML = `${brandMark(S().cafeName)}<p>${esc(S().tagline)}</p>${w?.ok ? `<p>${esc(w.city)} · ${w.temp}° ${esc(w.desc)}</p>` : ''}`;
 }
 
+
+function themePicker() {
+  const pref = themePref();
+  return `<div class="theme-pick"><strong>${icon('contrast')}المظهر</strong>
+    <div class="segmented" role="radiogroup" aria-label="المظهر">${THEMES.map(([k, label, ic]) => `<button type="button" role="radio" data-theme-set="${k}" aria-pressed="${pref === k}" aria-checked="${pref === k}">${icon(ic)}${label}</button>`).join('')}</div></div>`;
+}
+
+// ───────── تابع طلبي ─────────
+const TRACK_STEPS = ['new', 'preparing', 'ready', 'served'];
+const TRACK_LINE = {
+  new: 'وصل طلبك للكاشير', preparing: 'عم يتحضّر هلق ☕', ready: 'جاهز وجاي لطاولتك',
+  served: 'وصلك، صحتين وعافية', cancelled: 'انلغى هالطلب، إذا في سؤال نادِ نادل',
+};
+function renderHomeTrack() {
+  const open = openOrders().filter((o) => o.status !== 'cancelled');
+  const el = $('#homeTrack');
+  el.hidden = !open.length && !state.pending.length;
+  if (el.hidden) return;
+  const o = open[0];
+  el.innerHTML = `${icon('clock')}<span><strong>تابع طلبي</strong><small>${o ? `طلب #${o.no} · ${TRACK_LINE[o.status] ?? STATUS[o.status]?.label}` : 'طلبك محفوظ وبيستنى الكاشير'}${open.length > 1 ? ` · و${open.length - 1} كمان` : ''}</small></span><span class="chev">${icon('chev')}</span>`;
+}
+function drawTrack(list, note = '') {
+  const box = $('#trackBody');
+  if (!list.length && !state.pending.length) {
+    box.innerHTML = `<div class="empty">${artTile({ art: 'cup', hue: 30 })}<p>ما في طلب مفتوح من هالجهاز هلق.</p><p class="muted">لما الكاشير يسكّر الطاولة بعد الدفع، بننسى طلباتها.</p>
+      ${state.table ? '<button class="btn btn-brass" type="button" data-go="home">تصفّح المنيو</button>' : '<button class="btn btn-brass" type="button" data-go="welcome">اختار طاولتك واطلب</button>'}</div>`;
+    return;
+  }
+  box.innerHTML = `${note ? `<p class="track-note">${esc(note)}</p>` : ''}
+    ${state.pending.map((p) => `
+      <article class="track-card is-pending">
+        <div class="track-head"><strong>طلب محفوظ</strong><span class="status-chip new">بيستنى الكاشير</span></div>
+        <small class="muted">${p.count} ${p.count === 1 ? 'صنف' : 'أصناف'} · ${priceText(p.total)} · بيوصل للكاشير أول ما يفتح لوحته</small>
+      </article>`).join('')}
+    ${list.map((o) => {
+      const idx = TRACK_STEPS.indexOf(o.status);
+      return `
+      <button class="track-card" type="button" data-go="sent" data-param="${esc(o.id)}">
+        <div class="track-head"><strong>طلب #${o.no}</strong><span class="status-chip ${o.status}">${STATUS[o.status]?.label ?? ''}</span></div>
+        <small class="muted">الطاولة ${pad2(o.table)} · ${timeOf(o.createdAt ?? o.at)} · ${priceText(o.total)}</small>
+        ${o.status === 'cancelled' ? '' : `<span class="track-steps" aria-hidden="true">${TRACK_STEPS.map((_, i) => `<i class="${i <= idx ? 'on' : ''}"></i>`).join('')}</span>`}
+        <span class="track-now">${TRACK_LINE[o.status] ?? ''}</span>
+        <span class="track-items">${o.lines.map((l) => `${l.qty} × ${esc(l.name)}`).join('، ')}</span>
+      </button>`;
+    }).join('')}`;
+}
+async function renderTrack() {
+  drawTrack(openOrders());
+  try {
+    state.orders = await api(`/devices/${DEVICE}/orders`);
+    saveOrders();
+    socket?.emit('track', state.orders.map((o) => o.id));
+    if (current?.dataset.screen === 'track') drawTrack(openOrders());
+  } catch {
+    if (current?.dataset.screen === 'track') drawTrack(openOrders(), 'ما قدرنا نوصل للكاشير هلق، هاي آخر حالة معروفة.');
+  }
+}
 
 // ───────── نداء النادل ─────────
 function openWaiter() {
@@ -868,6 +988,15 @@ function bind() {
     if (!t) return;
     const d = t.dataset;
     if (d.back !== undefined) return back();
+    if (d.themeSet) { setTheme(d.themeSet); return renderMore(); }
+    if (d.busy) {
+      closeSheet($('#busySheet'));
+      const pick = busyPick;
+      busyPick = null;
+      if (d.busy === 'join' && pick) return finishPick(pick.n, pick.info);
+      pickDraft = '';
+      return updatePick();
+    }
     if (d.go) return go(d.go, d.param ?? null);
     if (d.tab) return go(d.tab);
     if (d.openItem) return openItem(d.openItem);

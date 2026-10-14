@@ -126,6 +126,26 @@ export function timeAgo(iso) {
   return h === 1 ? 'من ساعة' : `من ${h} ساعات`;
 }
 
+// ───────── المظهر: فاتح / غامق / تلقائي (حسب إعداد الجهاز) ─────────
+const THEME_KEY = 'cm.theme';
+const darkQuery = window.matchMedia?.('(prefers-color-scheme: dark)');
+export const THEMES = [['light', 'فاتح', 'sun'], ['dark', 'غامق', 'moon'], ['auto', 'تلقائي', 'contrast']];
+export function themePref() {
+  try { return localStorage.getItem(THEME_KEY) || 'auto'; } catch { return 'auto'; }
+}
+export function applyTheme(pref = themePref()) {
+  const dark = pref === 'dark' || (pref === 'auto' && Boolean(darkQuery?.matches));
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#1a130f' : '#f4ece1');
+  return dark;
+}
+export function setTheme(pref) {
+  try { localStorage.setItem(THEME_KEY, pref); } catch { /* */ }
+  applyTheme(pref);
+}
+darkQuery?.addEventListener?.('change', () => { if (themePref() === 'auto') applyTheme(); });
+applyTheme();
+
 export const STATUS = {
   new: { label: 'طلب جديد', short: 'جديد' },
   preparing: { label: 'قيد التحضير', short: 'تحضير' },

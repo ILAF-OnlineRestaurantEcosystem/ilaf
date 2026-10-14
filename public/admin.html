@@ -4,6 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f4ece1">
+  <script>
+    // المظهر قبل ما تنرسم الصفحة: فاتح / غامق / تلقائي حسب الجهاز
+    try {
+      var t = localStorage.getItem('cm.theme') || 'auto';
+      var dark = t === 'dark' || (t === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    } catch (e) { /* */ }
+  </script>
   <title>لوحة الكاشير — كافي محمد</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,6 +20,7 @@
   <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/brand.css">
   <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="/css/theme.css">
 </head>
 <body class="admin">
   <div class="grain" aria-hidden="true"></div>
@@ -50,6 +59,7 @@
         <div class="bar-right">
           <div class="bar-stats" id="barStats"></div>
           <span class="live" id="live" title="الاتصال المباشر"><i></i><span>مباشر</span></span>
+          <button class="theme-btn" type="button" id="themeBtn"></button>
           <span class="clock num" id="clock"></span>
         </div>
       </header>

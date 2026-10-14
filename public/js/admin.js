@@ -1,4 +1,4 @@
-import { $, $$, esc, api, money, moneyText, toast, openSheet, closeSheet, chime, unlockAudio, timeAgo, STATUS, SUGAR } from './common.js';
+import { $, $$, esc, api, money, moneyText, toast, openSheet, closeSheet, chime, unlockAudio, timeAgo, STATUS, SUGAR, THEMES, themePref, setTheme } from './common.js';
 import { brandLogo, fitLogo, brandMark, artTile, itemArt, icon, ART_KEYS, ART_LABELS } from './art.js';
 
 const S = {
@@ -89,8 +89,24 @@ const VIEWS = [
   { id: 'reports', label: 'التقارير', ic: 'chart' },
   { id: 'settings', label: 'الإعدادات', ic: 'gear' },
 ];
+// المظهر: الزر بيلف فاتح ← غامق ← تلقائي
+function renderThemeBtn() {
+  const [, label, ic] = THEMES.find(([k]) => k === themePref()) ?? THEMES[2];
+  $('#themeBtn').innerHTML = icon(ic);
+  $('#themeBtn').title = `المظهر: ${label} (اضغط للتغيير)`;
+  $('#themeBtn').setAttribute('aria-label', `المظهر: ${label}`);
+}
+function cycleTheme() {
+  const keys = THEMES.map(([k]) => k);
+  setTheme(keys[(keys.indexOf(themePref()) + 1) % keys.length]);
+  renderThemeBtn();
+  toast(`المظهر: ${THEMES.find(([k]) => k === themePref())[1]}`, 'ok');
+  if (S.view === 'settings') renderSettings();
+}
+
 function renderShell() {
   const s = S.data.settings;
+  renderThemeBtn();
   document.title = `لوحة الكاشير — ${s.cafeName}`;
   $('#sideBrand').innerHTML = `${brandMark(s.cafeName)}<small>لوحة الكاشير</small>`;
   renderNav();
@@ -1142,6 +1158,10 @@ function renderSettings() {
     <div class="settings-grid">
       <section class="panel">
         <div class="panel-head"><h2>الهوية</h2></div>
+        <div class="field">
+          <span>المظهر</span>
+          <div class="segmented" style="--n:3" role="radiogroup" aria-label="المظهر">${THEMES.map(([k, label, ic]) => `<button type="button" role="radio" data-theme-set="${k}" aria-pressed="${themePref() === k}" aria-checked="${themePref() === k}" style="display:inline-flex;align-items:center;justify-content:center;gap:6px">${icon(ic)}${label}</button>`).join('')}</div>
+        </div>
         <div class="logo-preview" id="logoPreview"></div>
         <div class="form-grid">
           <label class="field"><span>اسم المحل</span><input class="input" id="s_name" value="${esc(s.cafeName)}" maxlength="40"></label>
@@ -1354,6 +1374,8 @@ function bind() {
     }
     if (t.id === 'printCards') return printTableCards();
     if (t.id === 'copyLink') return copyCustomerLink();
+    if (t.id === 'themeBtn') return cycleTheme();
+    if (d.themeSet) { setTheme(d.themeSet); renderThemeBtn(); return renderSettings(); }
     if (t.id === 'takeoverBtn') { relay?.takeover(); return toast('هلق هالجهاز هو الكاشير ✓', 'ok'); }
     if (t.id === 'saveGemini') return saveGeminiKey();
     if (t.id === 'backupBtn') return downloadBackup();
