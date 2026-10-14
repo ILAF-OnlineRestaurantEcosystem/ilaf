@@ -1,0 +1,189 @@
+/* ─────────────────────────────────────────────
+   كافي محمد — نظام التصميم المشترك
+   بيج دافي + بني قهوة + نحاس الدلّة (ستايل تطبيق جوال)
+   ───────────────────────────────────────────── */
+:root {
+  --abyss: #e3d6c4;      /* الخلفية الخارجية حول التطبيق */
+  --harbor: #f4ece1;     /* سطح التطبيق */
+  --tide: #fbf6ef;       /* البطاقات */
+  --swell: #ffffff;      /* عناصر مرفوعة */
+  --tint: 92, 72, 46;    /* لون الظلال والحدود (RGB) */
+  --line: rgba(var(--tint), .12);
+  --line-strong: rgba(var(--tint), .22);
+  --inset: rgba(255, 255, 255, .72);
+  --foam: #33291f;       /* النص الأساسي */
+  --foam-2: #6b5d4c;     /* نص ثانوي */
+  --foam-3: #9a8b78;     /* تلميحات */
+  --brass: #6b4a2f;      /* بني القهوة — اللون الأساسي للأزرار */
+  --brass-hi: #4a3220;
+  --brass-lo: #a8907a;
+  --olive-soft: #ece0d1;
+  --gold: #a8834f;       /* نحاس الدلّة — لمسات */
+  --gold-soft: #f1e4cc;
+  --seaglass: #4e8466;   /* جاهز / نجاح */
+  --coral: #b9603f;      /* نداء / تنبيه */
+  --amber: #b07b2c;      /* قيد التحضير */
+  --on-brass: #f4ece1;
+
+  --font-display: 'Aref Ruqaa', 'Amiri', serif;
+  --font-body: 'Alexandria', 'Segoe UI', Tahoma, sans-serif;
+  --font-num: 'Alexandria', 'Segoe UI', sans-serif;
+
+  --r-sm: 12px;
+  --r-md: 18px;
+  --r-lg: 22px;
+  --r-xl: 30px;
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, .8) inset, 0 8px 20px -14px rgba(var(--tint), .45);
+  --shadow-deep: 0 24px 50px -20px rgba(var(--tint), .45), 0 6px 16px -8px rgba(var(--tint), .25);
+  color-scheme: light;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--abyss);
+  color: var(--foam);
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+img, svg { display: block; max-width: 100%; }
+button, input, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; border: 0; background: none; padding: 0; }
+a { color: var(--brass); }
+h1, h2, h3, h4, h5, p { margin: 0; }
+::selection { background: rgba(107, 74, 47, .2); }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 8px; }
+
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums lining-nums; }
+.cur { font-size: .78em; margin-inline-start: 3px; color: var(--foam-2); font-weight: 400; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ملمس ورق خفيف */
+.grain {
+  pointer-events: none; position: fixed; inset: 0; z-index: 200; opacity: .05; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ───────── أزرار ───────── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  height: 54px; padding: 0 26px; border-radius: 999px;
+  font-weight: 600; font-size: 15.5px;
+  transition: transform .4s var(--ease-spring), background .3s, box-shadow .3s, color .3s;
+  white-space: nowrap; position: relative;
+}
+.btn:active { transform: scale(.97); }
+.btn svg { width: 20px; height: 20px; flex: none; }
+.btn-brass { color: var(--on-brass); background: var(--brass); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 12px 24px -14px rgba(74, 50, 32, .9); }
+.btn-brass:hover { background: #7c5637; }
+.btn-ghost { color: var(--brass-hi); background: transparent; box-shadow: inset 0 0 0 1.5px rgba(107, 74, 47, .55); }
+.btn-ghost:hover { background: rgba(107, 74, 47, .06); }
+.btn-quiet { height: 42px; padding: 0 16px; color: var(--foam-2); border-radius: 999px; }
+.btn-quiet:hover { color: var(--foam); background: rgba(var(--tint), .06); }
+.btn-coral { color: #fff8f2; background: var(--coral); box-shadow: 0 10px 22px -12px rgba(185, 96, 63, .8); }
+.btn-sm { height: 42px; padding: 0 18px; font-size: 14px; }
+.btn-block { width: 100%; }
+.btn .arrow { transform: scaleX(-1); }
+.btn[disabled], .btn.is-busy { opacity: .55; pointer-events: none; }
+
+.icon-btn {
+  width: 46px; height: 46px; border-radius: 16px; display: grid; place-items: center; color: var(--foam);
+  background: var(--tide); box-shadow: var(--shadow-card), inset 0 0 0 1px var(--line);
+  transition: background .25s, transform .3s var(--ease-spring);
+}
+.icon-btn:hover { background: var(--swell); }
+.icon-btn:active { transform: scale(.92); }
+.icon-btn svg { width: 21px; height: 21px; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px;
+  border-radius: 999px; font-size: 13px; color: var(--foam-2);
+  background: var(--tide); box-shadow: inset 0 0 0 1px var(--line);
+  transition: background .25s, color .25s, box-shadow .25s;
+}
+.chip:hover { color: var(--foam); background: var(--swell); }
+.chip svg { width: 16px; height: 16px; }
+.chip.is-on { color: var(--on-brass); background: var(--brass); box-shadow: none; font-weight: 500; }
+
+/* ───────── حقول ───────── */
+.field { display: grid; gap: 8px; }
+.field > span { font-size: 13px; color: var(--foam-2); }
+.input, .textarea, .select {
+  width: 100%; min-height: 50px; padding: 12px 16px; border-radius: var(--r-md);
+  background: var(--inset); border: 1px solid var(--line-strong); color: var(--foam);
+  transition: border-color .2s, box-shadow .2s, background .2s; outline: none;
+}
+.textarea { min-height: 88px; resize: vertical; line-height: 1.6; }
+.input:focus, .textarea:focus, .select:focus { border-color: var(--brass-lo); box-shadow: 0 0 0 4px rgba(107, 74, 47, .1); background: #fff; }
+.input::placeholder, .textarea::placeholder { color: var(--foam-3); }
+.select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%236b4a2f' stroke-width='1.6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: left 16px center; padding-inline-start: 40px; }
+
+/* ───────── لوح منزلق (Sheet) ───────── */
+.scrim {
+  position: fixed; inset: 0; z-index: 80; background: rgba(40, 32, 22, .38);
+  backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+  opacity: 0; pointer-events: none; transition: opacity .45s var(--ease-out);
+}
+.scrim.is-open { opacity: 1; pointer-events: auto; }
+.sheet {
+  position: fixed; z-index: 90; inset-inline: 0; bottom: 0; margin-inline: auto;
+  width: min(560px, 100%); max-height: 92dvh; display: flex; flex-direction: column;
+  background: var(--harbor);
+  border-radius: var(--r-xl) var(--r-xl) 0 0; box-shadow: 0 -20px 60px -20px rgba(var(--tint), .5);
+  transform: translateY(105%); transition: transform .6s var(--ease-out); visibility: hidden;
+}
+.sheet.is-open { transform: none; visibility: visible; }
+.sheet-grip { width: 44px; height: 5px; border-radius: 9px; background: var(--line-strong); margin: 10px auto 0; flex: none; }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 22px 10px; flex: none; }
+.sheet-title { font-size: 22px; font-weight: 700; line-height: 1.35; color: var(--foam); }
+.sheet-body { padding: 4px 22px 22px; overflow-y: auto; overscroll-behavior: contain; flex: 1; }
+.sheet-foot { padding: 14px 22px calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); flex: none; background: var(--tide); }
+
+/* ───────── إشعار ───────── */
+.toasts { position: fixed; z-index: 150; top: 14px; inset-inline: 0; display: grid; justify-items: center; gap: 8px; pointer-events: none; padding: 0 16px; }
+.toast {
+  pointer-events: auto; display: flex; align-items: center; gap: 12px; max-width: 420px;
+  padding: 13px 18px; border-radius: 18px; background: var(--brass); color: var(--on-brass);
+  box-shadow: var(--shadow-deep); font-size: 14px; font-weight: 500;
+  animation: toastIn .6s var(--ease-spring) both;
+}
+.toast.is-leaving { animation: toastOut .4s var(--ease-out) both; }
+.toast .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold-soft); flex: none; }
+.toast.ok .dot { background: #bfe0c8; }
+.toast.err { background: var(--coral); }
+.toast.err .dot { background: #fff1e8; }
+@keyframes toastIn { from { opacity: 0; transform: translateY(-20px) scale(.92); } }
+@keyframes toastOut { to { opacity: 0; transform: translateY(-12px) scale(.96); } }
+
+/* ───────── رسومات الأصناف: بطاقة دافئة بخط بني ───────── */
+.art {
+  --h: 30;
+  position: relative; overflow: hidden; display: grid; place-items: center; color: #4a3826;
+  background:
+    radial-gradient(90% 80% at 30% 20%, hsl(var(--h) 48% 91% / .9), transparent 65%),
+    radial-gradient(80% 70% at 80% 100%, hsl(calc(var(--h) - 4) 30% 42% / .45), transparent 70%),
+    linear-gradient(150deg, hsl(var(--h) 34% 80%), hsl(calc(var(--h) - 2) 26% 60%));
+}
+.art::after { content: ''; position: absolute; inset: 0; box-shadow: inset 0 0 0 1px rgba(var(--tint), .1); border-radius: inherit; pointer-events: none; }
+.art svg { width: 60%; height: 60%; filter: drop-shadow(0 4px 6px rgba(74, 56, 38, .18)); }
+.art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
+
+.badge { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+.badge svg { width: 13px; height: 13px; }
+.badge-brass { background: var(--olive-soft); color: var(--brass-hi); }
+.badge-gold { background: var(--gold-soft); color: #7a5a2c; }
+.badge-sea { background: #dcebe0; color: #2f6449; }
+.badge-coral { background: #f5dfd4; color: #8f4329; }
+.badge-mute { background: rgba(var(--tint), .08); color: var(--foam-3); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}

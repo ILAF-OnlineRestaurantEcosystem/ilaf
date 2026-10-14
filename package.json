@@ -1,0 +1,21 @@
+{
+  "name": "mawj-cafe",
+  "version": "1.0.0",
+  "description": "نظام طلب إلكتروني للكافيهات مع لوحة كاشير مباشرة وباريستا ذكي",
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server/index.js",
+    "dev": "node --watch --env-file-if-exists=.env server/index.js",
+    "reset": "node server/reset.js",
+    "build:html": "node scripts/build-standalone.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.132.1",
+    "express": "^5.2.1",
+    "socket.io": "^4.8.4"
+  }
+}

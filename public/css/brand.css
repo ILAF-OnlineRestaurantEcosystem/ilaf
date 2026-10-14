@@ -1,0 +1,92 @@
+/* ───────── عناصر الهوية المشتركة بين صفحة الزبون ولوحة الكاشير ───────── */
+
+/* الشعار المصغّر */
+.brand-mark { display: inline-flex; align-items: center; gap: 8px; color: var(--foam); text-decoration: none; }
+.brand-mark svg { width: 30px; height: 37px; }
+.brand-mark-name { font-family: var(--font-display); font-weight: 700; font-size: 24px; line-height: 1; color: var(--brass-hi); }
+
+/* الشعار المتحرك: الدلّة بتصب والكلمة بتتعبّى */
+.brand-logo { width: 100%; height: auto; overflow: visible; }
+.brand-logo .logo-dallah { transform-box: view-box; transform-origin: 60px 128px; }
+.brand-logo .logo-wave { animation: wave 3.2s linear infinite; }
+.brand-logo .logo-stream { stroke-dasharray: 100 100; stroke-dashoffset: 100; }
+.brand-logo .logo-splash { opacity: 0; }
+.brand-logo .logo-steam path { opacity: 0; stroke-dasharray: 3 9; }
+.brand-logo.is-waiting > *:not(defs) { opacity: 0; }
+.brand-logo.is-pour .logo-prefix { animation: rise .8s var(--ease-out) .1s both; }
+.brand-logo.is-pour .logo-word-shell { animation: shellIn 1s var(--ease-out) both; }
+.brand-logo.is-pour .logo-dallah { animation: tilt 4.2s var(--ease-out) .2s both; }
+.brand-logo.is-pour .logo-stream { animation: pourStream 3.4s .75s both; }
+.brand-logo.is-pour .logo-splash { animation: splash .7s ease-out 1.1s 4; }
+.brand-logo.is-pour .logo-liquid { animation: fill 2.5s cubic-bezier(.45, .05, .35, 1) 1.05s both; }
+.brand-logo.is-pour .logo-steam path, .brand-logo.is-static .logo-steam path { animation: steam 3.6s ease-in-out 3.7s infinite; }
+.brand-logo .logo-steam g:nth-child(2) path { animation-delay: 4.5s !important; }
+.brand-logo .logo-steam g:nth-child(3) path { animation-delay: 5.2s !important; }
+.brand-logo.is-static .logo-dallah { transform: rotate(-8deg); }
+
+@keyframes wave { to { transform: translateX(150px); } }
+@keyframes shellIn { from { opacity: 0; } }
+@keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes tilt {
+  0% { transform: translate(40px, -30px) rotate(10deg); opacity: 0; }
+  14% { transform: none; opacity: 1; }
+  26% { transform: rotate(-40deg); }
+  76% { transform: rotate(-42deg); }
+  100% { transform: rotate(-8deg); }
+}
+@keyframes pourStream { 0% { stroke-dashoffset: 100; } 14% { stroke-dashoffset: 0; } 84% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -100; } }
+@keyframes fill { from { transform: translateY(var(--fill-from, 260px)); } to { transform: translateY(0); } }
+@keyframes splash { 0% { opacity: .9; r: 3; } 100% { opacity: 0; r: 16; } }
+@keyframes steam { 0% { opacity: 0; transform: translateY(14px); stroke-dashoffset: 0; } 35% { opacity: .55; } 100% { opacity: 0; transform: translateY(-22px); stroke-dashoffset: -24; } }
+@keyframes msgIn { from { opacity: 0; transform: translateY(10px) scale(.98); } }
+@keyframes pop { from { transform: scale(.3); } }
+@keyframes ping { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 55%, transparent); } 100% { box-shadow: 0 0 0 12px transparent; } }
+
+/* لوحة أرقام */
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 18px; direction: ltr; }
+.keypad button {
+  height: 58px; border-radius: 18px; font-size: 24px; font-weight: 500; background: var(--tide);
+  box-shadow: var(--shadow-card), inset 0 0 0 1px var(--line); transition: background .2s, transform .25s var(--ease-spring);
+}
+.keypad button:hover { background: var(--swell); }
+.keypad button:active { transform: scale(.94); }
+.keypad button svg { width: 24px; height: 24px; margin: auto; }
+
+/* اختيار متعدد */
+.segmented { display: grid; grid-template-columns: repeat(var(--n, 4), 1fr); gap: 6px; padding: 5px; border-radius: 16px; background: rgba(var(--tint), .07); }
+.segmented button { min-height: 42px; padding: 0 6px; border-radius: 12px; font-size: 13px; color: var(--foam-2); transition: background .3s, color .3s; }
+.segmented button[aria-pressed="true"] { background: var(--swell); color: var(--brass-hi); font-weight: 600; box-shadow: 0 4px 12px -8px rgba(var(--tint), .6); }
+
+/* عدّاد الكمية */
+.stepper { display: inline-flex; align-items: center; gap: 2px; height: 46px; padding: 4px; border-radius: 999px; background: var(--tide); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.stepper button { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; color: var(--brass-hi); }
+.stepper button:hover { background: rgba(var(--tint), .07); }
+.stepper button svg { width: 17px; height: 17px; }
+.stepper output { min-width: 24px; text-align: center; font-size: 17px; font-weight: 600; }
+.stepper.sm { height: 38px; }
+.stepper.sm button { width: 30px; height: 30px; }
+.stepper.sm output { font-size: 15px; min-width: 20px; }
+
+.empty { text-align: center; padding: 30px 10px 10px; color: var(--foam-3); display: grid; justify-items: center; gap: 12px; }
+.empty .art { width: 104px; height: 104px; border-radius: 50%; }
+
+/* بطاقات العروض */
+.offer {
+  position: relative; overflow: hidden; border-radius: var(--r-lg); padding: 18px; display: grid; gap: 10px;
+  background: linear-gradient(150deg, #f3ead9, #ece0c9); box-shadow: var(--shadow-card), inset 0 0 0 1px rgba(168, 131, 79, .3);
+}
+.offer-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.offer-title { font-size: 19px; font-weight: 700; line-height: 1.3; color: var(--brass-hi); }
+.offer-desc { color: var(--foam-2); font-size: 13.5px; }
+.offer-arts { display: flex; }
+.offer-arts .art { width: 52px; height: 52px; border-radius: 50%; box-shadow: 0 0 0 3px #f1e7d4; }
+.offer-arts .art + .art { margin-inline-start: -12px; }
+.offer-arts .art svg { width: 58%; height: 58%; }
+.offer-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.offer-price { display: flex; align-items: baseline; gap: 8px; font-weight: 700; }
+.offer-price .num { font-size: 22px; }
+.offer-price s { color: var(--foam-3); font-weight: 400; font-size: 13px; }
+
+/* زخرفة الأوراق في الزوايا */
+.leaves { position: absolute; pointer-events: none; color: var(--gold); opacity: .32; width: 150px; }
+.leaves svg { width: 100%; height: auto; }

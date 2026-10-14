@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f4ece1">
+  <title>كافي محمد — اطلب من طاولتك</title>
+  <meta name="description" content="اطلب من طاولتك مباشرة، وخلّينا نساعدك تختار.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;500;600;700&family=Aref+Ruqaa:wght@400;700&display=swap">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/brand.css">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="app-body">
+  <div class="phone" id="phone">
+    <div class="toasts" aria-live="polite"></div>
+    <div class="link-bar" id="linkBar" role="status" hidden></div>
+    <div class="pending-bar" id="pendingBar" role="status" hidden></div>
+
+    <!-- 1. البداية: رقم الطاولة قبل أي اشي -->
+    <section class="screen s-welcome" data-screen="welcome" aria-label="الترحيب">
+      <div class="leaves leaves-tr" data-leaves></div>
+      <div class="leaves leaves-bl" data-leaves></div>
+      <div class="welcome-logo" id="welcomeLogo"></div>
+      <h1 class="welcome-title" id="welcomeTitle"></h1>
+      <p class="link-chip" id="linkChip" hidden></p>
+      <div class="welcome-ask" id="welcomeAsk">
+        <p class="ask-label">طاولتك رقم كم؟</p>
+        <output class="pick-display" id="pickDisplay">—</output>
+        <p class="pick-zone" id="pickZone">الرقم مكتوب على طاولتك</p>
+        <div class="keypad" id="keypad"></div>
+        <button class="btn btn-brass btn-block" type="button" id="pickConfirm">ابدأ الطلب</button>
+      </div>
+      <div class="welcome-back" id="welcomeBack" hidden>
+        <p class="back-title">أهلين من جديد 👋</p>
+        <p class="back-line" id="backLine"></p>
+        <button class="btn btn-brass btn-block" type="button" id="keepTable"></button>
+        <button class="btn btn-ghost btn-block" type="button" id="otherTable">لا، أنا على طاولة ثانية</button>
+      </div>
+    </section>
+
+    <!-- 2. الطاولة -->
+    <section class="screen s-table" data-screen="table" aria-label="الطاولة">
+      <div class="leaves leaves-br" data-leaves></div>
+      <header class="topnav"><button class="icon-btn" type="button" data-back aria-label="رجوع"></button><span></span><span></span></header>
+      <div class="table-art" id="tableArt"></div>
+      <div id="tableWelcome">
+        <h1 class="screen-title center">مرحباً بك في طاولتك</h1>
+        <p class="table-line" id="tableLine"></p>
+        <p class="table-zone" id="tableZone"></p>
+        <p class="table-insight" id="tableInsight"></p>
+        <div class="stack">
+          <button class="btn btn-brass btn-block" type="button" data-go="home" id="browseBtn"></button>
+          <button class="btn btn-ghost btn-block" type="button" data-go="helper" id="discoverBtn"></button>
+        </div>
+        <button class="link-btn" type="button" id="changeTable">مش طاولتك؟ غيّر الرقم</button>
+      </div>
+      </section>
+
+    <!-- 3. القائمة -->
+    <section class="screen s-home" data-screen="home" aria-label="القائمة">
+      <header class="appbar" data-appbar></header>
+      <p class="greet" id="greet"></p>
+      <label class="search"><span data-icon="search"></span><input class="search-input" id="homeSearch" type="search" placeholder="ابحث في المنيو…" aria-label="ابحث في المنيو"></label>
+      <div id="homeResults" hidden></div>
+      <div id="homeMain">
+        <div class="cat-grid" id="catGrid"></div>
+        <button class="helper-card" type="button" data-go="helper">
+          <span class="helper-ic" data-icon="sparkle"></span>
+          <span><strong>ساعدنا نختارك</strong><small>اكتشف اللي بيناسب ذوقك اليوم</small></span>
+          <span class="chev" data-icon="chev"></span>
+        </button>
+        <section class="block" id="popBlock">
+          <header class="block-head"><h2>الأكثر طلباً</h2><span class="muted">هالأسبوعين</span></header>
+          <div class="pop-row" id="popRow"></div>
+        </section>
+        <section class="block" id="offerBlock">
+          <header class="block-head"><h2>العروض</h2><span class="muted">لفترة محدودة</span></header>
+          <div class="offer-list" id="offerList"></div>
+        </section>
+        <button class="barista-card" type="button" data-open-chat>
+          <span class="barista-ava" id="baristaAva"></span>
+          <span><strong id="baristaTitle"></strong><small>بيشرحلك كل مشروب من شو بيتكوّن وبيقترح عليك</small></span>
+          <span class="chev" data-icon="chev"></span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 4. قسم -->
+    <section class="screen s-category" data-screen="category" aria-label="القسم">
+      <header class="appbar" data-appbar></header>
+      <h1 class="screen-title" id="catTitle"></h1>
+      <p class="screen-sub" id="catSub"></p>
+      <label class="search"><span data-icon="search"></span><input class="search-input" id="catSearch" type="search" aria-label="ابحث في القسم"></label>
+      <div class="item-list" id="catItems"></div>
+    </section>
+
+    <!-- 5. ساعدنا نختارك -->
+    <section class="screen s-helper" data-screen="helper" aria-label="ساعدنا نختارك">
+      <header class="topnav"><button class="icon-btn" type="button" id="helperBack" aria-label="رجوع"></button><div class="steps-dots" id="helperDots"></div><span></span></header>
+      <h1 class="screen-title center">ساعدنا نختارك</h1>
+      <p class="screen-sub center">احكيلنا عن مزاجك اليوم، ومنقترحلك تجربة مميزة</p>
+      <div class="helper-q" id="helperQ"></div>
+      <div class="helper-foot"><button class="btn btn-brass btn-block" type="button" id="helperNext"></button></div>
+    </section>
+
+    <!-- 6. اختيارنا لك -->
+    <section class="screen s-result" data-screen="result" aria-label="اختيارنا لك">
+      <header class="topnav"><button class="icon-btn" type="button" data-back aria-label="رجوع"></button><span></span><span class="spark" data-icon="sparkle"></span></header>
+      <h1 class="screen-title">اختيارنا لك اليوم</h1>
+      <p class="screen-sub">بناءً على ذوقك، منرشحلك هالتجربة</p>
+      <div id="resultBody"></div>
+    </section>
+
+    <!-- 7. مراجعة الطلب -->
+    <section class="screen s-cart" data-screen="cart" aria-label="مراجعة طلبك">
+      <header class="topnav"><button class="icon-btn" type="button" data-back aria-label="رجوع"></button><h1 class="topnav-title">مراجعة طلبك</h1><span></span></header>
+      <div id="cartBody"></div>
+    </section>
+
+    <!-- 8. تم الإرسال / متابعة -->
+    <section class="screen s-sent" data-screen="sent" aria-label="متابعة الطلب">
+      <header class="topnav"><button class="icon-btn" type="button" data-go="home" aria-label="للقائمة" id="sentBack"></button><span></span><span></span></header>
+      <div id="sentBody"></div>
+    </section>
+
+    <!-- 9. فاتورة الطاولة -->
+    <section class="screen s-bill" data-screen="bill" aria-label="فاتورة الطاولة">
+      <header class="appbar" data-appbar></header>
+      <h1 class="screen-title" id="billTitle">فاتورة الطاولة</h1>
+      <p class="screen-sub" id="billSub"></p>
+      <div id="billBody"></div>
+    </section>
+
+    <!-- 10. المزيد -->
+    <section class="screen s-more" data-screen="more" aria-label="المزيد">
+      <header class="appbar" data-appbar></header>
+      <h1 class="screen-title">المزيد</h1>
+      <div class="menu-rows" id="moreRows"></div>
+      <div class="about" id="about"></div>
+    </section>
+
+    <!-- زر الباريستا العائم -->
+    <button class="fab" type="button" id="fab" data-open-chat aria-label="اسأل الباريستا"></button>
+
+    <!-- الشريط السفلي -->
+    <nav class="tabbar" id="tabbar" aria-label="التنقل">
+      <button type="button" data-tab="home"><span data-icon="home"></span>الرئيسية</button>
+      <button type="button" data-tab="cart"><span data-icon="bag"></span>السلة<i class="tab-count" id="cartCount" hidden></i></button>
+      <button type="button" data-tab="bill"><span data-icon="clipboard"></span>الفاتورة<i class="tab-dot" id="billDot" hidden></i></button>
+      <button type="button" data-tab="more"><span data-icon="dots"></span>المزيد</button>
+    </nav>
+
+    <!-- لوح الصنف -->
+    <section class="sheet item-sheet" id="itemSheet" role="dialog" aria-modal="true" aria-labelledby="itemTitle" aria-hidden="true">
+      <div class="sheet-grip"></div>
+      <div class="sheet-body" id="itemBody"></div>
+      <div class="sheet-foot" id="itemFoot"></div>
+    </section>
+
+    <!-- نداء النادل -->
+    <section class="sheet" id="waiterSheet" role="dialog" aria-modal="true" aria-labelledby="waiterTitle" aria-hidden="true">
+      <div class="sheet-grip"></div>
+      <div class="sheet-head"><h2 class="sheet-title" id="waiterTitle">نادِ نادل</h2><button class="icon-btn" data-close-sheet type="button" aria-label="إغلاق" data-icon="close"></button></div>
+      <div class="sheet-body">
+        <p class="muted" id="waiterLead" style="margin-bottom:14px"></p>
+        <div class="menu-rows">
+          <button class="row-btn" data-call="waiter" type="button"><span class="row-ic coral" data-icon="bell"></span><span><strong>بدي نادل</strong><small>سؤال، طلب خاص، أو أي مساعدة</small></span></button>
+          <button class="row-btn" data-call="bill" type="button"><span class="row-ic" data-icon="receipt"></span><span><strong>بدي الحساب</strong><small>بيجيك النادل مع الفاتورة</small></span></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- الباريستا -->
+    <aside class="chat" id="chat" role="dialog" aria-modal="true" aria-labelledby="chatName" aria-hidden="true">
+      <header class="chat-head">
+        <button class="icon-btn" id="chatClose" type="button" aria-label="إغلاق المحادثة"></button>
+        <div class="chat-id"><strong id="chatName"></strong><small>الباريستا · بيعرف القائمة حبة حبة</small></div>
+        <span class="chat-avatar" id="chatAvatar"></span>
+      </header>
+      <div class="chat-log" id="chatLog" aria-live="polite"></div>
+      <div class="chat-quick" id="chatQuick"></div>
+      <div class="chat-bar">
+        <button class="waiter-pill" id="chatWaiter" type="button"></button>
+        <form class="chat-input" id="chatForm" autocomplete="off">
+          <input class="input" id="chatText" placeholder="احكي مع الباريستا…" maxlength="400" aria-label="رسالتك للباريستا">
+          <button class="chat-send" type="submit" aria-label="إرسال" id="chatSend"></button>
+        </form>
+      </div>
+    </aside>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script type="module" src="/js/customer.js"></script>
+</body>
+</html>

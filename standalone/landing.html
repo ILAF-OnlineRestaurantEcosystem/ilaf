@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMCI+PHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjNmU0ZjFkIi8+PHN0b3Agb2Zmc2V0PSIuMyIgc3RvcC1jb2xvcj0iI2Q5YjQ2YyIvPjxzdG9wIG9mZnNldD0iLjUiIHN0b3AtY29sb3I9IiNmNmUzYjQiLz48c3RvcCBvZmZzZXQ9Ii43MiIgc3RvcC1jb2xvcj0iI2M3OWE0ZiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzVlNDIxNyIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgcng9IjE2IiBmaWxsPSIjMGIxZjI0Ii8+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoOSA0KSBzY2FsZSguNCkiPjxwYXRoIGQ9Ik00MiAxMDJDMjYgOTQgMTUgNzYgNyA1MmMtMS0zIDIuNS00LjUgNC41LTJDMjEgNzAgMzIgODQgNDcgOTB6IiBmaWxsPSJ1cmwoI2cpIi8+PHBhdGggZD0iTTc2IDcyYzIyLTIgMjggMjYgMTAgNDQiIGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNnKSIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMzggMTI4QzI3IDExNCAyOCA5OCA0NCA4NmM1LTQgNi0xMiAyLTE5aDI4Yy00IDctMyAxNSAyIDE5IDE2IDEyIDE3IDI4IDYgNDJ6IiBmaWxsPSJ1cmwoI2cpIi8+PHBhdGggZD0iTTQ0IDY3YzItMTMgMTAtMTkgMTYtMjkgNiAxMCAxNCAxNiAxNiAyOXoiIGZpbGw9InVybCgjZykiLz48Y2lyY2xlIGN4PSI2MCIgY3k9IjM0IiByPSI0LjUiIGZpbGw9InVybCgjZykiLz48cGF0aCBkPSJNMzUgMTI4aDUwbC0zIDZIMzh6IiBmaWxsPSIjYTc3ZDM4Ii8+PC9nPjwvc3ZnPgo=">
+<title>كافي محمد</title>
+<script>
+  // رابطين مباشرين لنفس الاستضافة: ‎#customer للزبون و ‎#admin للوحة التحكم
+  function openFromHash() {
+    var page = { customer: 'customer.html', admin: 'admin.html' }[(location.hash || '').slice(1)];
+    if (page) location.replace(page);
+  }
+  openFromHash();
+  window.addEventListener('hashchange', openFromHash);
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alexandria:wght@400;500;600;700&family=Aref+Ruqaa:wght@700&display=swap">
+<style>
+  /* صفحة بداية بطابع واحد مقصود (بيج + بني قهوة): شعار، زرّين للصفحتين، وطريقة التجربة */
+  :root {
+    --bg: #f4ece1;
+    --card: #fbf6ef;
+    --ink: #33291f;
+    --ink-2: #6b5d4c;
+    --brown: #6b4a2f;
+    --brown-dk: #4a3220;
+    --gold: #a8834f;
+    --gold-soft: #f1e4cc;
+    --line: rgba(92, 72, 46, .14);
+    --font-display: 'Aref Ruqaa', 'Amiri', serif;
+    --font-body: 'Alexandria', 'Segoe UI', Tahoma, sans-serif;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--ink); }
+  body { font-family: var(--font-body); font-size: 15px; line-height: 1.7; padding-inline: 16px; padding-block: 28px 40px; direction: rtl; }
+  .wrap { max-width: 560px; margin-inline: auto; display: grid; gap: 22px; }
+  header { display: grid; justify-items: center; gap: 6px; text-align: center; }
+  .mark { width: 76px; height: 76px; border-radius: 24px; background: var(--brown); display: grid; place-items: center; box-shadow: 0 14px 30px -14px rgba(74, 50, 32, .8); }
+  .mark svg { width: 46px; height: 46px; }
+  h1 { font-family: var(--font-display); font-size: clamp(38px, 9vw, 52px); line-height: 1.2; margin: 8px 0 0; color: var(--brown-dk); text-wrap: balance; }
+  .lede { color: var(--ink-2); margin: 0; max-width: 40ch; }
+  .doors { display: grid; gap: 12px; }
+  .door { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px; padding: 18px; border-radius: 22px; text-decoration: none; color: var(--ink); background: var(--card); box-shadow: 0 1px 0 rgba(255, 255, 255, .8) inset, 0 10px 24px -16px rgba(92, 72, 46, .55), inset 0 0 0 1px var(--line); transition: transform .3s cubic-bezier(.34, 1.56, .64, 1), box-shadow .3s; }
+  .door:hover { transform: translateY(-2px); }
+  .door:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+  .door.primary { background: var(--brown); color: #f6efe4; box-shadow: 0 16px 30px -16px rgba(74, 50, 32, .9); }
+  .door .ic { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; background: var(--gold-soft); color: var(--brown); }
+  .door.primary .ic { background: rgba(255, 255, 255, .14); color: #f6efe4; }
+  .door .ic svg { width: 26px; height: 26px; }
+  .door strong { display: block; font-size: 17px; font-weight: 700; }
+  .door small { display: block; font-size: 13px; opacity: .8; }
+  .door .go svg { width: 20px; height: 20px; }
+  .how { padding: 18px; border-radius: 22px; background: var(--gold-soft); display: grid; gap: 10px; }
+  .how h2 { font-size: 16px; margin: 0; color: var(--brown-dk); }
+  .how ol { margin: 0; padding-inline-start: 1.3em; display: grid; gap: 6px; color: var(--ink); }
+  .how b { color: var(--brown-dk); }
+  .note { font-size: 12.5px; color: var(--ink-2); text-align: center; margin: 0; }
+  @media (prefers-reduced-motion: reduce) { .door { transition: none; } }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <span class="mark" aria-hidden="true">
+      <svg viewBox="0 0 120 140"><defs><linearGradient id="br" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8a6a2c"/><stop offset=".35" stop-color="#e2c27e"/><stop offset=".55" stop-color="#f7e6bb"/><stop offset=".78" stop-color="#c9a056"/><stop offset="1" stop-color="#7a5a22"/></linearGradient></defs>
+        <path d="M42 102C26 94 15 76 7 52c-1-3 2.5-4.5 4.5-2C21 70 32 84 47 90z" fill="url(#br)"/>
+        <path d="M76 72c22-2 28 26 10 44" fill="none" stroke="url(#br)" stroke-width="6" stroke-linecap="round"/>
+        <path d="M38 128C27 114 28 98 44 86c5-4 6-12 2-19h28c-4 7-3 15 2 19 16 12 17 28 6 42z" fill="url(#br)"/>
+        <path d="M44 67c2-13 10-19 16-29 6 10 14 16 16 29z" fill="url(#br)"/>
+        <circle cx="60" cy="33" r="4.5" fill="url(#br)"/><path d="M35 128h50l-3 6H38z" fill="#c9a056"/>
+      </svg>
+    </span>
+    <h1>كافي محمد</h1>
+    <p class="lede">نظام طلب من الطاولة: الزبون بيطلب من جواله، والكاشير بيشوف الطلب بلوحته بنفس اللحظة.</p>
+  </header>
+
+  <nav class="doors" aria-label="الصفحات">
+    <a class="door primary" href="admin.html">
+      <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg></span>
+      <span><strong>لوحة الكاشير</strong><small>رمز الدخول 1234 · افتحها أول على جهاز الكاشير</small></span>
+      <span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14.5 6l-6 6 6 6"/></svg></span>
+    </a>
+    <a class="door" href="customer.html">
+      <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg></span>
+      <span><strong>صفحة الزبون</strong><small>تجربة سريعة على نفس الجهاز</small></span>
+      <span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14.5 6l-6 6 6 6"/></svg></span>
+    </a>
+  </nav>
+
+  <section class="how" aria-labelledby="howTitle">
+    <h2 id="howTitle">كيف تطلب من جوال ثاني</h2>
+    <ol>
+      <li>افتح <b>لوحة الكاشير</b> على جهازك وادخل بالرمز <b>1234</b>. لما يصير جنب الساعة <b>"مربوط"</b> يعني جاهزة.</li>
+      <li>من قسم <b>الطاولات</b> امسح الـ QR من أي جوال، أو اضغط <b>"انسخ الرابط"</b> وابعته على واتساب.</li>
+      <li>من الجوال اكتب رقم طاولة (مثلاً <b>20</b>) واطلب. بتضوي الطاولة عند الكاشير مع صوت بنفس اللحظة.</li>
+      <li>بدك نديم يحكي بذكاء؟ من <b>الإعدادات</b> بلوحة الكاشير حط مفتاح Gemini المجاني.</li>
+    </ol>
+  </section>
+
+  <p class="note">لوحة الكاشير هي اللي بتستقبل الطلبات وبتحفظ الحسابات، فلازم تضل مفتوحة على جهاز الكاشير.</p>
+</main>
+</body>
+</html>
