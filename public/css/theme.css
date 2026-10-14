@@ -3,39 +3,39 @@
    بيتفعّل بـ <html data-theme="dark"> (الاختيار: فاتح / غامق / تلقائي حسب الجهاز — common.js)
    ───────────────────────────────────────────── */
 :root[data-theme="dark"] {
-  --abyss: #110c09;
-  --harbor: #1a130f;
-  --tide: #241b15;
-  --swell: #2e231b;
-  --tint: 236, 218, 194;              /* بالغامق الخطوط والطبقات الشفافة فاتحة */
-  --line: rgba(236, 218, 194, .1);
-  --line-strong: rgba(236, 218, 194, .18);
-  --inset: rgba(236, 218, 194, .05);
-  --foam: #f1e6d6;
-  --foam-2: #cbb9a2;
-  --foam-3: #978670;
-  --brass: #8c6442;
-  --brass-hi: #e8c595;                /* النصوص المميزة: نحاسي فاتح */
-  --brass-lo: #8a7259;
-  --olive-soft: #2d2219;
-  --gold: #cfa56b;
-  --gold-soft: #3a2b1d;
+  --abyss: #0d0704;
+  --harbor: #160d08;                  /* الخلفية: بني شوكولاتة عميق */
+  --tide: #251710;                    /* البطاقات: أفتح بدرجة */
+  --swell: #2f1e15;
+  --tint: 245, 236, 229;              /* بالغامق الطبقات الشفافة فاتحة */
+  --line: #38251b;                    /* حدود هادية */
+  --line-strong: #4a3326;
+  --inset: #1d120c;
+  --foam: #f5ece5;                    /* النص الأساسي: كريمي فاتح */
+  --foam-2: #a8988d;                  /* نص ثانوي */
+  --foam-3: #8a7a6f;
+  --brass: #e8a852;                   /* الأزرار: ذهبي مضيء… */
+  --on-brass: #160d08;                /* …ونصها غامق (الفاتح عليه ما بينقرأ) */
+  --brass-hi: #e8a852;                /* نص مميّز وأسعار: ذهبي */
+  --brass-lo: #8a6a45;
+  --olive-soft: #2a1a12;
+  --gold: #d4a359;
+  --gold-soft: #3a2616;
   --seaglass: #74b48f;
   --coral: #e08d6c;
   --amber: #d9a552;
-  --on-brass: #fbf1e3;
-  --shadow-card: 0 1px 0 rgba(255, 255, 255, .03) inset, 0 8px 20px -14px rgba(0, 0, 0, .7);
-  --shadow-deep: 0 24px 50px -20px rgba(0, 0, 0, .75), 0 6px 16px -8px rgba(0, 0, 0, .5);
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, .03) inset, 0 8px 20px -14px rgba(0, 0, 0, .75);
+  --shadow-deep: 0 24px 50px -20px rgba(0, 0, 0, .8), 0 6px 16px -8px rgba(0, 0, 0, .55);
   color-scheme: dark;
 }
 
 /* ───── مشترك ───── */
 [data-theme="dark"] ::selection { background: rgba(232, 197, 149, .25); }
-[data-theme="dark"] .btn-brass { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1), 0 12px 24px -14px rgba(0, 0, 0, .9); }
-[data-theme="dark"] .btn-brass:hover { background: #9c724d; }
-[data-theme="dark"] .btn-ghost { box-shadow: inset 0 0 0 1.5px rgba(232, 197, 149, .4); }
-[data-theme="dark"] .btn-ghost:hover { background: rgba(232, 197, 149, .07); }
-[data-theme="dark"] .input:focus, [data-theme="dark"] .textarea:focus, [data-theme="dark"] .select:focus { background: var(--swell); box-shadow: 0 0 0 4px rgba(232, 197, 149, .12); }
+[data-theme="dark"] .btn-brass { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25), 0 12px 24px -14px rgba(0, 0, 0, .9); }
+[data-theme="dark"] .btn-brass:hover { background: #f0b968; }
+[data-theme="dark"] .btn-ghost { box-shadow: inset 0 0 0 1.5px rgba(232, 168, 82, .45); }
+[data-theme="dark"] .btn-ghost:hover { background: rgba(232, 168, 82, .08); }
+[data-theme="dark"] .input:focus, [data-theme="dark"] .textarea:focus, [data-theme="dark"] .select:focus { background: var(--swell); box-shadow: 0 0 0 4px rgba(232, 168, 82, .16); }
 [data-theme="dark"] .select option { background: var(--tide); color: var(--foam); }
 [data-theme="dark"] .scrim { background: rgba(0, 0, 0, .55); }
 [data-theme="dark"] .sheet { box-shadow: 0 -20px 60px -20px rgba(0, 0, 0, .8); }
@@ -58,33 +58,39 @@
 [data-theme="dark"] .status-chip.preparing, [data-theme="dark"] .status-pill.preparing { background: rgba(217, 165, 82, .16); color: #ecc27e; }
 
 /* العروض */
-[data-theme="dark"] .offer { background: linear-gradient(150deg, #2c2118, #231a14); box-shadow: var(--shadow-card), inset 0 0 0 1px rgba(207, 165, 107, .22); }
-[data-theme="dark"] .offer-arts .art { box-shadow: 0 0 0 3px #2a1f17; }
+[data-theme="dark"] .offer { background: linear-gradient(150deg, #2c1b12, #22150e); box-shadow: var(--shadow-card), inset 0 0 0 1px rgba(212, 163, 89, .25); }
+[data-theme="dark"] .offer-arts .art { box-shadow: 0 0 0 3px #2c1b12; }
 
 /* ───── صفحة الزبون ───── */
-[data-theme="dark"] .app-body { background: radial-gradient(80% 60% at 50% 0%, #2a1f17, transparent 70%), var(--abyss); }
+[data-theme="dark"] .app-body { background: radial-gradient(80% 60% at 50% 0%, #26160d, transparent 70%), var(--abyss); }
+
+/* الأسعار والأيقونات النشطة بالغامق: ذهبي (بيبرز ومقروء) */
+[data-theme="dark"] .item-row .price b, [data-theme="dark"] .pop-card .price, [data-theme="dark"] .offer-price .num { color: var(--brass-hi); }
+/* زر نديم: الدلّة ذهبية، فخلفيته بني عشان تبيّن */
+[data-theme="dark"] .fab { background: #3a2417; box-shadow: 0 14px 28px -12px rgba(0, 0, 0, .9), inset 0 0 0 1px rgba(212, 163, 89, .35); }
+[data-theme="dark"] .fab::after { box-shadow: 0 0 0 2px #3a2417; }
 @media (min-width: 560px) {
-  [data-theme="dark"] .phone { box-shadow: 0 40px 80px -30px rgba(0, 0, 0, .8), 0 0 0 10px #241b15, 0 0 0 11px rgba(236, 218, 194, .1); }
+  [data-theme="dark"] .phone { box-shadow: 0 40px 80px -30px rgba(0, 0, 0, .8), 0 0 0 10px #251710, 0 0 0 11px rgba(245, 236, 229, .1); }
 }
-[data-theme="dark"] .tabbar { background: rgba(36, 27, 21, .92); box-shadow: 0 12px 30px -14px rgba(0, 0, 0, .8), inset 0 0 0 1px var(--line); }
-[data-theme="dark"] .sheet-hero .icon-btn, [data-theme="dark"] .pop-rank { background: rgba(26, 19, 15, .85); }
+[data-theme="dark"] .tabbar { background: rgba(37, 23, 16, .94); box-shadow: 0 12px 30px -14px rgba(0, 0, 0, .8), inset 0 0 0 1px var(--line); }
+[data-theme="dark"] .sheet-hero .icon-btn, [data-theme="dark"] .pop-rank { background: rgba(22, 13, 8, .85); }
 [data-theme="dark"] .recipe h4 { color: var(--brass-hi); }
 [data-theme="dark"] .waiter-pill { background: rgba(224, 141, 108, .14); }
 [data-theme="dark"] .link-bar { background: #3a2b18; color: #ecc27e; box-shadow: 0 10px 24px -14px rgba(0, 0, 0, .8), inset 0 0 0 1px rgba(236, 194, 126, .2); }
 
 /* ───── لوحة الكاشير ───── */
-[data-theme="dark"] .side { background: linear-gradient(180deg, #33261c, #1f1712); }
-[data-theme="dark"] .nav-btn[aria-current="page"] { background: rgba(232, 197, 149, .16); color: var(--foam); }
-[data-theme="dark"] .nav-count { background: var(--gold-soft); color: #e8c595; }
-[data-theme="dark"] .bar { background: linear-gradient(180deg, var(--harbor) 75%, rgba(26, 19, 15, 0)); }
+[data-theme="dark"] .side { background: linear-gradient(180deg, #2a1a12, #1a0f0a); color: #f5ece5; box-shadow: inset -1px 0 0 var(--line); }
+[data-theme="dark"] .nav-btn[aria-current="page"] { background: rgba(232, 168, 82, .16); color: #e8a852; }
+[data-theme="dark"] .nav-count { background: var(--gold-soft); color: #e8a852; }
+[data-theme="dark"] .bar { background: linear-gradient(180deg, var(--harbor) 75%, rgba(22, 13, 8, 0)); }
 [data-theme="dark"] .tile.t-new { background: linear-gradient(160deg, #4a3820, #3a2b18); }
 [data-theme="dark"] .tile.t-new .tile-no, [data-theme="dark"] .tile.t-new .tile-state { color: #f1d9ad; }
 [data-theme="dark"] .tile.t-preparing { background: #352a19; }
 [data-theme="dark"] .tile.t-ready { background: #1e3026; }
-[data-theme="dark"] .drawer-foot { background: rgba(36, 27, 21, .9); }
-[data-theme="dark"] .ocard.s-new { background: #33271b; }
+[data-theme="dark"] .drawer-foot { background: rgba(37, 23, 16, .92); }
+[data-theme="dark"] .ocard.s-new { background: #33210f; }
 [data-theme="dark"] .onote { background: rgba(217, 165, 82, .14); color: #ecc27e; }
-[data-theme="dark"] .zone-card, [data-theme="dark"] .tcard { background: rgba(236, 218, 194, .04); }
+[data-theme="dark"] .zone-card, [data-theme="dark"] .tcard { background: rgba(245, 236, 229, .04); }
 [data-theme="dark"] .stat-pill.profit, [data-theme="dark"] .kpi.profit { background: rgba(116, 180, 143, .14); box-shadow: inset 0 0 0 1px rgba(116, 180, 143, .25); }
 [data-theme="dark"] .stat-pill.profit, [data-theme="dark"] .stat-pill.profit .num,
 [data-theme="dark"] .kpi.profit strong, [data-theme="dark"] .ttable .profit-cell { color: #9fd4b4; }
@@ -92,7 +98,7 @@
 /* الـ QR لازم يضل على أبيض عشان ينقرأ */
 [data-theme="dark"] .tcard .qr, [data-theme="dark"] .site-qr .qr { background: #f4ece1; }
 @media (max-width: 980px) {
-  [data-theme="dark"] .side { background: rgba(31, 23, 18, .97); }
+  [data-theme="dark"] .side { background: rgba(26, 15, 10, .97); }
 }
 
 /* ───── زر المظهر ───── */

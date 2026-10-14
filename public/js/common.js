@@ -136,7 +136,7 @@ export function themePref() {
 export function applyTheme(pref = themePref()) {
   const dark = pref === 'dark' || (pref === 'auto' && Boolean(darkQuery?.matches));
   document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#1a130f' : '#f4ece1');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#160d08' : '#f4ece1');
   return dark;
 }
 export function setTheme(pref) {

@@ -373,7 +373,7 @@
 .tabbar button { position: relative; display: grid; justify-items: center; gap: 3px; font-size: 11px; color: var(--foam-3); padding: 8px 0; transition: color .25s; }
 .tabbar button svg { width: 23px; height: 23px; }
 .tabbar button[aria-current="page"] { color: var(--brass-hi); font-weight: 700; }
-.tabbar button[aria-current="page"]::before { content: ''; position: absolute; top: -2px; width: 22px; height: 3px; border-radius: 9px; background: var(--brass); }
+.tabbar button[aria-current="page"]::before { content: ''; position: absolute; top: -2px; width: 22px; height: 3px; border-radius: 9px; background: var(--gold); }
 .tab-count { position: absolute; top: 2px; left: calc(50% - 22px); min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px; display: grid; place-items: center; font-style: normal; font-size: 10.5px; font-weight: 700; background: var(--coral); color: #fff; }
 .tab-count.bump { animation: pop .5s var(--ease-spring); }
 .tab-dot { position: absolute; top: 6px; left: calc(50% - 14px); width: 9px; height: 9px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 0 2px var(--tide); }

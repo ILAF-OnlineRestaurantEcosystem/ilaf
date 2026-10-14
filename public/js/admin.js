@@ -858,7 +858,7 @@ function loadScript(src) {
 }
 // الصفحات بتنرسم على canvas بنص كامل لكل سطر: المتصفح بيشبك الحروف العربية ويرتّب الأرقام صح
 // (أدوات تحويل HTML لـ PDF بتقطّع النص كلمة كلمة فبتلزق الكلمات العربية ببعض)
-const PDF = { W: 1240, H: 1754, M: 76, ink: '#2e261d', ink2: '#6f604e', brown: '#6b4a2f', dark: '#4a3220', sand: '#f1e4cc', cream: '#fbf6ef', line: '#e8dccb', up: '#3f7a57', down: '#b9603f' };
+const PDF = { W: 1240, H: 1754, M: 76, ink: '#2b1a12', ink2: '#7a685d', brown: '#4a2c1d', dark: '#2b1a12', sand: '#f6ead4', cream: '#fbf8f5', line: '#e8e1d9', up: '#3f7a57', down: '#b9603f' };
 const pdfFont = (weight, size) => `${weight} ${size}px Alexandria, 'Segoe UI', Tahoma, sans-serif`;
 
 function renderReportPages(r) {
