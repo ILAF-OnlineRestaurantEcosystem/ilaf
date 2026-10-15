@@ -149,28 +149,33 @@ export function dayStart() {
 /** معرّف الجهاز اللي بيبعته جوال الزبون (عشوائي ومحفوظ عنده) — ما في موقع بيقدر يقرأ IP أو MAC الجهاز بشكل موثوق */
 export const cleanDevice = (v) => (/^[a-z0-9]{8,40}$/.test(String(v ?? '')) ? String(v) : null);
 
-export function createOrder({ table, lines, note, source, device }) {
+/** الطلب الخارجي (تيك أواي) بيتسجّل على "طاولة 0" بدون جلسة، وكل طلب بيتسكّر لحاله */
+export const TAKEAWAY = 0;
+const cleanTakeaway = (t) => ({ name: String(t?.name ?? '').trim().slice(0, 40), phone: String(t?.phone ?? '').replace(/[^\d+\s-]/g, '').trim().slice(0, 20) });
+
+export function createOrder({ table, lines, note, source, device, takeaway = null }) {
   const d = db();
-  const tableNo = Number(table);
-  const t = d.tables.find((x) => x.number === tableNo);
-  if (!t) throw new HttpError(400, `ما في طاولة رقم ${table} عنا. تأكد من الرقم المكتوب على الطاولة.`);
+  const tableNo = takeaway ? TAKEAWAY : Number(table);
+  const t = takeaway ? null : d.tables.find((x) => x.number === tableNo);
+  if (!takeaway && !t) throw new HttpError(400, `ما في طاولة رقم ${table} عنا. تأكد من الرقم المكتوب على الطاولة.`);
   const priced = priceLines(lines);
   const now = new Date();
   const iso = now.toISOString();
   const from = dayStart();
   const todays = d.orders.filter((o) => new Date(o.createdAt) >= from);
   // أول طلب على طاولة فاضية بيفتح "جلسة" = فاتورة الطاولة، وكل الطلبات بعده بتنضاف عليها لحد الدفع
-  if (!t.sessionId) { t.sessionId = uid('s'); t.sessionAt = iso; }
+  if (t && !t.sessionId) { t.sessionId = uid('s'); t.sessionAt = iso; }
   const order = {
     id: uid('o'),
     no: todays.reduce((m, o) => Math.max(m, o.no), 0) + 1,
     table: tableNo,
-    sessionId: t.sessionId,
-    zoneName: zoneOf(tableNo)?.name ?? '',
+    sessionId: t?.sessionId ?? null,
+    zoneName: takeaway ? 'طلب خارجي' : zoneOf(tableNo)?.name ?? '',
+    ...(takeaway ? { takeaway: cleanTakeaway(takeaway) } : {}),
     ...priced,
     note: String(note ?? '').slice(0, 200).trim(),
     status: 'new',
-    source: source === 'barista' ? 'barista' : 'menu',
+    source: ['barista', 'cashier'].includes(source) ? source : 'menu',
     device: cleanDevice(device), // "تابع طلبي": بينمسح لما الكاشير يسكّر الطاولة
     createdAt: iso,
     updatedAt: iso,
@@ -180,6 +185,26 @@ export function createOrder({ table, lines, note, source, device }) {
   order.stockTaken = Object.fromEntries(Object.entries(order.stockTaken ?? {}).filter(([id]) => tracked(d.items.find((i) => i.id === id))));
   moveStock(order.stockTaken, -1);
   d.orders.push(order);
+  save();
+  return order;
+}
+
+/** الكاشير بيعدّل أصناف طلب مفتوح: بنرجّع مخزنه القديم ونسعّره من جديد (الخصم اليدوي بينشال) */
+export function editOrderLines(id, rawLines, note) {
+  const d = db();
+  const order = d.orders.find((o) => o.id === id);
+  if (!order) throw new HttpError(404, 'الطلب غير موجود.');
+  if (!OPEN_STATUSES.includes(order.status)) throw new HttpError(409, 'ما بنقدر نعدّل طلب مدفوع أو ملغي.');
+  moveStock(order.stockTaken, +1);
+  let priced;
+  try { priced = priceLines(rawLines); } catch (err) { moveStock(order.stockTaken, -1); throw err; }
+  const { stockTaken, ...rest } = priced;
+  Object.assign(order, rest, { manualDiscount: 0, edited: true });
+  order.stockTaken = Object.fromEntries(Object.entries(stockTaken).filter(([sid]) => tracked(d.items.find((i) => i.id === sid))));
+  moveStock(order.stockTaken, -1);
+  if (note != null) order.note = String(note).slice(0, 200).trim();
+  order.updatedAt = new Date().toISOString();
+  (order.history ??= []).push({ status: order.status, at: order.updatedAt, edited: true });
   save();
   return order;
 }
@@ -296,7 +321,7 @@ export function closeDay({ force = false } = {}) {
   const day = currentDay();
   const closedOrders = [];
   if (day.openTables.length) {
-    if (!force) throw new HttpError(409, `في طاولات لسا مفتوحة: ${day.openTables.join('، ')}. سكّرها أو اختار "سكّرها كلها واغلق".`);
+    if (!force) throw new HttpError(409, `في طاولات لسا مفتوحة: ${day.openTables.map((n) => (n === TAKEAWAY ? 'طلبات خارجية' : n)).join('، ')}. سكّرها أو اختار "سكّرها كلها واغلق".`);
     for (const n of day.openTables) closedOrders.push(...closeTable(n).closed);
   }
   const now = new Date().toISOString();
@@ -380,7 +405,7 @@ function analyze(orders) {
   }
   const name = (id) => d.items.find((i) => i.id === id)?.name ?? id;
   const top = Object.entries(itemQty).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([id, qty]) => ({ id, name: name(id), qty }));
-  const tables = Object.values(byTable)
+  const tables = Object.values(byTable).filter((t) => t.table !== TAKEAWAY)
     .sort((a, b) => b.orders - a.orders)
     .slice(0, 8)
     .map((t) => {

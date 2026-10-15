@@ -26,6 +26,8 @@ const cur = () => S.data?.settings.currency ?? '₪';
 const itemById = (id) => S.data.items.find((i) => i.id === id);
 const zoneById = (id) => S.data.zones.find((z) => z.id === id);
 const OPEN = ['new', 'preparing', 'ready', 'served'];
+const TAKEAWAY = 0; // الطلب الخارجي بيتسجّل على "طاولة 0"
+const placeLabel = (o) => (o.table === TAKEAWAY ? `طلب خارجي${o.takeaway?.name ? ` · ${o.takeaway.name}` : ''}` : `طاولة ${o.table}`);
 const NEXT = { new: ['preparing', 'ابدأ التحضير'], preparing: ['ready', 'جاهز'], ready: ['served', 'تم التقديم'] };
 
 async function call(path, opts = {}) {
@@ -121,6 +123,7 @@ function renderShell() {
   $('#addOffer').innerHTML = `${icon('plus')}عرض جديد`;
   $('#addZone').innerHTML = `${icon('plus')}منطقة`;
   $('#printCards').innerHTML = `${icon('printer')}اطبع كروت الـ QR`;
+  $$('[data-new-order]').forEach((b) => { b.innerHTML = `${icon('plus')}طلب جديد`; });
   $('#copyLink').innerHTML = `${icon('clipboard')}انسخ الرابط`;
   $('#legend').innerHTML = [
     ['var(--gold)', 'طلب جديد'], ['var(--amber)', 'قيد التحضير'], ['var(--seaglass)', 'جاهز'], ['var(--brass)', 'تم التقديم'], ['var(--coral)', 'نداء نادل'],
@@ -203,9 +206,27 @@ function tileHtml(t) {
       </span>
     </button>`;
 }
+function takeawayTile() {
+  const os = S.orders.filter((o) => o.table === TAKEAWAY);
+  const st = ['new', 'ready', 'preparing', 'served'].find((s) => os.some((o) => o.status === s)) ?? null;
+  const total = os.reduce((s, o) => s + o.total, 0);
+  return `
+    <button class="tile tile-takeaway ${st ? 't-' + st : ''} ${S.justIn.has(TAKEAWAY) ? 'just-in' : ''} ${S.selected === TAKEAWAY ? 'is-selected' : ''}" type="button" data-table="${TAKEAWAY}" aria-label="الطلبات الخارجية">
+      ${S.justIn.has(TAKEAWAY) ? '<span class="ripple"></span><span class="ripple"></span><span class="ripple"></span>' : ''}
+      <span class="tile-no">${icon('bag')}</span>
+      <span>
+        <span class="tile-state">${os.length ? `${os.length} طلب خارجي` : 'طلبات خارجية'}</span>
+        <span class="tile-meta">${os.length ? `${STATUS[st]?.label ?? ''} · ${moneyText(total, cur())}` : 'تيك أواي · ما في هلق'}</span>
+      </span>
+    </button>`;
+}
 function renderFloor() {
   const byZone = S.data.zones.map((z) => ({ z, tables: S.data.tables.filter((t) => t.zoneId === z.id) })).filter((g) => g.tables.length);
-  $('#floor').innerHTML = byZone.map(({ z, tables }) => `
+  $('#floor').innerHTML = `
+    <section class="zone">
+      <header class="zone-title"><h2>طلبات خارجية</h2><p>تيك أواي بدون طاولة</p></header>
+      <div class="tiles">${takeawayTile()}</div>
+    </section>` + byZone.map(({ z, tables }) => `
     <section class="zone">
       <header class="zone-title"><h2>${esc(z.name)}</h2><p>${tables.length} طاولة · ${tables.filter((t) => tableState(t.number).os.length).length} مشغولة</p></header>
       <div class="tiles">${tables.map(tileHtml).join('')}</div>
@@ -220,16 +241,21 @@ function renderFloor() {
 
 // ───────── لوح الطاولة ─────────
 function orderCard(o, { inKanban = false } = {}) {
-  const next = NEXT[o.status];
+  const takeaway = o.table === TAKEAWAY;
+  // الطلب الخارجي: بعد ما يجهز بينسلّم وبينحسب لحاله
+  const next = takeaway && ['ready', 'served'].includes(o.status) ? ['paid', 'سلّمته وانحسب'] : NEXT[o.status];
   return `
     <article class="ocard s-${o.status}" ${inKanban ? `data-table="${o.table}"` : ''}>
       <div class="ocard-head">
         <span class="num">#${o.no}</span>
-        ${inKanban ? `<span class="badge badge-mute">طاولة <span class="num" style="font-size:13px">${o.table}</span></span>` : ''}
+        ${inKanban ? (takeaway ? `<span class="badge badge-gold">${icon('bag')}خارجي</span>` : `<span class="badge badge-mute">طاولة <span class="num" style="font-size:13px">${o.table}</span></span>`) : ''}
         <span class="status-pill ${o.status}">${STATUS[o.status].label}</span>
         ${o.source === 'barista' ? `<span class="badge badge-brass" title="الطلب اقترحه الباريستا الذكي">${icon('sparkle')}باريستا</span>` : ''}
+        ${o.source === 'cashier' ? `<span class="badge badge-mute" title="الكاشير أدخل الطلب">كاشير</span>` : ''}
+        ${o.edited ? `<span class="badge badge-mute" title="الكاشير عدّل الطلب">معدّل</span>` : ''}
         <time datetime="${o.createdAt}">${timeAgo(o.createdAt)}</time>
       </div>
+      ${takeaway && (o.takeaway?.name || o.takeaway?.phone) ? `<p class="takeaway-who">${icon('user')}<b>${esc(o.takeaway.name || 'زبون')}</b>${o.takeaway.phone ? ` · <span dir="ltr">${esc(o.takeaway.phone)}</span>` : ''}</p>` : ''}
       <div class="olines">
         ${o.lines.map((l, i) => `
           <div class="oline"><span class="qty">${l.qty}×</span>
@@ -242,6 +268,7 @@ function orderCard(o, { inKanban = false } = {}) {
       ${o.note ? `<p class="onote">${esc(o.note)}</p>` : ''}
       <div class="oactions">
         ${next ? `<button class="btn ${o.status === 'new' ? 'btn-brass' : 'btn-ghost'} btn-sm" type="button" data-advance="${o.id}" data-to="${next[0]}">${icon(next[0] === 'served' ? 'check' : next[0] === 'ready' ? 'bell' : 'flame')}${next[1]}</button>` : ''}
+        ${OPEN.includes(o.status) ? `<button class="icon-btn" type="button" data-edit-order="${o.id}" aria-label="عدّل الطلب" title="عدّل الطلب (زيد أو شيل أصناف)">${icon('edit')}</button>` : ''}
         <button class="icon-btn" type="button" data-print="${o.id}" aria-label="اطبع تذكرة المطبخ" title="اطبع تذكرة المطبخ">${icon('printer')}</button>
         ${o.status === 'new' ? `<button class="icon-btn" type="button" data-cancel="${o.id}" aria-label="إلغاء الطلب" title="إلغاء الطلب">${icon('close')}</button>` : ''}
       </div>
@@ -274,6 +301,19 @@ function renderDrawer() {
   const t = S.data.tables.find((x) => x.number === n);
   const { os, calls } = tableState(n);
   const total = os.reduce((s, o) => s + o.total, 0);
+  if (n === TAKEAWAY) {
+    $('#drawerInner').innerHTML = `
+      <header class="drawer-head">
+        <span class="drawer-no">${icon('bag')}</span>
+        <div class="drawer-id"><h2 id="drawerTitle">طلبات خارجية</h2><p>تيك أواي · كل طلب بينسلّم وبينحسب لحاله</p></div>
+        <button class="icon-btn" type="button" data-close-drawer aria-label="إغلاق">${icon('close')}</button>
+      </header>
+      <div class="drawer-body">
+        <button class="btn btn-brass btn-block" type="button" data-new-order data-for-table="${TAKEAWAY}">${icon('plus')}طلب خارجي جديد</button>
+        ${os.length ? os.sort((a, b) => a.createdAt.localeCompare(b.createdAt)).map((o) => orderCard(o)).join('') : `<div class="empty">${artTile({ art: 'cup', hue: 30 })}<p>ما في طلبات خارجية مفتوحة هلق.</p></div>`}
+      </div>`;
+    return;
+  }
   const keepInsight = $('#tableInsight')?.outerHTML;
   $('#drawerInner').innerHTML = `
     <header class="drawer-head">
@@ -283,6 +323,7 @@ function renderDrawer() {
     </header>
     <div class="drawer-body">
       ${keepInsight ?? `<div class="insight" id="tableInsight">${icon('sparkle')}<span>…</span></div>`}
+      <button class="btn btn-ghost btn-block" type="button" data-new-order data-for-table="${n}">${icon('plus')}طلب جديد لهالطاولة</button>
       ${calls.map((c) => `
         <div class="call-row">${icon(c.kind === 'bill' ? 'receipt' : 'bell')}
           <div><strong>${c.kind === 'bill' ? 'الزبون طالب الحساب' : 'الزبون بينادي نادل'}</strong><small>${timeAgo(c.at)}</small></div>
@@ -295,6 +336,132 @@ function renderDrawer() {
         <div class="drawer-total"><span>حساب الطاولة</span><span>${money(total, cur())}</span></div>
         <button class="btn btn-brass btn-block" type="button" data-close-table="${n}">${icon('receipt')}تم الدفع · سكّر الطاولة</button>
       </footer>` : ''}`;
+}
+
+// ───────── الكاشير بيعمل طلب أو بيعدّله ─────────
+function itemUnitPrice(it) {
+  // نفس منطق السيرفر التقريبي: عرض خصم نسبة فعّال على الصنف
+  const off = S.data.offers.find((o) => o.active && o.type === 'discount' && o.itemIds.includes(it.id));
+  return off ? Math.round(it.price * (100 - off.percent)) / 100 : it.price;
+}
+function openOrderEditor({ order = null, table = null } = {}) {
+  const cart = new Map();
+  const keyOf = (l) => `${l.kind}:${l.id}:${l.sugar ?? ''}`;
+  const add = (kind, id, qty = 1, sugar = '') => {
+    const k = keyOf({ kind, id, sugar });
+    const cur0 = cart.get(k);
+    if (cur0) cur0.qty += qty; else cart.set(k, { kind, id, qty, sugar });
+  };
+  if (order) order.lines.forEach((l) => add(l.kind, l.refId, l.qty, l.options?.sugar ?? ''));
+  let type = order ? (order.table === TAKEAWAY ? 'takeaway' : 'table') : (table === TAKEAWAY ? 'takeaway' : 'table');
+  let cat = 'all';
+  let q = '';
+  const combos = () => S.data.offers.filter((o) => o.active && o.type === 'combo');
+  const lineInfo = (l) => {
+    if (l.kind === 'offer') { const o = S.data.offers.find((x) => x.id === l.id); return { name: o ? `عرض ${o.title}` : 'عرض', unit: o?.price ?? 0, sugarChoice: false }; }
+    const it = itemById(l.id);
+    return { name: it?.name ?? l.id, unit: it ? itemUnitPrice(it) : 0, sugarChoice: !!it?.sugarChoice, stock: it?.stock };
+  };
+  openEditor({
+    title: order ? `تعديل طلب #${order.no}` : 'طلب جديد',
+    saveLabel: order ? 'احفظ التعديل' : 'أرسل الطلب',
+    body: `
+      ${order ? `<p class="muted">${esc(placeLabel(order))}${order.manualDiscount ? ' · انتبه: الخصم اليدوي على هالطلب بينشال لما تعدّله' : ''}</p>` : `
+        ${segmented('oeType', [['table', 'على طاولة'], ['takeaway', 'طلب خارجي (تيك أواي)']], type)}
+        <div class="form-grid" id="oeWhere"></div>`}
+      <div class="oe-pick">
+        <input class="input" id="oeSearch" type="search" placeholder="دوّر على صنف…" autocomplete="off">
+        <div class="oe-cats" id="oeCats"></div>
+        <div class="oe-items" id="oeItems"></div>
+      </div>
+      <h3 class="oe-title">الطلب</h3>
+      <div class="oe-cart" id="oeCart"></div>
+      <label class="field"><span>ملاحظة للمطبخ (اختياري)</span><textarea class="textarea" id="oeNote" maxlength="200" placeholder="مثلاً: بدون ثلج">${esc(order?.note ?? '')}</textarea></label>`,
+    onSave: async () => {
+      const lines = [...cart.values()].map((l) => ({ kind: l.kind, id: l.id, qty: l.qty, options: l.sugar ? { sugar: l.sugar } : {} }));
+      if (!lines.length) throw new Error('ضيف صنف واحد على الأقل.');
+      if (order) {
+        const o = await call(`/orders/${order.id}/lines`, { method: 'PUT', body: { lines, note: val('oeNote') } });
+        applyOrder(o);
+        toast(`انحفظ تعديل طلب #${o.no}`, 'ok');
+        return;
+      }
+      const body = { lines, note: val('oeNote') };
+      if (type === 'takeaway') body.takeaway = { name: val('oeName').trim(), phone: val('oePhone').trim() };
+      else {
+        body.table = Number(val('oeTable'));
+        if (!S.data.tables.some((x) => x.number === body.table)) throw new Error('اكتب رقم طاولة صحيح.');
+      }
+      const o = await call('/orders', { method: 'POST', body });
+      applyOrder(o);
+      toast(`انبعت طلب #${o.no} · ${placeLabel(o)} · ${moneyText(o.total, cur())}`, 'ok');
+    },
+  });
+  const renderWhere = () => {
+    const el = $('#oeWhere');
+    if (!el) return;
+    el.innerHTML = type === 'takeaway'
+      ? `<label class="field"><span>اسم الزبون</span><input class="input" id="oeName" maxlength="40" placeholder="مثلاً: أبو أحمد"></label>
+         <label class="field"><span>رقم التلفون (اختياري)</span><input class="input" id="oePhone" maxlength="20" inputmode="tel" dir="ltr" placeholder="059…"></label>`
+      : `<label class="field"><span>رقم الطاولة</span><input class="input" id="oeTable" type="number" min="1" max="${S.data.tables.length}" inputmode="numeric" value="${table && table !== TAKEAWAY ? table : ''}" placeholder="1 – ${S.data.tables.length}"></label>`;
+  };
+  const renderPick = () => {
+    const cats = [['all', 'الكل'], ['offers', 'العروض'], ...S.data.categories.map((c) => [c.id, c.name])];
+    $('#oeCats').innerHTML = cats.map(([id, name]) => `<button type="button" class="chip ${cat === id ? 'is-on' : ''}" data-oe-cat="${esc(id)}">${esc(name)}</button>`).join('');
+    const qq = q.trim();
+    const offers = cat === 'all' || cat === 'offers' ? combos().filter((o) => !qq || o.title.includes(qq)) : [];
+    const items = cat === 'offers' ? [] : S.data.items.filter((i) => (cat === 'all' || i.categoryId === cat) && (!qq || i.name.includes(qq)));
+    $('#oeItems').innerHTML = [
+      ...offers.map((o) => `<button type="button" class="oe-item is-offer" data-oe-add="offer:${esc(o.id)}"><b>عرض ${esc(o.title)}</b><small>${moneyText(o.price, cur())}</small></button>`),
+      ...items.map((it) => {
+        const out = !it.available || (it.stock != null && it.stock !== '' && Number(it.stock) <= 0);
+        return `<button type="button" class="oe-item ${out ? 'is-out' : ''}" data-oe-add="item:${esc(it.id)}" ${out ? 'disabled' : ''}><b>${esc(it.name)}</b><small>${out ? 'مش متوفر' : moneyText(itemUnitPrice(it), cur())}${!out && it.stock != null && it.stock !== '' ? ` · بالمخزن ${it.stock}` : ''}</small></button>`;
+      }),
+    ].join('') || '<p class="muted">ما في أصناف مطابقة.</p>';
+  };
+  const renderCart = () => {
+    const rows = [...cart.entries()];
+    let total = 0;
+    $('#oeCart').innerHTML = rows.length ? rows.map(([k, l]) => {
+      const info = lineInfo(l);
+      total += info.unit * l.qty;
+      return `<div class="oe-line">
+        <div class="oe-line-name"><b>${esc(info.name)}</b>${info.sugarChoice ? `<select class="select oe-sugar" data-oe-sugar="${esc(k)}" aria-label="السكر">${[['', 'السكر عادي'], ...Object.entries(SUGAR)].map(([v, lbl]) => `<option value="${v}" ${l.sugar === v ? 'selected' : ''}>${lbl}</option>`).join('')}</select>` : ''}</div>
+        <div class="stepper sm"><button type="button" data-oe-qty="${esc(k)}" data-d="1" aria-label="زيادة">${icon('plus')}</button><output>${l.qty}</output><button type="button" data-oe-qty="${esc(k)}" data-d="-1" aria-label="${l.qty === 1 ? 'شيل' : 'إنقاص'}">${icon(l.qty === 1 ? 'trash' : 'minus')}</button></div>
+        <span class="oe-line-total">${moneyText(info.unit * l.qty, cur())}</span>
+      </div>`;
+    }).join('') + `<div class="oe-total"><span>المجموع</span><b>${moneyText(Math.round(total * 100) / 100, cur())}</b></div>`
+      : '<p class="muted">لسا ما ضفت أصناف. اختار من فوق.</p>';
+  };
+  renderWhere();
+  renderPick();
+  renderCart();
+  const form = $('#editorForm');
+  form.oninput = (e) => { if (e.target.id === 'oeSearch') { q = e.target.value; renderPick(); } };
+  form.onchange = (e) => {
+    const k = e.target.dataset.oeSugar;
+    if (k == null) return;
+    const l = cart.get(k);
+    cart.delete(k);
+    l.sugar = e.target.value;
+    add(l.kind, l.id, l.qty, l.sugar);
+    renderCart();
+  };
+  form.onclick = (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    const dd = b.dataset;
+    if (dd.seg === 'oeType') { type = dd.v; renderWhere(); return; }
+    if (dd.oeCat) { cat = dd.oeCat; renderPick(); return; }
+    if (dd.oeAdd) { const [kind, id] = dd.oeAdd.split(':'); add(kind, id, 1, ''); renderCart(); b.classList.remove('bump'); void b.offsetWidth; b.classList.add('bump'); return; }
+    if (dd.oeQty) {
+      const l = cart.get(dd.oeQty);
+      if (!l) return;
+      l.qty += Number(dd.d);
+      if (l.qty <= 0) cart.delete(dd.oeQty);
+      renderCart();
+    }
+  };
 }
 
 // ───────── الطلبات (كانبان) ─────────
@@ -314,7 +481,8 @@ async function advance(id, to) {
   try {
     const o = await call(`/orders/${id}`, { method: 'PATCH', body: { status: to } });
     applyOrder(o);
-    if (to === 'ready') toast(`طلب طاولة ${o.table} جاهز`, 'ok');
+    if (to === 'ready') toast(`طلب ${placeLabel(o)} جاهز`, 'ok');
+    if (to === 'paid') toast(`انسلّم طلب #${o.no} وانحسب`, 'ok');
   } catch (err) { toast(err.message, 'err'); }
 }
 function applyOrder(o) {
@@ -337,7 +505,7 @@ function printTicket(o) {
     <div class="ticket">
       <h1>${esc(s.cafeName)}</h1>
       <p style="text-align:center;margin:0">تذكرة المطبخ</p>
-      <div class="big">طاولة ${o.table}</div>
+      <div class="big">${esc(placeLabel(o))}</div>${o.takeaway?.phone ? `<p style="text-align:center;margin:0" dir="ltr">${esc(o.takeaway.phone)}</p>` : ''}
       <div class="row"><span>طلب #${o.no}</span><span>${new Date(o.createdAt).toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' })}</span></div>
       <hr>
       ${o.lines.map((l) => `<div class="row"><b>${l.qty} × ${esc(l.name)}</b></div>${l.options?.sugar ? `<small>— ${SUGAR[l.options.sugar]}</small><br>` : ''}${l.parts ? `<small>— ${esc(l.parts.join(' + '))}</small><br>` : ''}${l.note ? `<small>— ${esc(l.note)}</small><br>` : ''}`).join('')}
@@ -1384,6 +1552,8 @@ function bind() {
       return;
     }
     if (t.id === 'printCards') return printTableCards();
+    if (d.newOrder !== undefined) { e.stopPropagation(); return openOrderEditor({ table: d.forTable != null ? Number(d.forTable) : null }); }
+    if (d.editOrder) { e.stopPropagation(); const o = S.orders.find((x) => x.id === d.editOrder); return o && openOrderEditor({ order: o }); }
     if (t.id === 'copyLink') return copyCustomerLink();
     if (t.id === 'themeBtn') return cycleTheme();
     if (d.themeSet) { setTheme(d.themeSet); renderThemeBtn(); return renderSettings(); }
@@ -1479,8 +1649,9 @@ function connect() {
     S.justIn.add(o.table);
     setTimeout(() => { S.justIn.delete(o.table); }, 2600);
     refreshLive();
+    if (o.source === 'cashier') return; // الكاشير هو اللي عمله، ما في داعي للجرس
     if (S.sound) chime('order');
-    toast(`طلب جديد من طاولة ${o.table} · ${moneyText(o.total, cur())}`);
+    toast(`طلب جديد من ${placeLabel(o)} · ${moneyText(o.total, cur())}`);
     if (document.hidden) { S.unseen++; document.title = `(${S.unseen}) طلب جديد — ${S.data.settings.cafeName}`; }
     refreshBarStats();
   });

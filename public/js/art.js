@@ -187,6 +187,7 @@ export function artTile(item, cls = '') {
 
 // ───────── أيقونات الواجهة (24×24) ─────────
 const UI = {
+  user: '<circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.8-3.8 3.6-5.8 7-5.8s6.2 2 7 5.8"/>',
   bag: '<path d="M5 8h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
   minus: '<path d="M5 12h14"/>',

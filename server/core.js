@@ -4,6 +4,7 @@ import { db, save, uid, replaceAll } from './db.js';
 import {
   publicMenu, createOrder, setOrderStatus, publicOrder, tableInsight, stats,
   setLinePrice, closeTable, tableBill, currentDay, closeDay, months, monthReport, maintain, deviceOrders, tableOccupancy,
+  editOrderLines,
   OPEN_STATUSES, HttpError,
 } from './logic.js';
 import { currentWeather, geocode } from './weather.js';
@@ -181,6 +182,18 @@ route('GET', '/admin/orders', ({ q }) => {
   if (status === 'open') list = list.filter((o) => OPEN_STATUSES.includes(o.status));
   else if (status) list = list.filter((o) => o.status === status);
   return [...list].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, limit);
+}, { admin: true });
+// الكاشير بيعمل طلب من عنده: لطاولة، أو طلب خارجي (تيك أواي) باسم وتلفون
+route('POST', '/admin/orders', ({ body }) => {
+  const takeaway = body?.takeaway ? { name: str(body.takeaway.name, 40), phone: str(body.takeaway.phone, 20) } : null;
+  const order = createOrder({ table: body?.table, lines: body?.lines, note: body?.note, source: 'cashier', takeaway });
+  const stockMoved = Object.keys(order.stockTaken ?? {}).length > 0;
+  return { status: 201, data: order, events: [...orderEvents(order).map((e) => (e.room === 'admin' ? { ...e, event: 'order:new' } : e)), ...(stockMoved ? [toAll('menu:changed')] : [])] };
+}, { admin: true });
+// الكاشير بيعدّل أصناف طلب مفتوح
+route('PUT', '/admin/orders/:id/lines', ({ p, body }) => {
+  const order = editOrderLines(p.id, body?.lines, body?.note);
+  return { data: order, events: [...orderEvents(order), toAll('menu:changed')] };
 }, { admin: true });
 route('PATCH', '/admin/orders/:id', ({ p, body }) => {
   const order = setOrderStatus(p.id, str(body?.status, 20));
