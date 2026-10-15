@@ -64,6 +64,8 @@ function validateItem(body) {
     recipe: str(body?.recipe, 400),
     price: num(body?.price, { min: 0, max: 10000 }),
     cost: num(body?.cost === '' || body?.cost == null ? 0 : body.cost, { min: 0, max: 10000 }),
+    // الكمية بالمخزن: فاضي = مش محسوب
+    stock: body?.stock === '' || body?.stock == null ? null : Math.round(num(body.stock, { min: 0, max: 100000 })),
     sugar: Math.round(num(body?.sugar ?? 1, { min: 0, max: 3 })),
     caffeine: Math.round(num(body?.caffeine ?? 0, { min: 0, max: 3 })),
     tags: (Array.isArray(body?.tags) ? body.tags : String(body?.tags ?? '').split(/[،,]/)).map((t) => str(t, 20)).filter(Boolean).slice(0, 8),
@@ -122,7 +124,9 @@ route('GET', '/devices/:id/orders', ({ p }) => deviceOrders(p.id));
 route('GET', '/tables/:n/bill', ({ p }) => tableBill(p.n));
 route('POST', '/orders', ({ body }) => {
   const order = createOrder({ table: body?.table, lines: body?.lines, note: body?.note, source: body?.source, device: body?.device });
-  return { status: 201, data: publicOrder(order), events: [toAdmin('order:new', order)] };
+  // إذا الطلب أخد من المخزن، قائمة الزباين بتتحدّث (ممكن صنف صار "نفد" أو "باقي 2")
+  const stockMoved = Object.keys(order.stockTaken ?? {}).length > 0;
+  return { status: 201, data: publicOrder(order), events: [toAdmin('order:new', order), ...(stockMoved ? [toAll('menu:changed')] : [])] };
 });
 route('GET', '/orders/:id', ({ p }) => {
   const order = db().orders.find((o) => o.id === p.id);
@@ -180,7 +184,8 @@ route('GET', '/admin/orders', ({ q }) => {
 }, { admin: true });
 route('PATCH', '/admin/orders/:id', ({ p, body }) => {
   const order = setOrderStatus(p.id, str(body?.status, 20));
-  return { data: order, events: orderEvents(order) };
+  const restocked = order.status === 'cancelled' && Object.keys(order.stockTaken ?? {}).length > 0;
+  return { data: order, events: [...orderEvents(order), ...(restocked ? [toAll('menu:changed')] : [])] };
 }, { admin: true });
 route('POST', '/admin/tables/:n/close', ({ p }) => {
   const n = Number(p.n);

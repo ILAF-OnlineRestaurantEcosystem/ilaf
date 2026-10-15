@@ -1,6 +1,6 @@
 // يجمع كل ما يحتاجه الباريستا ليقترح بذكاء: القائمة بأسعارها الفعلية، الطقس، الطاولة، الأكثر طلباً، والسلة
 import { db } from '../db.js';
-import { effectivePrice, comboValue, topItems, tableInsight } from '../logic.js';
+import { effectivePrice, comboValue, topItems, tableInsight, inStock, tracked, LOW_STOCK } from '../logic.js';
 import { currentWeather } from '../weather.js';
 
 const toWestern = (s) => String(s).replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
@@ -28,16 +28,22 @@ export function detectTable(text, lastBotText = '') {
 export async function buildContext({ table, cart = [] }) {
   const d = db();
   const now = new Date();
-  const items = d.items.filter((i) => i.available).map((i) => {
+  // نديم بيراجع المخزن: المتوفر بس بيقترحه، واللي نفد بيعرف إنه موجود بالقائمة بس مش متوفر هلأ
+  const items = d.items.filter((i) => inStock(i)).map((i) => {
     const p = effectivePrice(i);
     const cat = d.categories.find((c) => c.id === i.categoryId);
     return {
       id: i.id, name: i.name, desc: i.desc, recipe: i.recipe ?? '', category: cat?.name ?? '', temp: cat?.temp ?? null,
       price: p.price, was: p.was, sugar: i.sugar ?? 1, caffeine: i.caffeine ?? 0,
       tags: i.tags ?? [], sugarChoice: !!i.sugarChoice, categoryId: i.categoryId,
+      left: tracked(i) && Number(i.stock) <= LOW_STOCK ? Number(i.stock) : null,
     };
   });
-  const offers = d.offers.filter((o) => o.active && o.itemIds.every((id) => d.items.find((i) => i.id === id)?.available)).map((o) => ({
+  const outOfStock = d.items.filter((i) => !inStock(i)).map((i) => ({
+    id: i.id, name: i.name, categoryId: i.categoryId, category: d.categories.find((c) => c.id === i.categoryId)?.name ?? '',
+    tags: i.tags ?? [], caffeine: i.caffeine ?? 0,
+  }));
+  const offers = d.offers.filter((o) => o.active && o.itemIds.every((id) => inStock(d.items.find((i) => i.id === id)))).map((o) => ({
     id: o.id, type: o.type, title: o.title, description: o.description, price: o.price, percent: o.percent,
     value: o.type === 'combo' ? comboValue(o) : null,
     names: o.itemIds.map((id) => d.items.find((i) => i.id === id)?.name),
@@ -54,6 +60,7 @@ export async function buildContext({ table, cart = [] }) {
 
   return {
     settings: d.settings,
+    outOfStock,
     tableCount: d.tables.length,
     time: { hour: now.getHours(), dayPart: dayPart(now.getHours()), weekday: now.toLocaleDateString('ar', { weekday: 'long' }) },
     weather: await currentWeather(),

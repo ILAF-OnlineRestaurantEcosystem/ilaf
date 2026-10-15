@@ -38,13 +38,18 @@ export function publicMenu() {
   const d = db();
   const items = d.items.map((it) => {
     const p = effectivePrice(it);
-    return { ...it, price: p.price, was: p.was, offerId: p.offerId };
+    // التكلفة والمخزن للكاشير بس: الزبون بيشوف "نفد" أو "باقي 3" لما الكمية قليلة
+    const { cost, stock, ...pub } = it;
+    return {
+      ...pub, price: p.price, was: p.was, offerId: p.offerId,
+      available: inStock(it), left: tracked(it) && Number(stock) <= LOW_STOCK ? Number(stock) : null,
+    };
   });
   const offers = d.offers.filter((o) => o.active).map((o) => ({
     ...o,
     value: o.type === 'combo' ? comboValue(o) : null,
     names: o.itemIds.map((id) => d.items.find((i) => i.id === id)?.name).filter(Boolean),
-    available: o.itemIds.every((id) => d.items.find((i) => i.id === id)?.available),
+    available: o.itemIds.every((id) => inStock(d.items.find((i) => i.id === id))),
   }));
   return {
     settings: publicSettings(),
@@ -57,6 +62,40 @@ export function publicMenu() {
 }
 
 /** يحوّل سطور السلة القادمة من الزبون إلى سطور طلب مسعّرة من السيرفر (لا نثق بأسعار المتصفح) */
+// ───────── المخزن ─────────
+// stock: null = الصنف مش محسوب بالمخزن (بيضل متوفر)، رقم = الكمية الموجودة. لما توصل صفر بيصير "نفد" لحاله.
+export const tracked = (item) => item?.stock != null && item.stock !== '';
+export const inStock = (item, qty = 1) => Boolean(item) && item.available !== false && (!tracked(item) || Number(item.stock) >= qty);
+export const LOW_STOCK = 5;
+
+/** الكميات اللي بياخدها الطلب من المخزن لكل صنف (العروض بتاخد من أصنافها) */
+function stockNeeds(lines) {
+  const d = db();
+  const need = {};
+  for (const l of lines) {
+    const ids = l.kind === 'offer' ? (d.offers.find((o) => o.id === l.refId)?.itemIds ?? []) : [l.refId];
+    for (const id of ids) need[id] = (need[id] ?? 0) + l.qty;
+  }
+  return need;
+}
+function checkStock(need) {
+  const d = db();
+  for (const [id, qty] of Object.entries(need)) {
+    const item = d.items.find((i) => i.id === id);
+    if (!item || !tracked(item)) continue;
+    if (Number(item.stock) <= 0) throw new HttpError(409, `"${item.name}" نفد من المخزن حالياً، احذفه من السلة وكمّل.`);
+    if (Number(item.stock) < qty) throw new HttpError(409, `ضل من "${item.name}" ${item.stock} بس، نزّل الكمية وكمّل.`);
+  }
+}
+/** sign = -1 لما ينطلب، +1 لما ينلغى الطلب (بترجع الكمية) */
+function moveStock(taken, sign) {
+  const d = db();
+  for (const [id, qty] of Object.entries(taken ?? {})) {
+    const item = d.items.find((i) => i.id === id);
+    if (item && tracked(item)) item.stock = Math.max(0, Number(item.stock) + sign * qty);
+  }
+}
+
 export function priceLines(rawLines) {
   const d = db();
   if (!Array.isArray(rawLines) || rawLines.length === 0) throw new HttpError(400, 'السلة فاضية.');
@@ -71,7 +110,7 @@ export function priceLines(rawLines) {
       const offer = d.offers.find((o) => o.id === raw.id && o.active && o.type === 'combo');
       if (!offer) throw new HttpError(400, 'هذا العرض لم يعد متوفراً.');
       const parts = offer.itemIds.map((id) => d.items.find((i) => i.id === id));
-      if (parts.some((p) => !p || !p.available)) throw new HttpError(409, `أحد أصناف عرض "${offer.title}" نفد حالياً.`);
+      if (parts.some((p) => !inStock(p))) throw new HttpError(409, `أحد أصناف عرض "${offer.title}" نفد حالياً.`);
       const value = comboValue(offer);
       lines.push({
         kind: 'offer', refId: offer.id, name: `عرض ${offer.title}`, unitPrice: offer.price, qty,
@@ -83,7 +122,7 @@ export function priceLines(rawLines) {
     } else {
       const item = d.items.find((i) => i.id === raw?.id);
       if (!item) throw new HttpError(400, 'صنف غير معروف في السلة.');
-      if (!item.available) throw new HttpError(409, `"${item.name}" نفد حالياً، احذفه من السلة وكمّل.`);
+      if (!inStock(item)) throw new HttpError(409, `"${item.name}" نفد حالياً، احذفه من السلة وكمّل.`);
       const p = effectivePrice(item);
       const sugar = item.sugarChoice && SUGAR_LABELS[raw?.options?.sugar] ? raw.options.sugar : undefined;
       lines.push({
@@ -97,7 +136,9 @@ export function priceLines(rawLines) {
   }
   const total = round(lines.reduce((s, l) => s + l.lineTotal, 0));
   const cost = round(lines.reduce((s, l) => s + l.unitCost * l.qty, 0));
-  return { lines, subtotal: round(subtotal), discount: round(discount), total, cost };
+  const stockTaken = stockNeeds(lines);
+  checkStock(stockTaken);
+  return { lines, subtotal: round(subtotal), discount: round(discount), total, cost, stockTaken };
 }
 
 /** بداية يوم العمل الحالي (من آخر "إغلاق المحل") */
@@ -135,6 +176,9 @@ export function createOrder({ table, lines, note, source, device }) {
     updatedAt: iso,
     history: [{ status: 'new', at: iso }],
   };
+  // بننقص المخزن، وبنحفظ شو أخدنا عشان يرجع إذا انلغى الطلب
+  order.stockTaken = Object.fromEntries(Object.entries(order.stockTaken ?? {}).filter(([id]) => tracked(d.items.find((i) => i.id === id))));
+  moveStock(order.stockTaken, -1);
   d.orders.push(order);
   save();
   return order;
@@ -145,6 +189,7 @@ export function setOrderStatus(id, status) {
   const order = db().orders.find((o) => o.id === id);
   if (!order) throw new HttpError(404, 'الطلب غير موجود.');
   if (order.status === status) return order;
+  if (status === 'cancelled' && OPEN_STATUSES.includes(order.status)) moveStock(order.stockTaken, +1);
   order.status = status;
   order.updatedAt = new Date().toISOString();
   (order.history ??= []).push({ status, at: order.updatedAt });

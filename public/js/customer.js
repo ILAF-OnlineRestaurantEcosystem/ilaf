@@ -147,7 +147,8 @@ function itemRow(it) {
         <p>${esc(it.desc)}</p>
         <span class="price"><b>${priceText(it.price).split(' ')[0]}</b> ${esc(S().currencyName || S().currency)}${it.was ? `<s>${priceText(it.was)}</s>` : ''}</span>
         <span class="badges">
-          ${!it.available ? '<span class="badge badge-mute">نفد اليوم</span>' : ''}
+          ${!it.available ? '<span class="badge badge-mute">مش متوفر حالياً</span>' : ''}
+          ${it.available && it.left ? `<span class="badge badge-coral">باقي ${it.left} بس</span>` : ''}
           ${it.was ? '<span class="badge badge-coral">عرض</span>' : ''}
           ${popular && it.available ? `<span class="badge badge-gold">${icon('star')}مطلوب</span>` : ''}
         </span>
@@ -418,7 +419,7 @@ function openItem(id) {
   $('#itemBody').innerHTML = `
     <div class="sheet-hero">${artTile(it, 'big')}<button class="icon-btn" type="button" data-close-sheet aria-label="إغلاق">${icon('close')}</button></div>
     <h2 class="detail-name" id="itemTitle">${esc(it.name)}</h2>
-    <div class="detail-price">${priceText(it.price)}${it.was ? `<s>${priceText(it.was)}</s>` : ''}${it.available ? '' : '<span class="badge badge-mute">نفد اليوم</span>'}</div>
+    <div class="detail-price">${priceText(it.price)}${it.was ? `<s>${priceText(it.was)}</s>` : ''}${it.available ? (it.left ? `<span class="badge badge-coral">باقي ${it.left} بس</span>` : '') : '<span class="badge badge-mute">مش متوفر حالياً</span>'}</div>
     <p class="detail-desc">${esc(it.desc)}</p>
     ${it.recipe ? `<div class="recipe"><h4>${icon('leaf')}من شو بيتكوّن</h4><p>${esc(it.recipe)}</p></div>` : ''}
     <div class="meters">${meter('الحلاوة', it.sugar)}${meter('الكافيين', it.caffeine)}</div>
@@ -436,7 +437,7 @@ function renderItemFoot() {
     <div class="foot-row">
       <div class="stepper"><button type="button" data-step="1" aria-label="زيادة">${icon('plus')}</button><output>${draft.qty}</output><button type="button" data-step="-1" aria-label="إنقاص">${icon('minus')}</button></div>
       <button class="btn btn-brass" id="itemAdd" type="button">إضافة إلى الطلب · ${priceText(it.price * draft.qty)}</button>
-    </div>` : '<p class="muted center">هالصنف نفد اليوم، جرّب اشي ثاني.</p>';
+    </div>` : '<p class="muted center">هالصنف مش متوفر حالياً، جرّب اشي ثاني أو اسأل نديم عن بديل.</p>';
 }
 
 // ───────── 5. ساعدنا نختارك ─────────

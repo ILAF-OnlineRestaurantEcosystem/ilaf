@@ -366,11 +366,19 @@ function renderMenuView() {
         ${artTile(it)}
         <div style="min-width:0"><h4>${esc(it.name)}</h4><p>${esc(it.recipe || it.desc)}</p></div>
         <span class="irow-cat muted">${esc(cat?.name ?? '')}</span>
-        <span>${money(it.price, cur())}</span>
+        <span>${money(it.price, cur())}${stockBadge(it)}</span>
         <label class="switch"><input type="checkbox" data-avail="${esc(it.id)}" ${it.available ? 'checked' : ''}><span class="track"></span><span class="lbl">${it.available ? 'متوفر' : 'نفد'}</span></label>
         <button class="icon-btn" type="button" data-edit-item="${esc(it.id)}" aria-label="تعديل ${esc(it.name)}">${icon('edit')}</button>
       </div>`;
   }).join('') : '<div class="empty"><p>ما في أصناف هون. ضيف صنف جديد من الزر فوق.</p></div>';
+}
+
+/** شارة المخزن بقائمة الأصناف: باقي كم، أو نفد */
+function stockBadge(it) {
+  if (it.stock == null || it.stock === '') return '';
+  const n = Number(it.stock);
+  const cls = n <= 0 ? 'out' : n <= 5 ? 'low' : '';
+  return `<small class="stock-badge ${cls}">${n <= 0 ? 'نفد من المخزن' : `بالمخزن ${n}`}</small>`;
 }
 
 // ───────── تأكيد جوّا الصفحة ─────────
@@ -425,6 +433,8 @@ function openItemEditor(it) {
         <label class="field"><span>سعر البيع (${esc(cur())})</span><input class="input" id="f_price" type="number" min="0" step="0.5" value="${esc(d.price)}" inputmode="decimal"></label>
         <label class="field"><span>التكلفة على المحل (${esc(cur())})</span><input class="input" id="f_cost" type="number" min="0" step="0.1" value="${esc(d.cost ?? '')}" inputmode="decimal" placeholder="مثلاً 3.5"></label>
         <p class="margin-hint" id="marginHint"></p>
+        <label class="field"><span>الكمية بالمخزن (اتركها فاضية إذا مش بدك تحسبها)</span><input class="input" id="f_stock" type="number" min="0" step="1" value="${esc(d.stock ?? '')}" inputmode="numeric" placeholder="مثلاً 20"></label>
+        <p class="muted" style="margin-top:-6px;font-size:12.5px">كل طلب بينقص منها، ولما تخلص الصنف بيصير "نفد" عند الزبائن لحاله، ونديم بيحكيلهم إنه مش متوفر حالياً.</p>
         <label class="field full"><span>وصف قصير</span><input class="input" id="f_desc" value="${esc(d.desc)}" maxlength="200"></label>
         <label class="field full"><span>من شو بيتكوّن (بيظهر للزبون وبيشرحه الباريستا)</span><textarea class="textarea" id="f_recipe" maxlength="400">${esc(d.recipe ?? '')}</textarea></label>
         <div class="field"><span>الحلاوة</span>${segmented('sugar', [[0, 'بدون'], [1, 'خفيف'], [2, 'وسط'], [3, 'حلو']], d.sugar)}</div>
@@ -453,6 +463,7 @@ function openItemEditor(it) {
         sugar: Number(segValue('sugar')), caffeine: Number(segValue('caffeine')), tags: val('f_tags'),
         sugarChoice: $('#f_sugarChoice').checked, available: $('#f_available').checked, art: d.art, hue: Number(val('f_hue')), image: d.image,
         cost: val('f_cost'),
+        stock: val('f_stock'),
       };
       if (!body.name.trim()) throw new Error('اكتب اسم الصنف.');
       if (body.price === '' || Number(body.price) < 0) throw new Error('اكتب سعر صحيح.');

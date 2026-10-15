@@ -246,6 +246,19 @@ export function basicBarista(ctx, history, freshTable) {
       : { reply: 'ساعات الدوام بيأكدلك ياها النادل، اضغط "نادِ نادل" إذا بدك تعرف بالضبط 🙂', suggestions: [], offerWaiter: true };
   }
 
+  // راجعنا المخزن: الصنف موجود بالقائمة بس خلص
+  const gone = findItems(lastUser?.text ?? '', ctx.outOfStock ?? []);
+  if (gone.length && !findItems(lastUser?.text ?? '', ctx.items).length) {
+    const g = gone[0];
+    // البديل الأقرب: نفس القسم، وأكتر وسوم مشتركة (قهوة بحليب بدل قهوة بحليب)، وبعدين الأكثر طلباً
+    const near = (i) => (i.tags ?? []).filter((t) => (g.tags ?? []).includes(t)).length * 10 - Math.abs((i.caffeine ?? 0) - (g.caffeine ?? 0)) * 3 + (popRank[i.id] ?? 0) / 4;
+    const alt = ctx.items.filter((i) => i.categoryId === g.categoryId).sort((a, b) => near(b) - near(a)).slice(0, 2);
+    return {
+      reply: `للأسف ${g.name} خلص من عنا هلأ، مش متوفر حالياً 🙏${alt.length ? ` بس عنا ${alt.map((i) => `${i.name} (${fmt(i.price, cur)})`).join(' أو ')}، بتحب تجرّب؟` : ''}`,
+      suggestions: alt.map((i) => ({ item_id: i.id, qty: 1, sugar: '', for_whom: '' })),
+    };
+  }
+
   // شرح صنف أو المقارنة بين صنفين
   const mentioned = findItems(lastUser?.text ?? '', ctx.items);
   const asksAbout = /شو|ايش|من شو|مكونات|بتتكون|بيتكون|مكون|يعني|الفرق|فرق|كيف بتعملو|بتعملوه|احكيلي عن|عرفني|اشرح|شرح|طعمه|طعمها|قوي|خفيف/.test(q.t);
@@ -272,8 +285,11 @@ export function basicBarista(ctx, history, freshTable) {
       sugar === 'none' ? 'وبنعمله بدون سكر متل ما بدك' : i.sugarChoice ? 'والسكر حسب ما بتحب' : '',
     ].filter(Boolean).join('، ');
     if (wantsIt && !asksAbout) {
+      if (i.left != null && i.left < qty) {
+        return { reply: `ضل من ${i.name} ${i.left} بس بالمخزن 🙏 بتحب آخد ${i.left}؟`, suggestions: [{ item_id: i.id, qty: i.left, sugar, for_whom: '' }] };
+      }
       return {
-        reply: `من عيوني! ${qty > 1 ? `${qty} × ` : ''}${i.name}${qty > 1 ? ` = ${fmt(i.price * qty, cur)}` : ` بـ${fmt(i.price, cur)}`}${notes ? `، ${notes}` : ''}. اضغط "أضف للسلة" تحت وبيوصلك ع الطاولة ☕`,
+        reply: `من عيوني! ${qty > 1 ? `${qty} × ` : ''}${i.name}${qty > 1 ? ` = ${fmt(i.price * qty, cur)}` : ` بـ${fmt(i.price, cur)}`}${notes ? `، ${notes}` : ''}${i.left != null ? ` (الحق حالك، باقي ${i.left} بس)` : ''}. اضغط "أضف للسلة" تحت وبيوصلك ع الطاولة ☕`,
         suggestions: [{ item_id: i.id, qty, sugar, for_whom: '' }],
       };
     }

@@ -72,7 +72,17 @@
 @media (min-width: 560px) {
   [data-theme="dark"] .phone { box-shadow: 0 40px 80px -30px rgba(0, 0, 0, .8), 0 0 0 10px #251710, 0 0 0 11px rgba(245, 236, 229, .1); }
 }
-[data-theme="dark"] .tabbar { background: rgba(37, 23, 16, .94); box-shadow: 0 12px 30px -14px rgba(0, 0, 0, .8), inset 0 0 0 1px var(--line); }
+/* الشريط السفلي وشريط البحث: أبيض كريمي فوق الشوكولاتة (طلب صاحب المحل) */
+[data-theme="dark"] .tabbar { background: rgba(251, 248, 245, .97); box-shadow: 0 14px 34px -12px rgba(0, 0, 0, .9); }
+[data-theme="dark"] .tabbar button { color: #7a685d; }
+[data-theme="dark"] .tabbar button[aria-current="page"] { color: #4a2c1d; }
+[data-theme="dark"] .tabbar button[aria-current="page"]::before { background: #d4a359; }
+[data-theme="dark"] .tab-dot { box-shadow: 0 0 0 2px #fbf8f5; }
+[data-theme="dark"] .search { background: #fbf8f5; box-shadow: 0 10px 24px -14px rgba(0, 0, 0, .8); }
+[data-theme="dark"] .search svg { color: #7a685d; }
+[data-theme="dark"] .search-input { color: #2b1a12; }
+[data-theme="dark"] .search-input::placeholder { color: #8f7d70; }
+[data-theme="dark"] .search:focus-within { box-shadow: 0 10px 24px -14px rgba(0, 0, 0, .8), inset 0 0 0 1.5px #d4a359; }
 [data-theme="dark"] .sheet-hero .icon-btn, [data-theme="dark"] .pop-rank { background: rgba(22, 13, 8, .85); }
 [data-theme="dark"] .recipe h4 { color: var(--brass-hi); }
 [data-theme="dark"] .waiter-pill { background: rgba(224, 141, 108, .14); }

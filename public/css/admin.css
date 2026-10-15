@@ -418,3 +418,8 @@ tr.is-current td { background: var(--gold-soft); }
 .cashier-card strong { font-weight: 700; }
 .cashier-card small { color: var(--foam-3); font-size: 12.5px; line-height: 1.6; }
 .cashier-card.standby { box-shadow: inset 0 0 0 1.5px var(--amber); }
+
+/* المخزن */
+.stock-badge { display: block; width: max-content; margin-top: 2px; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: rgba(var(--tint), .07); color: var(--foam-2); }
+.stock-badge.low { background: rgba(176, 123, 44, .16); color: var(--amber); }
+.stock-badge.out { background: rgba(185, 96, 63, .16); color: var(--coral); }
