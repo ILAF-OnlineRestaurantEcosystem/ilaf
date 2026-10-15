@@ -1,10 +1,10 @@
-import { $, $$, esc, api, moneyText, toast, openSheet, closeSheet, reducedMotion, revealOnScroll, chime, SUGAR, STATUS, THEMES, themePref, setTheme } from './common.js';
-import { brandLogo, fitLogo, brandMark, dallahIcon, artTile, itemArt, icon, weatherIcon, leavesArt } from './art.js';
+import { $, $$, esc, api, moneyText, toast, openSheet, closeSheet, reducedMotion, revealOnScroll, chime, SUGAR, STATUS, THEMES, themePref, setTheme, TENANT, storeKey, bizWords, applyBusiness, frozenNow } from './common.js';
+import { brandLogo, fitLogo, brandMark, dallahIcon, artTile, itemArt, icon, weatherIcon, leavesArt, setBusiness, isRestaurant } from './art.js';
 import { recommend, MOODS, SWEETNESS, PEOPLE } from './chooser.js';
 
 const LS = {
-  get(k, d) { try { return JSON.parse(localStorage.getItem('cm.' + k)) ?? d; } catch { return d; } },
-  set(k, v) { try { localStorage.setItem('cm.' + k, JSON.stringify(v)); } catch { /* التخزين اختياري */ } },
+  get(k, d) { try { return JSON.parse(localStorage.getItem(storeKey(k))) ?? d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(storeKey(k), JSON.stringify(v)); } catch { /* التخزين اختياري */ } },
 };
 
 // معرّف هالجهاز: بيربط طلباته فيه لـ"تابع طلبي" (الموقع ما بيقدر يقرأ IP أو MAC، وكل زباين الواي فاي إلهم نفس الـ IP)
@@ -39,6 +39,7 @@ const state = {
 };
 
 const S = () => state.menu.settings;
+const W = () => bizWords(S().businessType);
 const itemById = (id) => state.menu?.items.find((i) => i.id === id);
 const offerById = (id) => state.menu?.offers.find((o) => o.id === id);
 const catById = (id) => state.menu?.categories.find((c) => c.id === id);
@@ -313,7 +314,7 @@ function renderHome() {
       </div>
     </article>`).join('');
   $('#baristaAva').innerHTML = dallahIcon();
-  $('#baristaTitle').textContent = `اسأل ${S().baristaName}، الباريستا الذكي`;
+  $('#baristaTitle').textContent = `اسأل ${S().baristaName}، ${W().hostSmart}`;
   doHomeSearch();
 }
 function doHomeSearch() {
@@ -324,7 +325,7 @@ function doHomeSearch() {
   const list = state.menu.items.filter((i) => i.name.includes(q) || i.desc.includes(q) || (i.tags ?? []).some((t) => t.includes(q)));
   $('#homeResults').innerHTML = list.length
     ? `<div class="item-list">${list.map(itemRow).join('')}</div>`
-    : `<div class="empty"><p>ما لقينا "${esc(q)}". جرّب كلمة ثانية، أو اسأل الباريستا.</p><button class="btn btn-ghost btn-sm" type="button" data-open-chat>اسأل ${esc(S().baristaName)}</button></div>`;
+    : `<div class="empty"><p>ما لقينا "${esc(q)}". جرّب كلمة ثانية، أو اسأل ${W().host}.</p><button class="btn btn-ghost btn-sm" type="button" data-open-chat>اسأل ${esc(S().baristaName)}</button></div>`;
   revealOnScroll($('#homeResults'));
 }
 
@@ -425,7 +426,7 @@ function openItem(id) {
     <div class="meters">${meter('الحلاوة', it.sugar)}${meter('الكافيين', it.caffeine)}</div>
     ${it.sugarChoice ? `<p class="opt-title">السكر</p>
       <div class="segmented" role="group" aria-label="كمية السكر">${Object.entries(SUGAR).map(([k, v]) => `<button type="button" data-sugar="${k}" aria-pressed="${k === 'medium'}">${v.replace('سكر ', '')}</button>`).join('')}</div>` : ''}
-    <p class="opt-title">ملاحظة للباريستا (اختياري)</p>
+    <p class="opt-title">${W().note}</p>
     <input class="input" id="itemNote" maxlength="120" placeholder="مثلاً: حليب قليل الدسم، بدون كريمة">
     <button class="ask-link" type="button" data-ask-about="${esc(it.id)}">${icon('sparkle')}اسأل ${esc(S().baristaName)} عن ${esc(it.name)}</button>`;
   renderItemFoot();
@@ -509,7 +510,7 @@ function renderCart() {
   $$('[data-screen="cart"] [data-back]').forEach((b) => { b.innerHTML = icon('arrow'); });
   if (!count) {
     $('#cartBody').innerHTML = `<div class="empty">${artTile({ art: 'cup', hue: 30 })}<p>طلبك لسا فاضي. اختار من المنيو، أو خلّينا نساعدك تختار.</p>
-      <button class="btn btn-brass" type="button" data-go="home">تصفّح المنيو</button><button class="btn btn-ghost" type="button" data-go="helper">${icon('sparkle')}ساعدنا نختارك</button></div>`;
+      <button class="btn btn-brass" type="button" data-go="home">تصفّح المنيو</button>${isRestaurant() ? '' : `<button class="btn btn-ghost" type="button" data-go="helper">${icon('sparkle')}ساعدنا نختارك</button>`}</div>`;
     return;
   }
   $('#cartBody').innerHTML = `
@@ -770,8 +771,8 @@ function renderMore() {
     row('clock', 'تابع طلبي', 'حالة طلباتك من هالجهاز لحظة بلحظة', 'data-go="track"', 'gold'),
     row('bell', 'نادِ نادل', 'بتضوي طاولتك عند الكاشير وبيجيك حدا', 'data-open-waiter', 'coral'),
     row('receipt', 'اطلب الحساب', 'النادل بيجيك مع الفاتورة', 'data-call-now="bill"'),
-    row('sparkle', `اسأل ${esc(S().baristaName)}`, 'الباريستا الذكي: اسأله عن أي مشروب', 'data-open-chat', 'gold'),
-    row('star', 'ساعدنا نختارك', 'ثلاث أسئلة ومنقترحلك', 'data-go="helper"', 'gold'),
+    row('sparkle', `اسأل ${esc(S().baristaName)}`, `${W().hostSmart}: ${W().ask}`, 'data-open-chat', 'gold'),
+    isRestaurant() ? '' : row('star', 'ساعدنا نختارك', 'ثلاث أسئلة ومنقترحلك', 'data-go="helper"', 'gold'),
     row('table', 'غيّر الطاولة', state.table ? `إنت هلأ على طاولة ${pad2(state.table)}` : 'لسا ما اخترت طاولة', 'data-change-table'),
     row('clipboard', 'فاتورة الطاولة', 'كل طلباتك والمجموع', 'data-go="bill"'),
   ].join('');
@@ -867,11 +868,13 @@ async function callWaiter(kind) {
 }
 
 // ───────── الباريستا ─────────
-const QUICK = ['شو الأكثر طلباً؟', 'معي 20 شيكل، شو بتقترح؟', 'شوف الطقس وشربني على ذوقك', 'احنا 5 و2 ما بحبوا السكر كثير', 'شو الفرق بين اللاتيه والكابتشينو؟'];
+const QUICK_CAFE = ['شو الأكثر طلباً؟', 'معي 20 شيكل، شو بتقترح؟', 'شوف الطقس وشربني على ذوقك', 'احنا 5 و2 ما بحبوا السكر كثير', 'شو الفرق بين اللاتيه والكابتشينو؟'];
+const QUICK_RESTAURANT = ['شو أطيب طبق عندكم؟', 'احنا 4، شو منطلب نتشارك؟', 'بدي اشي خفيف ومش دسم', 'معي 60 شيكل لشخصين، شو بتقترح؟', 'شو الفرق بين المسخن والمقلوبة؟'];
+const QUICK = () => (isRestaurant() ? QUICK_RESTAURANT : QUICK_CAFE);
 function greetingText() {
   const s = S();
-  if (state.table) return `أهلين! أنا ${s.baristaName}، الباريستا تبعك ☕ شايفك ع طاولة ${state.table}${state.tableZone ? ` بـ${state.tableZone}` : ''}. احكيلي شو مزاجك اليوم، أو اسألني عن أي مشروب ومن شو بيتكوّن.`;
-  return `أهلين! أنا ${s.baristaName}، الباريستا تبعك ☕ قبل كل اشي، طاولتك رقم كم؟`;
+  if (state.table) return `أهلين! أنا ${s.baristaName}، ${W().host} تبعك ${isRestaurant() ? '🍽️' : '☕'} شايفك ع طاولة ${state.table}${state.tableZone ? ` بـ${state.tableZone}` : ''}. احكيلي شو مزاجك اليوم، أو اسألني عن أي مشروب ومن شو بيتكوّن.`;
+  return `أهلين! أنا ${s.baristaName}، ${W().host} تبعك ${isRestaurant() ? '🍽️' : '☕'} قبل كل اشي، طاولتك رقم كم؟`;
 }
 function openChat(prefill) {
   const chat = $('#chat');
@@ -881,7 +884,7 @@ function openChat(prefill) {
     $('#chatLog').innerHTML = '';
     appendBot(g);
   }
-  $('#chatQuick').innerHTML = QUICK.map((q) => `<button class="chip" type="button" data-quick="${esc(q)}">${esc(q)}</button>`).join('');
+  $('#chatQuick').innerHTML = QUICK().map((q) => `<button class="chip" type="button" data-quick="${esc(q)}">${esc(q)}</button>`).join('');
   chat.classList.add('is-open');
   chat.setAttribute('aria-hidden', 'false');
   if (prefill) setTimeout(() => sendChat(prefill), 450);
@@ -1092,8 +1095,9 @@ function enrichMenu() {
 }
 function connectLive() {
   if (typeof io !== 'function') return;
-  socket = io();
+  socket = io({ query: { tenant: TENANT ?? '' } });
   socket.on('connect', () => socket.emit('track', state.orders.map((o) => o.id)));
+  socket.on('tenant:frozen', frozenNow);
   socket.on('order:update', onOrderUpdate);
   socket.on('order:accepted', onAccepted);
   socket.on('call:accepted', () => toast('وصل ندائك للكاشير ✓', 'ok'));
@@ -1129,6 +1133,11 @@ async function boot() {
     return;
   }
   enrichMenu();
+  setBusiness(S().businessType); // مطعم = قدرة ومغرفة وألوان الفخار بدل الدلّة
+  applyBusiness(S().businessType);
+  $('#chatSub').textContent = `${W().host} · ${W().sub}`;
+  $('#chatText').placeholder = W().placeholder;
+  $('#fab').setAttribute('aria-label', `اسأل ${W().host}`);
   document.title = `${S().cafeName} — اطلب من طاولتك`;
   fillIcons();
   $$('[data-leaves]').forEach((el) => { el.innerHTML = leavesArt(); });

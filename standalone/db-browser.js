@@ -2,6 +2,10 @@
 import { buildSeed, migrate } from '../server/seed.js';
 
 export const DB_KEY = 'cafe-mohammad-demo-db';
+// نسخة الموقع فيها محل واحد بس (نفس واجهة server/db.js للمنصة)
+export const DEFAULT_TENANT = 'local';
+export const withTenant = (_id, fn) => fn();
+export const currentTenant = () => DEFAULT_TENANT;
 let state = null;
 
 export function load() {

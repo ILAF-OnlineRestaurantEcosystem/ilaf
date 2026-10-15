@@ -19,6 +19,20 @@ export function moneyText(n, cur = '₪') {
   return `${Number.isInteger(v) ? v : v.toFixed(1)}${cur}`;
 }
 
+// CoffeeFlow: كل محل إله مسار (/1001) و API خاص (/api/t/1001)، وتخزين خاص بالجهاز
+export const TENANT = (location.pathname.match(/^\/(\d{3,8})(?:\/|$)/) || [])[1] ?? null;
+export const tenantPath = TENANT ? `/${TENANT}` : '';
+const API_BASE = TENANT ? `/api/t/${TENANT}` : '/api';
+/** مفتاح التخزين بالمتصفح: كل محل لحاله (عشان زبون زار محلين ما تتلخبط سلّته) */
+export const storeKey = (k) => `cm.${TENANT ? TENANT + '.' : ''}${k}`;
+
+/** المحل انجمّد من المنصة: بنعيد تحميل الصفحة، والسيرفر بيعرض "الحساب مجمّد" */
+export function frozenNow() {
+  if (window.__CAFE_DEMO__ || frozenNow.done) return;
+  frozenNow.done = true;
+  location.reload();
+}
+
 export async function api(path, { method = 'GET', body, token } = {}) {
   // نسخة الـ HTML المستقلة: النظام كامل بيشتغل داخل المتصفح
   if (window.__CAFE_DEMO__) return window.__CAFE_DEMO__.api(path, { method, body, token });
@@ -27,11 +41,12 @@ export async function api(path, { method = 'GET', body, token } = {}) {
   if (token) headers['x-admin-token'] = token;
   let res;
   try {
-    res = await fetch('/api' + path, { method, headers, body: body !== undefined ? JSON.stringify(body) : undefined });
+    res = await fetch(API_BASE + path, { method, headers, body: body !== undefined ? JSON.stringify(body) : undefined });
   } catch {
     throw Object.assign(new Error('ما في اتصال بالسيرفر. تأكد من الشبكة وجرب كمان مرة.'), { status: 0 });
   }
   const data = await res.json().catch(() => ({}));
+  if (res.status === 423 && data.frozen) frozenNow();
   if (!res.ok) throw Object.assign(new Error(data.error || 'صار خطأ، جرب كمان مرة.'), { status: res.status });
   return data;
 }
@@ -145,6 +160,17 @@ export function setTheme(pref) {
 }
 darkQuery?.addEventListener?.('change', () => { if (themePref() === 'auto') applyTheme(); });
 applyTheme();
+
+// ───────── كافيه أو مطعم: الكلمات اللي بتتغيّر ─────────
+export function bizWords(type) {
+  return type === 'restaurant'
+    ? { place: 'مطعم', host: 'المضيف', hostSmart: 'المضيف الذكي', ask: 'اسأله عن أي طبق', items: 'طبق', note: 'ملاحظة للمطبخ (اختياري)', sub: 'بيعرف القائمة طبق طبق', placeholder: 'احكي مع المضيف…' }
+    : { place: 'كافيه', host: 'الباريستا', hostSmart: 'الباريستا الذكي', ask: 'اسأله عن أي مشروب', items: 'مشروب', note: 'ملاحظة للباريستا (اختياري)', sub: 'بيعرف القائمة حبة حبة', placeholder: 'احكي مع الباريستا…' };
+}
+/** بيحط نوع المحل على الصفحة (ألوان وهوية المطعم بـ theme.css) */
+export function applyBusiness(type) {
+  document.documentElement.dataset.biz = type === 'restaurant' ? 'restaurant' : 'cafe';
+}
 
 export const STATUS = {
   new: { label: 'طلب جديد', short: 'جديد' },

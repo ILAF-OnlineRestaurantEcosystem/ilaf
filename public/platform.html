@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f4ece1">
+  <script>
+    // المظهر قبل ما تنرسم الصفحة: فاتح / غامق / تلقائي حسب الجهاز
+    try {
+      var t = localStorage.getItem('cm.theme') || 'auto';
+      var dark = t === 'dark' || (t === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    } catch (e) { /* */ }
+  </script>
+  <title>CoffeeFlow — لوحة المنصة</title>
+  <link rel="icon" href="/coffeeflow.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/brand.css">
+  <link rel="stylesheet" href="/css/platform.css">
+  <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body class="pf">
+  <div class="toasts" aria-live="polite"></div>
+
+  <!-- الدخول / الإعداد الأول -->
+  <section class="pf-auth" id="auth" hidden>
+    <div class="pf-auth-card">
+      <div class="pf-logo" data-logo></div>
+      <h1 id="authTitle">دخول المنصة</h1>
+      <p class="muted" id="authSub">لوحة تحكم المحلات المشتركة بـ CoffeeFlow</p>
+      <form id="authForm" class="stack" novalidate>
+        <label class="field" id="keyField" hidden><span>رمز الإعداد (بيطلع بشاشة السيرفر لما يشتغل)</span><input class="input" id="a_key" dir="ltr" autocomplete="off" placeholder="XXXX-XXXX"></label>
+        <label class="field"><span>اسم المستخدم (ID)</span><input class="input" id="a_user" dir="ltr" autocomplete="username" placeholder="mohammed"></label>
+        <label class="field" id="nameField" hidden><span>اسمك</span><input class="input" id="a_name" autocomplete="name" placeholder="محمد"></label>
+        <label class="field"><span>كلمة السر</span><input class="input" id="a_pass" type="password" dir="ltr" autocomplete="current-password"></label>
+        <p class="form-err" id="authErr" role="alert"></p>
+        <button class="btn btn-brass btn-block" type="submit" id="authBtn">دخول</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- المنصة -->
+  <div class="pf-app" id="app" hidden>
+    <header class="pf-top">
+      <div class="pf-brand"><span class="pf-logo sm" data-logo></span><span class="pf-word">Coffee<b>Flow</b></span></div>
+      <nav class="pf-nav" aria-label="أقسام المنصة">
+        <button type="button" data-pf-view="tenants" aria-current="page">المحلات</button>
+        <button type="button" data-pf-view="team">الفريق</button>
+      </nav>
+      <div class="pf-me">
+        <span class="pf-user" id="meName"></span>
+        <button class="theme-btn" type="button" id="themeBtn"></button>
+        <button class="btn btn-ghost btn-sm" type="button" id="logoutBtn">خروج</button>
+      </div>
+    </header>
+
+    <main class="pf-main">
+      <section data-pf="tenants">
+        <div class="pf-head">
+          <div><h1>المحلات</h1><p class="muted" id="tenantsSub"></p></div>
+          <button class="btn btn-brass" type="button" id="newTenant"></button>
+        </div>
+        <div class="pf-kpis" id="kpis"></div>
+        <div class="pf-toolbar">
+          <label class="search pf-search"><span data-icon="search"></span><input class="search-input" id="tSearch" type="search" placeholder="دوّر بالاسم أو الرقم أو صاحب المحل…"></label>
+          <div class="segmented" id="tFilter" style="--n:4" role="group" aria-label="فلترة المحلات">
+            <button type="button" data-f="all" aria-pressed="true">الكل</button>
+            <button type="button" data-f="cafe" aria-pressed="false">كافيهات</button>
+            <button type="button" data-f="restaurant" aria-pressed="false">مطاعم</button>
+            <button type="button" data-f="suspended" aria-pressed="false">مجمّدة</button>
+          </div>
+        </div>
+        <div class="pf-grid" id="tenantGrid"></div>
+      </section>
+
+      <section data-pf="team" hidden>
+        <div class="pf-head">
+          <div><h1>فريق المنصة</h1><p class="muted">كل واحد بيدخل بحسابه، وكلكم بتشوفوا نفس المحلات والأرقام.</p></div>
+          <button class="btn btn-brass" type="button" id="newUser"></button>
+        </div>
+        <div class="pf-team" id="team"></div>
+        <section class="pf-panel">
+          <h2>غيّر كلمة السر تبعتي</h2>
+          <form class="pf-form" id="pwForm" novalidate>
+            <label class="field"><span>كلمة السر الحالية</span><input class="input" id="pw_cur" type="password" dir="ltr" autocomplete="current-password"></label>
+            <label class="field"><span>كلمة السر الجديدة</span><input class="input" id="pw_new" type="password" dir="ltr" autocomplete="new-password"></label>
+            <button class="btn btn-ghost" type="submit">احفظ</button>
+          </form>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <!-- نافذة الإضافة والتعديل -->
+  <section class="sheet editor" id="editor" role="dialog" aria-modal="true" aria-labelledby="editorTitle" aria-hidden="true">
+    <div class="sheet-grip"></div>
+    <div class="sheet-head">
+      <h2 class="sheet-title" id="editorTitle"></h2>
+      <button class="icon-btn" data-close-sheet type="button" aria-label="إغلاق" id="editorClose"></button>
+    </div>
+    <form class="sheet-body" id="editorForm" novalidate></form>
+    <div class="sheet-foot editor-foot" id="editorFoot"></div>
+  </section>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+  <script type="module" src="/js/platform.js"></script>
+</body>
+</html>

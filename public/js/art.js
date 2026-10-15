@@ -34,8 +34,37 @@ function brassDefs(gradId, darkId) {
 }
 
 /** الدلّة لحالها (للأيقونات وزر الباريستا) */
+// ───────── هوية المطعم: قدرة فخار (أيقونة) ومغرفة نحاس بتصب (الشعار الكبير) ─────────
+let BIZ = 'cafe';
+/** نوع المحل بيغيّر رسمة الهوية: كافيه = دلّة، مطعم = قدرة ومغرفة */
+export function setBusiness(kind) { BIZ = kind === 'restaurant' ? 'restaurant' : 'cafe'; }
+export const isRestaurant = () => BIZ === 'restaurant';
+
+export function potShape(gradId) {
+  return `
+    <path d="M44 30c-6-8 6-12 0-20M58 26c-6-8 6-12 0-20M72 30c-6-8 6-12 0-20" fill="none" stroke="#c9a056" stroke-width="3" stroke-linecap="round" opacity=".75"/>
+    <circle cx="58" cy="44" r="6" fill="url(#${gradId})" stroke="#6b2e14" stroke-width="1.2"/>
+    <path d="M24 62Q58 38 92 62z" fill="url(#${gradId})" stroke="#6b2e14" stroke-width="1.4"/>
+    <path d="M22 66h72c6 30-4 58-36 60-32-2-42-30-36-60z" fill="url(#${gradId})" stroke="#6b2e14" stroke-width="1.4"/>
+    <path d="M22 74c-14 0-14 18 0 18M94 74c14 0 14 18 0 18" fill="none" stroke="url(#${gradId})" stroke-width="6" stroke-linecap="round"/>
+    <path d="M24 84c20 6 48 6 68 0" fill="none" stroke="#fbe2c6" stroke-width="2" opacity=".5"/>
+    <path d="M44 126h28l-4 8H48z" fill="#8a3b1c"/>`;
+}
+export function ladleShape(gradId, darkId) {
+  // مغرفة مايلة بتصب من حافتها اليسار (عند نقطة الصب 405,125 بالشعار)
+  return `
+    <path d="M32 78C54 52 80 26 104 4" fill="none" stroke="url(#${gradId})" stroke-width="7" stroke-linecap="round"/>
+    <path d="M32 78C54 52 80 26 104 4" fill="none" stroke="#5c4115" stroke-width="1" stroke-linecap="round" opacity=".4"/>
+    <circle cx="107" cy="2" r="5" fill="none" stroke="url(#${gradId})" stroke-width="3.5"/>
+    <path d="M-26 104L40 70C50 92 36 120 12 126C-6 130-22 120-26 104z" fill="url(#${gradId})" stroke="#5c4115" stroke-width="1.2"/>
+    <path d="M-21 102L37 72" stroke="url(#${darkId})" stroke-width="3.5" stroke-linecap="round"/>
+    <circle cx="-24" cy="106" r="3.2" fill="#d0713c"/>`;
+}
+const terraDefs = (id) => `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e8946a"/><stop offset=".45" stop-color="#c4643a"/><stop offset="1" stop-color="#7d3218"/></linearGradient>`;
+
 export function dallahIcon() {
   const g = nextId('dg'), d = nextId('dd');
+  if (BIZ === 'restaurant') return `<svg viewBox="0 0 112 140" aria-hidden="true"><defs>${terraDefs(g)}</defs>${potShape(g)}</svg>`;
   return `<svg viewBox="0 0 112 140" aria-hidden="true"><defs>${brassDefs(g, d)}</defs><g transform="translate(-4 2)">${dallahShape(g, d)}</g></svg>`;
 }
 
@@ -54,8 +83,9 @@ export function brandLogo({ word = 'محمد', prefix = 'كافي', mode = 'pour
   <defs>
     ${brassDefs(g, d)}
     <linearGradient id="${coffee}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#f3d7a2"/><stop offset=".06" stop-color="#d9a262"/>
-      <stop offset=".45" stop-color="#a8682f"/><stop offset="1" stop-color="#5b3216"/>
+      ${BIZ === 'restaurant'
+        ? '<stop offset="0" stop-color="#f8d58a"/><stop offset=".06" stop-color="#e8a24a"/><stop offset=".45" stop-color="#c25a2c"/><stop offset="1" stop-color="#6e2412"/>'
+        : '<stop offset="0" stop-color="#f3d7a2"/><stop offset=".06" stop-color="#d9a262"/><stop offset=".45" stop-color="#a8682f"/><stop offset="1" stop-color="#5b3216"/>'}
     </linearGradient>
     <linearGradient id="${crema}" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#fbe7c0" stop-opacity="0"/><stop offset=".5" stop-color="#fbe7c0" stop-opacity=".9"/><stop offset="1" stop-color="#fbe7c0" stop-opacity="0"/>
@@ -77,7 +107,7 @@ export function brandLogo({ word = 'محمد', prefix = 'كافي', mode = 'pour
     </g>
   </g>
 
-  <path class="logo-stream" d="M405 125 C403 150 399 172 397 214" fill="none" stroke="#b47a3f" stroke-width="5.5" stroke-linecap="round" pathLength="100"/>
+  <path class="logo-stream" d="M405 125 C403 150 399 172 397 214" fill="none" stroke="${BIZ === 'restaurant' ? '#d0713c' : '#b47a3f'}" stroke-width="5.5" stroke-linecap="round" pathLength="100"/>
   <circle class="logo-splash" cx="397" cy="214" r="7" fill="none" stroke="#e8c48f" stroke-width="1.5"/>
 
   <g class="logo-steam" fill="none" stroke="#9a8166" stroke-width="2.4" stroke-linecap="round">
@@ -87,7 +117,7 @@ export function brandLogo({ word = 'محمد', prefix = 'كافي', mode = 'pour
   </g>
 
   <g transform="translate(434 9) scale(1.1)">
-    <g class="logo-dallah">${dallahShape(g, d)}</g>
+    <g class="logo-dallah">${BIZ === 'restaurant' ? ladleShape(g, d) : dallahShape(g, d)}</g>
   </g>
 </svg>`;
 }
@@ -187,6 +217,8 @@ export function artTile(item, cls = '') {
 
 // ───────── أيقونات الواجهة (24×24) ─────────
 const UI = {
+  cup: '<path d="M4.5 9.5h12v4.5a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5z"/><path d="M16.5 11h1.3a2.6 2.6 0 0 1 0 5.2h-1.6"/><path d="M8.5 3.5c-.9 1.1.9 1.9 0 3.2M12.5 3.5c-.9 1.1.9 1.9 0 3.2"/>',
+  utensils: '<path d="M7 3v7a2 2 0 0 0 2 2v9M11 3v7a2 2 0 0 1-2 2M9 3v6M16.5 21V3c-2 1.3-3 4-3 7.5h3"/>',
   user: '<circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.8-3.8 3.6-5.8 7-5.8s6.2 2 7 5.8"/>',
   bag: '<path d="M5 8h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
@@ -219,6 +251,9 @@ const UI = {
   chart: '<path d="M4 20V4M4 20h16"/><path d="M8 16v-5M12 16V8M16 16v-3"/>',
   gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
   map: '<path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>',
+  lock: '<rect x="5" y="10.5" width="14" height="10" rx="2.2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/><path d="M12 14.5v2.5"/>',
+  unlock: '<rect x="5" y="10.5" width="14" height="10" rx="2.2"/><path d="M8 10.5V8a4 4 0 0 1 7.6-1.7"/><path d="M12 14.5v2.5"/>',
+  snow: '<path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9"/><path d="M9.5 4.5 12 7l2.5-2.5M9.5 19.5 12 17l2.5 2.5M4.5 11.2 7.6 12l-.9 3.2M19.5 12.8 16.4 12l.9-3.2M6.7 8.8 7.6 12M17.3 15.2 16.4 12"/>',
   logout: '<path d="M14 4h5v16h-5"/><path d="M10 8l-4 4 4 4M6 12h10"/>',
   sound: '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>',
   mute: '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l4 6M21 9l-4 6"/>',

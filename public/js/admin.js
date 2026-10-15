@@ -1,5 +1,5 @@
-import { $, $$, esc, api, money, moneyText, toast, openSheet, closeSheet, chime, unlockAudio, timeAgo, STATUS, SUGAR, THEMES, themePref, setTheme } from './common.js';
-import { brandLogo, fitLogo, brandMark, artTile, itemArt, icon, ART_KEYS, ART_LABELS } from './art.js';
+import { $, $$, esc, api, money, moneyText, toast, openSheet, closeSheet, chime, unlockAudio, timeAgo, STATUS, SUGAR, THEMES, themePref, setTheme, TENANT, tenantPath, storeKey, frozenNow, bizWords, applyBusiness } from './common.js';
+import { brandLogo, fitLogo, brandMark, artTile, itemArt, icon, ART_KEYS, ART_LABELS, setBusiness } from './art.js';
 
 const S = {
   token: null,
@@ -19,8 +19,8 @@ const S = {
 };
 const relay = window.__CAFE_DEMO__?.relay ?? null;
 const store = {
-  get(k) { try { return localStorage.getItem('cm.admin.' + k); } catch { return null; } },
-  set(k, v) { try { if (v == null) localStorage.removeItem('cm.admin.' + k); else localStorage.setItem('cm.admin.' + k, v); } catch { /* */ } },
+  get(k) { try { return localStorage.getItem(storeKey('admin.' + k)); } catch { return null; } },
+  set(k, v) { try { if (v == null) localStorage.removeItem(storeKey('admin.' + k)); else localStorage.setItem(storeKey('admin.' + k), v); } catch { /* */ } },
 };
 const cur = () => S.data?.settings.currency ?? '₪';
 const itemById = (id) => S.data.items.find((i) => i.id === id);
@@ -108,6 +108,8 @@ function cycleTheme() {
 
 function renderShell() {
   const s = S.data.settings;
+  setBusiness(s.businessType); // مطعم = قدرة الفخار وألوانه
+  applyBusiness(s.businessType);
   renderThemeBtn();
   document.title = `لوحة الكاشير — ${s.cafeName}`;
   $('#sideBrand').innerHTML = `${brandMark(s.cafeName)}<small>لوحة الكاشير</small>`;
@@ -115,6 +117,7 @@ function renderShell() {
   renderSoundBtn();
   $('#openMenu').innerHTML = `${icon('bag')}<span>صفحة الزبون</span>`;
   if (relay) $('#openMenu').href = customerLink();
+  else if (TENANT) $('#openMenu').href = tenantPath; // صفحة زباين هالمحل على المنصة
   $('#logoutBtn').innerHTML = `${icon('logout')}<span>خروج</span>`;
   $('#closeShopBtn').innerHTML = `${icon('lock')}<span>إغلاق المحل</span>`;
   $('#editorClose').innerHTML = icon('close');
@@ -857,7 +860,7 @@ function customerLink() {
   for (const [k, v] of Object.entries(relay?.customerParams() ?? {})) u.searchParams.set(k, v);
   return u.href;
 }
-const qrTarget = () => (relay ? customerLink() : qrBase() + '/');
+const qrTarget = () => (relay ? customerLink() : `${qrBase()}${tenantPath}/`);
 function renderTablesView() {
   const { zones, tables } = S.data;
   $('#zoneList').innerHTML = zones.map((z) => `
@@ -1341,25 +1344,31 @@ function renderSettings() {
           <span>المظهر</span>
           <div class="segmented" style="--n:3" role="radiogroup" aria-label="المظهر">${THEMES.map(([k, label, ic]) => `<button type="button" role="radio" data-theme-set="${k}" aria-pressed="${themePref() === k}" aria-checked="${themePref() === k}" style="display:inline-flex;align-items:center;justify-content:center;gap:6px">${icon(ic)}${label}</button>`).join('')}</div>
         </div>
+        <div class="field">
+          <span>نوع المحل</span>
+          <div class="segmented" style="--n:2" role="radiogroup" aria-label="نوع المحل">${[['cafe', 'كافيه', 'cup'], ['restaurant', 'مطعم', 'utensils']].map(([k, label, ic]) => `<button type="button" role="radio" data-biz-set="${k}" aria-pressed="${(s.businessType ?? 'cafe') === k}" aria-checked="${(s.businessType ?? 'cafe') === k}" style="display:inline-flex;align-items:center;justify-content:center;gap:6px">${icon(ic)}${label}</button>`).join('')}</div>
+          <small class="muted">بيغيّر الهوية والألوان وكلام صفحة الزباين ونديم. الأصناف بتضل زي ما هي إلا إذا حمّلت القائمة الجاهزة.</small>
+          <button class="btn btn-ghost btn-sm" type="button" id="loadTemplate" style="justify-self:start;margin-top:6px">${icon('download')}حمّل قائمة ${(s.businessType ?? 'cafe') === 'restaurant' ? 'المطعم' : 'الكافيه'} الجاهزة</button>
+        </div>
         <div class="logo-preview" id="logoPreview"></div>
         <div class="form-grid">
           <label class="field"><span>اسم المحل</span><input class="input" id="s_name" value="${esc(s.cafeName)}" maxlength="40"></label>
           <label class="field"><span>الكلمة اللي بتتعبّى بالشعار</span><input class="input" id="s_word" value="${esc(s.brandWord)}" maxlength="12"></label>
           <label class="field full"><span>الجملة تحت الشعار</span><input class="input" id="s_tagline" value="${esc(s.tagline)}" maxlength="80"></label>
-          <label class="field"><span>اسم الباريستا الذكي</span><input class="input" id="s_barista" value="${esc(s.baristaName)}" maxlength="20"></label>
+          <label class="field"><span>اسم ${bizWords(s.businessType).hostSmart}</span><input class="input" id="s_barista" value="${esc(s.baristaName)}" maxlength="20"></label>
           <label class="field"><span>رمز العملة</span><input class="input" id="s_cur" value="${esc(s.currency)}" maxlength="4"></label>
         </div>
       </section>
       <section class="panel">
         <div class="panel-head"><h2>الطقس والموقع</h2></div>
-        <p class="muted">الباريستا بيقرأ طقس هالمدينة ليقترح سخن أو بارد.</p>
+        <p class="muted">${esc(s.baristaName)} بيقرأ طقس هالمدينة ليقترح ${(s.businessType ?? 'cafe') === 'restaurant' ? 'شوربة وطبخات سخنة بالبرد، وسلطات ومشروبات باردة بالحر' : 'سخن أو بارد'}.</p>
         <div class="inline-form"><input class="input" id="s_city" value="${esc(s.city)}" placeholder="اسم المدينة"><button class="btn btn-ghost btn-sm" type="button" id="geoBtn">دوّر</button></div>
         <div class="geo-results" id="geoResults"></div>
         <div class="form-grid">
           <label class="field"><span>خط العرض</span><input class="input" id="s_lat" value="${s.lat}" dir="ltr"></label>
           <label class="field"><span>خط الطول</span><input class="input" id="s_lon" value="${s.lon}" dir="ltr"></label>
         </div>
-        <div class="panel-head" style="margin-top:8px"><h2>الباريستا الذكي</h2></div>
+        <div class="panel-head" style="margin-top:8px"><h2>${bizWords(s.businessType).hostSmart}</h2></div>
         <div class="ai-status"><i style="background:${ai.configured && !ai.lastError ? 'var(--seaglass)' : 'var(--amber)'}"></i>
           <span>${aiText}</span></div>
         ${gem ? `<div class="field">
@@ -1399,7 +1408,7 @@ function renderSettings() {
   const drawLogo = () => {
     const name = val('s_name') || s.cafeName;
     const word = val('s_word') || s.brandWord;
-    $('#logoPreview').innerHTML = brandLogo({ word, prefix: name.replace(word, '').trim() || 'كافي', mode: 'static' });
+    $('#logoPreview').innerHTML = brandLogo({ word, prefix: name.replace(word, '').trim() || (S.bizDraft === 'restaurant' ? 'مطعم' : 'كافي'), mode: 'static' });
     fitLogo($('#logoPreview svg'));
   };
   drawLogo();
@@ -1458,8 +1467,10 @@ async function saveSettings() {
       cafeName: val('s_name'), brandWord: val('s_word'), tagline: val('s_tagline'), baristaName: val('s_barista'),
       currency: val('s_cur'), city: val('s_city'), lat: val('s_lat'), lon: val('s_lon'), adminPin: val('s_pin'),
       wifi: val('s_wifi'), hours: val('s_hours'), cafeNotes: val('s_notes'),
+      businessType: S.bizDraft ?? S.data.settings.businessType ?? 'cafe',
     };
     S.data.settings = await call('/settings', { method: 'PUT', body });
+    S.bizDraft = null;
     renderShell();
     toast('انحفظت الإعدادات', 'ok');
     renderSettings();
@@ -1575,6 +1586,34 @@ function bind() {
       $('#geoResults').innerHTML = '';
       return;
     }
+    if (t.dataset.bizSet) {
+      // معاينة فورية للهوية، والحفظ بزر "احفظ الإعدادات"
+      S.bizDraft = t.dataset.bizSet;
+      $$('[data-biz-set]').forEach((b) => { const on = b === t; b.setAttribute('aria-pressed', on); b.setAttribute('aria-checked', on); });
+      setBusiness(S.bizDraft); applyBusiness(S.bizDraft);
+      $('#loadTemplate').innerHTML = `${icon('download')}حمّل قائمة ${S.bizDraft === 'restaurant' ? 'المطعم' : 'الكافيه'} الجاهزة`;
+      $('#s_barista').closest('.field').querySelector('span').textContent = `اسم ${bizWords(S.bizDraft).hostSmart}`;
+      $('#settings').dispatchEvent(new Event('input'));
+      const word = val('s_word') || S.data.settings.brandWord;
+      const name = val('s_name') || S.data.settings.cafeName;
+      $('#logoPreview').innerHTML = brandLogo({ word, prefix: name.replace(word, '').trim() || (S.bizDraft === 'restaurant' ? 'مطعم' : 'كافي'), mode: 'static' });
+      fitLogo($('#logoPreview svg'));
+      return;
+    }
+    if (t.id === 'loadTemplate') {
+      const type = S.bizDraft ?? S.data.settings.businessType ?? 'cafe';
+      const label = type === 'restaurant' ? 'المطعم' : 'الكافيه';
+      if (!(await askConfirm(`تحمّل قائمة ${label} الجاهزة؟ الأقسام والأصناف والعروض الحالية بتنشال وبتنحط مكانها قائمة ${label} بصورها وأسعارها (فيك تعدّلها بعدين). الطلبات والتقارير والطاولات بتضل زي ما هي.`, 'حمّلها'))) return;
+      try {
+        const r = await call('/menu-template', { method: 'POST', body: { type } });
+        S.data = await call('/bootstrap');
+        S.bizDraft = null;
+        renderShell();
+        renderSettings();
+        toast(`انحطت قائمة ${label}: ${r.categories} أقسام و${r.items} صنف`, 'ok');
+      } catch (err) { toast(err.message, 'err'); }
+      return;
+    }
     if (t.id === 'clearDemo') {
       if (!(await askConfirm('تمسح الطلبات التجريبية؟ التقارير والإحصائيات بتبلّش من الصفر.', 'امسحها'))) return;
       try { const r = await call('/demo/clear', { method: 'POST' }); S.data.demoOrders = 0; toast(`انمسح ${r.removed} طلب تجريبي`, 'ok'); renderSettings(); refreshBarStats(); } catch (err) { toast(err.message, 'err'); }
@@ -1638,12 +1677,13 @@ function bind() {
 function connect() {
   if (typeof io !== 'function') return;
   S.socket?.disconnect();
-  const sock = io({ auth: { token: S.token } });
+  const sock = io({ auth: { token: S.token }, query: { tenant: TENANT ?? '' } });
   S.socket = sock;
   const live = $('#live');
   if (relay) relay.onChange(renderRelay);
   else sock.on('connect', () => { live.classList.remove('off'); live.querySelector('span').textContent = 'مباشر'; });
   sock.on('disconnect', () => { live.classList.add('off'); live.querySelector('span').textContent = 'منقطع'; });
+  sock.on('tenant:frozen', frozenNow);
   sock.on('order:new', (o) => {
     applyOrder(o);
     S.justIn.add(o.table);
@@ -1741,5 +1781,10 @@ async function boot() {
 
 S.sound = store.get('sound') !== '0';
 bind();
+// "افتح لوحة الكاشير" من منصة CoffeeFlow بتيجي برمز جاهز (#cf=...) بدل ما تكتب الرمز
+{
+  const m = location.hash.match(/(?:^#|&)cf=([0-9a-f]{20,})/);
+  if (m) { store.set('token', m[1]); history.replaceState(null, '', location.pathname + location.search); }
+}
 S.token = store.get('token');
 if (S.token) boot(); else showLogin();

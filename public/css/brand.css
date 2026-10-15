@@ -55,6 +55,7 @@
 /* اختيار متعدد */
 .segmented { display: grid; grid-template-columns: repeat(var(--n, 4), 1fr); gap: 6px; padding: 5px; border-radius: 16px; background: rgba(var(--tint), .07); }
 .segmented button { min-height: 42px; padding: 0 6px; border-radius: 12px; font-size: 13px; color: var(--foam-2); transition: background .3s, color .3s; }
+.segmented button svg { width: 17px; height: 17px; flex: none; }
 .segmented button[aria-pressed="true"] { background: var(--swell); color: var(--brass-hi); font-weight: 600; box-shadow: 0 4px 12px -8px rgba(var(--tint), .6); }
 
 /* عدّاد الكمية */

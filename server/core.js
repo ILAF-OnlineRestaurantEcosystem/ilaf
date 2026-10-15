@@ -1,6 +1,6 @@
 // قلب النظام: كل مسارات الـ API كدوال صافية (بدون Express ولا ملفات)
 // نفس الكود بيشغّل السيرفر الحقيقي، وبيشغّل نسخة الـ HTML المستقلة داخل المتصفح.
-import { db, save, uid, replaceAll } from './db.js';
+import { db, save, uid, replaceAll, currentTenant } from './db.js';
 import {
   publicMenu, createOrder, setOrderStatus, publicOrder, tableInsight, stats,
   setLinePrice, closeTable, tableBill, currentDay, closeDay, months, monthReport, maintain, deviceOrders, tableOccupancy,
@@ -10,22 +10,28 @@ import {
 import { currentWeather, geocode } from './weather.js';
 import { chat } from './barista/index.js';
 import { aiStatus } from './barista/ai.js';
+import { menuTemplate } from './seed.js';
 
 export { HttpError };
 
 // ───────── جلسات الكاشير ─────────
-const sessions = new Map(); // token → expiresAt
-function randomToken() {
+// كل جلسة مربوطة بمحل: رمز لوحة محل ما بيفتح لوحة محل ثاني
+const sessions = new Map(); // token → { tenant, exp }
+export function randomToken() {
   const bytes = new Uint8Array(24);
   globalThis.crypto.getRandomValues(bytes);
   return [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
-export function registerToken(token, ttlMs = 12 * 3600 * 1000) { sessions.set(token, Date.now() + ttlMs); return token; }
+/** بيلغي كل جلسات الكاشير تبعت محل (لما يتجمّد، لازم يدخل من جديد بعد فك التجميد) */
+export function dropSessions(tenant) {
+  for (const [k, s] of sessions) if (s.tenant === tenant) sessions.delete(k);
+}
+export function registerToken(token, ttlMs = 12 * 3600 * 1000) { sessions.set(token, { tenant: currentTenant(), exp: Date.now() + ttlMs }); return token; }
 export function validToken(token) {
-  const exp = token && sessions.get(token);
-  if (!exp) return false;
-  if (exp < Date.now()) { sessions.delete(token); return false; }
-  return true;
+  const s = token && sessions.get(token);
+  if (!s) return false;
+  if (s.exp < Date.now()) { sessions.delete(token); return false; }
+  return s.tenant === currentTenant();
 }
 function sameText(a, b) {
   if (a.length !== b.length) return false;
@@ -388,6 +394,7 @@ route('PUT', '/admin/settings', ({ body: b = {} }) => {
   if (b.wifi != null) s.wifi = str(b.wifi, 100);
   if (b.hours != null) s.hours = str(b.hours, 100);
   if (b.cafeNotes != null) s.cafeNotes = str(b.cafeNotes, 600);
+  if (b.businessType != null) s.businessType = b.businessType === 'restaurant' ? 'restaurant' : 'cafe';
   if (b.city != null) s.city = str(b.city, 40);
   if (b.lat != null && b.lat !== '') s.lat = num(b.lat, { min: -90, max: 90 });
   if (b.lon != null && b.lon !== '') s.lon = num(b.lon, { min: -180, max: 180 });
@@ -398,6 +405,20 @@ route('PUT', '/admin/settings', ({ body: b = {} }) => {
   }
   save();
   return { data: s, events: [toAll('menu:changed')] };
+}, { admin: true });
+// القائمة الجاهزة (كافيه أو مطعم): بتبدّل الأقسام والأصناف والعروض، والطلبات والتقارير والطاولات بتضل
+route('POST', '/admin/menu-template', ({ body }) => {
+  const type = body?.type === 'restaurant' ? 'restaurant' : 'cafe';
+  const d = db();
+  const open = d.orders.filter((o) => OPEN_STATUSES.includes(o.status)).length;
+  if (open) throw new HttpError(409, `في ${open} طلب مفتوح. خلّصهم أو سكّر الطاولات أول، بعدين بدّل القائمة.`);
+  const t = menuTemplate(type);
+  d.categories = t.categories;
+  d.items = t.items;
+  d.offers = t.offers;
+  d.settings.businessType = type;
+  save();
+  return { data: { ok: true, items: t.items.length, categories: t.categories.length }, events: [toAll('menu:changed')] };
 }, { admin: true });
 route('GET', '/admin/geocode', async ({ q }) => {
   const query = str(q.get('q'), 60);

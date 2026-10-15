@@ -121,3 +121,58 @@
 .theme-pick .segmented { --n: 3; }
 .theme-pick .segmented button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .theme-pick .segmented svg { width: 16px; height: 16px; }
+
+/* ─────────────────────────────────────────────
+   هوية المطعم (لما نوع المحل "مطعم"): فخار الطابون + زعفران + زيت زيتون
+   ───────────────────────────────────────────── */
+:root[data-biz="restaurant"] {
+  --abyss: #ebe0d2;
+  --harbor: #f6efe6;
+  --tide: #ffffff;
+  --swell: #ffffff;
+  --tint: 42, 28, 20;
+  --line: #eadfd2;
+  --line-strong: #dbcab8;
+  --inset: #fbf6f0;
+  --foam: #2a1c14;
+  --foam-2: #75645a;
+  --foam-3: #8e7c70;
+  --brass: #a8482a;      /* تيراكوتا: الأزرار */
+  --brass-hi: #7a3018;   /* نص مميّز */
+  --brass-lo: #c9a08c;
+  --olive-soft: #efe3d3;
+  --gold: #d9952e;       /* زعفران: لمسات */
+  --gold-soft: #f7e7cf;
+  --on-brass: #fff8f1;
+}
+:root[data-theme="dark"][data-biz="restaurant"] {
+  --abyss: #0d0907;
+  --harbor: #140e0b;     /* فحم */
+  --tide: #221813;
+  --swell: #2c1f18;
+  --tint: 246, 237, 228;
+  --line: #3a2a21;
+  --line-strong: #4c372b;
+  --inset: #1a120e;
+  --foam: #f6ede4;
+  --foam-2: #b09e92;
+  --foam-3: #8d7b6f;
+  --brass: #e0784e;      /* تيراكوتا مضيء ونصه غامق */
+  --on-brass: #140e0b;
+  --brass-hi: #f0936a;
+  --brass-lo: #8a5a44;
+  --olive-soft: #2a1d16;
+  --gold: #e0a443;
+  --gold-soft: #3a2416;
+}
+[data-biz="restaurant"] .btn-brass:hover { background: #8f3b21; }
+[data-theme="dark"][data-biz="restaurant"] .btn-brass:hover { background: #f0936a; }
+[data-biz="restaurant"] .btn-ghost { box-shadow: inset 0 0 0 1.5px rgba(168, 72, 42, .45); }
+[data-theme="dark"][data-biz="restaurant"] .btn-ghost { box-shadow: inset 0 0 0 1.5px rgba(224, 120, 78, .5); }
+[data-biz="restaurant"] .offer { background: linear-gradient(150deg, #fbeee2, #f3e0cd); }
+[data-theme="dark"][data-biz="restaurant"] .offer { background: linear-gradient(150deg, #2c1d15, #21160f); }
+[data-theme="dark"][data-biz="restaurant"] .fab { background: #3a2016; }
+[data-biz="restaurant"] .side { background: linear-gradient(180deg, #8a3a20, #4a1d0e); }
+[data-theme="dark"][data-biz="restaurant"] .side { background: linear-gradient(180deg, #2c1b14, #1a100c); }
+[data-theme="dark"][data-biz="restaurant"] .tabbar button[aria-current="page"] { color: #a8482a; }
+[data-biz="restaurant"] [data-cafe-only] { display: none !important; }

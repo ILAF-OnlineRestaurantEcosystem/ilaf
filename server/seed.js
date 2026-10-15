@@ -1,6 +1,10 @@
 // البيانات الأولية: القائمة، المناطق، الطاولات، العروض، وسجل طلبات تجريبي
 // يعطي الباريستا الذكي "ذاكرة" من أول تشغيل (طاولة 33 للقهوة، طاولة 20 للنسكافيه مع التحلاية…)
 import { summarize } from './reports.js';
+import {
+  R_CATEGORIES, R_ITEMS, R_RECIPES, R_COSTS, R_IMAGES, R_CATEGORY_IMAGES, R_OFFERS, R_ZONES,
+  R_TABLE_COUNT, rZoneForTable, rSeats, R_TASTE, R_HOURS,
+} from './seed-restaurant.js';
 
 const CATEGORIES = [
   { id: 'hot', name: 'مشروبات ساخنة', en: 'Hot Drinks', desc: 'قهوة مختصة وشاي ومشروبات بتدفّي القلب', temp: 'hot', icon: 'cup', order: 1 },
@@ -354,12 +358,15 @@ function pickWeighted(rand, weights) {
   return entries[0][0];
 }
 
-function buildDemoOrders(items, tables, zones) {
-  const rand = rng(20261008);
+const CAFE_HOURS = { 8: 3, 9: 6, 10: 7, 11: 5, 12: 3, 13: 3, 14: 2, 15: 3, 16: 4, 17: 6, 18: 8, 19: 9, 20: 9, 21: 7, 22: 4, 23: 2 };
+const CAFE_PEOPLE = { family: 5, work: 1.4 };
+const REST_PEOPLE = { family: 6, majlis: 8 };
+function buildDemoOrders(items, tables, zones, { taste: zoneTaste = ZONE_TASTE, tableTaste = TABLE_TASTE, hours = CAFE_HOURS, people: crowd = CAFE_PEOPLE, perPerson = 1, costs = COSTS, seed = 20261008 } = {}) {
+  const rand = rng(seed);
   const byId = Object.fromEntries(items.map((i) => [i.id, i]));
   const orders = [];
   const now = new Date();
-  const hourWeights = { 8: 3, 9: 6, 10: 7, 11: 5, 12: 3, 13: 3, 14: 2, 15: 3, 16: 4, 17: 6, 18: 8, 19: 9, 20: 9, 21: 7, 22: 4, 23: 2 };
+  const hourWeights = hours;
   const DAYS = 21;
 
   for (let d = DAYS; d >= 0; d--) {
@@ -376,15 +383,15 @@ function buildDemoOrders(items, tables, zones) {
       if (at > now) continue;
       const table = 1 + Math.floor(rand() * tables.length);
       const zoneId = tables[table - 1].zoneId;
-      const taste = TABLE_TASTE[table] && rand() < 0.8 ? TABLE_TASTE[table] : ZONE_TASTE[zoneId];
-      const people = 1 + Math.floor(rand() * (zoneId === 'family' ? 5 : zoneId === 'work' ? 1.4 : 3));
+      const taste = tableTaste[table] && rand() < 0.8 ? tableTaste[table] : zoneTaste[zoneId];
+      const people = 1 + Math.floor(rand() * (crowd[zoneId] ?? 3));
       const lines = [];
-      for (let p = 0; p < people; p++) {
+      for (let p = 0; p < Math.round(people * perPerson); p++) {
         const id = pickWeighted(rand, taste);
         const existing = lines.find((l) => l.refId === id);
         if (existing) { existing.qty++; existing.lineTotal = existing.qty * existing.unitPrice; continue; }
         const it = byId[id];
-        lines.push({ kind: 'item', refId: id, name: it.name, unitPrice: it.price, qty: 1, lineTotal: it.price, options: {}, note: '', unitCost: COSTS[id] ?? 0 });
+        lines.push({ kind: 'item', refId: id, name: it.name, unitPrice: it.price, qty: 1, lineTotal: it.price, options: {}, note: '', unitCost: costs[id] ?? 0 });
       }
       const subtotal = lines.reduce((s, l) => s + l.lineTotal, 0);
       dailyNos.push({ at, table, zoneId, lines, subtotal });
@@ -415,15 +422,39 @@ function buildDemoOrders(items, tables, zones) {
   return orders;
 }
 
-export function buildSeed() {
-  const tables = Array.from({ length: TABLE_COUNT }, (_, i) => ({
-    number: i + 1,
-    zoneId: zoneForTable(i + 1),
-    seats: zoneForTable(i + 1) === 'family' ? 6 : zoneForTable(i + 1) === 'work' ? 1 : 4,
-  }));
-  const items = ITEMS.map((it) => ({ image: IMAGES[it.id] ?? null, available: true, recipe: RECIPES[it.id] ?? '', cost: COSTS[it.id] ?? 0, ...it }));
-  const offers = OFFERS.map((o) => ({ ...o }));
-  const orders = buildDemoOrders(items, tables, ZONES);
+/**
+ * بيانات محل جديد. type: 'cafe' | 'restaurant' · name: اسم المحل · demo: سجل طلبات تجريبي لـ21 يوم (للعرض)
+ */
+/** القائمة الجاهزة حسب نوع المحل (أقسام، أصناف، عروض) */
+export function menuTemplate(type = 'cafe') {
+  if (type === 'restaurant') {
+    return {
+      categories: R_CATEGORIES.map((c) => ({ ...c, image: R_CATEGORY_IMAGES[c.id] ?? null })),
+      items: R_ITEMS.map((it, i) => ({ image: R_IMAGES[it.id] ?? null, available: true, recipe: R_RECIPES[it.id] ?? '', cost: R_COSTS[it.id] ?? 0, sugar: 0, caffeine: 0, sugarChoice: false, order: i + 1, ...it })),
+      offers: R_OFFERS.map((o) => ({ ...o, itemIds: [...o.itemIds] })),
+    };
+  }
+  return {
+    categories: CATEGORIES.map((c) => ({ ...c, image: CATEGORY_IMAGES[c.id] ?? null })),
+    items: ITEMS.map((it) => ({ image: IMAGES[it.id] ?? null, available: true, recipe: RECIPES[it.id] ?? '', cost: COSTS[it.id] ?? 0, ...it })),
+    offers: OFFERS.map((o) => ({ ...o, itemIds: [...o.itemIds] })),
+  };
+}
+
+export function buildSeed({ type = 'cafe', name = null, demo = true } = {}) {
+  const rest = type === 'restaurant';
+  const zones = (rest ? R_ZONES : ZONES).map((z) => ({ ...z }));
+  const tables = rest
+    ? Array.from({ length: R_TABLE_COUNT }, (_, i) => ({ number: i + 1, zoneId: rZoneForTable(i + 1), seats: rSeats(rZoneForTable(i + 1)) }))
+    : Array.from({ length: TABLE_COUNT }, (_, i) => ({
+      number: i + 1,
+      zoneId: zoneForTable(i + 1),
+      seats: zoneForTable(i + 1) === 'family' ? 6 : zoneForTable(i + 1) === 'work' ? 1 : 4,
+    }));
+  const { categories, items, offers } = menuTemplate(type);
+  const orders = !demo ? [] : rest
+    ? buildDemoOrders(items, tables, zones, { taste: R_TASTE, tableTaste: {}, hours: R_HOURS, people: REST_PEOPLE, perPerson: 1.5, costs: R_COSTS, seed: 20261015 })
+    : buildDemoOrders(items, tables, zones);
   // يوم العمل الحالي بلّش الصبح، والأيام اللي قبل مسكّرة ومحفوظة بتقاريرها
   const now = new Date();
   const opened = new Date(now);
@@ -439,9 +470,10 @@ export function buildSeed() {
   return {
     version: 1,
     settings: {
-      cafeName: 'كافي محمد',
-      brandWord: 'محمد',
-      tagline: 'قهوة على أصولها، وإطلالة على البحر',
+      cafeName: name || (rest ? 'مطعم السرايا' : 'كافي محمد'),
+      brandWord: (name || (rest ? 'مطعم السرايا' : 'كافي محمد')).trim().split(/\s+/).pop(),
+      businessType: rest ? 'restaurant' : 'cafe', // كافيه أو مطعم: بيغيّر الكلام والهوية
+      tagline: rest ? 'أكل بيتي فلسطيني على أصوله' : 'قهوة على أصولها، وإطلالة على البحر',
       currency: '₪',
       currencyName: 'شيكل',
       city: 'غزة',
@@ -455,10 +487,10 @@ export function buildSeed() {
       cafeNotes: '',
       dayOpenedAt: opened.toISOString(),
     },
-    categories: CATEGORIES.map((c) => ({ ...c, image: CATEGORY_IMAGES[c.id] ?? null })),
+    categories,
     items,
     offers,
-    zones: ZONES.map((z) => ({ ...z })),
+    zones,
     tables,
     orders,
     calls: [],
@@ -501,6 +533,7 @@ export function migrate(state) {
     state.menuVersion = 2;
   }
   state.settings.brandWord ??= state.settings.cafeName.split(/\s+/).pop();
+  state.settings.businessType ??= 'cafe';
   state.settings.wifi ??= '';
   state.settings.hours ??= '';
   state.settings.cafeNotes ??= '';

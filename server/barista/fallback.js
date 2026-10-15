@@ -185,9 +185,13 @@ export function basicBarista(ctx, history, freshTable) {
   const lastUser = [...history].reverse().find((m) => m.role !== 'assistant');
   const q = parse(lastUser?.text ?? '');
   const cur = ctx.settings.currency;
-  const drinks = ctx.items.filter((i) => ['hot', 'cold', 'juice'].includes(i.categoryId));
-  const desserts = ctx.items.filter((i) => i.categoryId === 'dessert');
-  const food = ctx.items.filter((i) => i.categoryId === 'bakery');
+  // كافيه: الاقتراح الأساسي مشروب والأكل إضافة. مطعم: الاقتراح الأساسي طبق، والمشروب والمقبلات إضافة
+  const rest = ctx.settings.businessType === 'restaurant';
+  const drinks = ctx.items.filter((i) => ['hot', 'cold', 'juice', 'drinks'].includes(i.categoryId));
+  const desserts = ctx.items.filter((i) => ['dessert', 'r-dessert'].includes(i.categoryId));
+  const food = ctx.items.filter((i) => (rest ? ['mains', 'grills', 'sandwiches', 'starters'] : ['bakery']).includes(i.categoryId));
+  const mains = rest ? ctx.items.filter((i) => ['mains', 'grills', 'sandwiches'].includes(i.categoryId)) : drinks;
+  const starters = ctx.items.filter((i) => i.categoryId === 'starters');
   const popRank = Object.fromEntries(ctx.popular.map((p, i) => [p.id, 10 - i]));
   const tableRank = Object.fromEntries((ctx.table?.topAtTable ?? []).map((p, i) => [p.id, 8 - i * 2]));
   const parts = [];
@@ -300,7 +304,10 @@ export function basicBarista(ctx, history, freshTable) {
   }
 
   // "شو في أكل/حلويات/عصاير؟": بنعرض القسم بأسعاره
-  const CAT_WORDS = [['bakery', /اكل|معجنات|سندويش|ساندويش|فطور/], ['dessert', /حلويات|تحلايه|تحلاية|حلو(?!ين)/], ['juice', /عصاير|عصير|فريش/], ['cold', /بارد|مثلج|ايس/], ['hot', /سخن|ساخن|قهوه|قهوة/]];
+  const CAT_WORDS = rest ? [
+    ['grills', /مشاوي|مشوي|منقل|فحم/], ['sandwiches', /سندويش|ساندويش|سندويشات|عالسريع|سريع/], ['starters', /مقبلات|سلطات|سلطه|شوربه|شوربات/],
+    ['mains', /طبخ|طبخات|طبيخ|اكل بيتي|اطباق رئيسيه|رئيسي/], ['r-dessert', /حلويات|تحلايه|تحلاية|حلو(?!ين)/], ['drinks', /مشروبات|تشربوا|شرب/],
+  ] : [['bakery', /اكل|معجنات|سندويش|ساندويش|فطور/], ['dessert', /حلويات|تحلايه|تحلاية|حلو(?!ين)/], ['juice', /عصاير|عصير|فريش/], ['cold', /بارد|مثلج|ايس/], ['hot', /سخن|ساخن|قهوه|قهوة/]];
   if (/(?:شو|ايش|شي|وش)\s*(?:في|فيه|عندكم|عنكم|بتقدموا)/.test(q.t) && !q.budget && !q.people) {
     const hit = CAT_WORDS.find(([, re]) => re.test(q.t));
     const list = hit ? ctx.items.filter((i) => i.categoryId === hit[0]) : [];
@@ -318,7 +325,9 @@ export function basicBarista(ctx, history, freshTable) {
   if (q.joke) return { reply: `${pick(JOKES)}\nوهلق بجد، شو بتحب أعملك؟`, suggestions: [] };
   if (q.whoAreYou) {
     return {
-      reply: `أنا ${s.baristaName}، الباريستا تبع ${s.cafeName} 🤎 بعرف كل مشروب عنا من شو بيتكوّن، وبختارلك حسب مزاجك أو ميزانيتك أو قديش إنتو. وإذا بدك حدا من الفريق بناديلك ياه.`,
+      reply: rest
+        ? `أنا ${s.baristaName}، المضيف تبع ${s.cafeName} 🤎 بعرف كل طبق عنا من شو بيتكوّن وكيف بينطبخ، وبرتّبلك سفرة حسب جوعك أو ميزانيتك أو قديش إنتو. وإذا بدك حدا من الفريق بناديلك ياه.`
+        : `أنا ${s.baristaName}، الباريستا تبع ${s.cafeName} 🤎 بعرف كل مشروب عنا من شو بيتكوّن، وبختارلك حسب مزاجك أو ميزانيتك أو قديش إنتو. وإذا بدك حدا من الفريق بناديلك ياه.`,
       suggestions: [],
     };
   }
@@ -353,7 +362,7 @@ export function basicBarista(ctx, history, freshTable) {
     }
     if (/شو عندكم|شو في عندكم|شو القائمه|شو القائمة|المنيو|شو بتقدموا/.test(q.t)) {
       const cats = [...new Set(ctx.items.map((i) => i.category))];
-      return { reply: `عنا ${cats.join('، ')}. بتحب أبلشلك بالقهوة؟ ولا بدك اشي منعش؟`, suggestions: [] };
+      return { reply: `عنا ${cats.join('، ')}. ${rest ? 'بتحب نبلّش بمقبلات؟ ولا جوعان وبدك طبخة على طول؟' : 'بتحب أبلشلك بالقهوة؟ ولا بدك اشي منعش؟'}`, suggestions: [] };
     }
     if (q.thanks) return { reply: 'تكرم عينك! إذا بدك اشي كمان أنا هون ☕', suggestions: [] };
     if (freshTable && ctx.table) {
@@ -369,6 +378,10 @@ export function basicBarista(ctx, history, freshTable) {
     const asText = (list) => list.map((i) => `${i.name} (${fmt(i.price, cur)})`).join(' أو ');
     const cards = (list) => list.map((i) => ({ item_id: i.id, qty: 1, sugar: '', for_whom: '' }));
     const byPop = (list) => [...list].sort((a, b) => (popRank[b.id] ?? 0) - (popRank[a.id] ?? 0));
+    const waterItem = ctx.items.find((i) => /^(?:مي|مياه|ماء)/.test(i.name));
+    if (WATER_WORDS.test(tn) && waterItem) {
+      return { reply: `أكيد، ${waterItem.name} بـ${fmt(waterItem.price, cur)} 💧`, suggestions: cards([waterItem]) };
+    }
     if (WATER_WORDS.test(tn)) {
       return { reply: 'المي اطلبها من النادل وبيجيبلك ياها ع الطاولة 💧 اضغط "نادِ نادل".', suggestions: [], offerWaiter: true };
     }
@@ -378,12 +391,17 @@ export function basicBarista(ctx, history, freshTable) {
     }
     if (thing || SODA_WORDS.test(tn) || FOOD_WORDS.test(tn) || SWEET_WORDS.test(tn)) {
       const name = thing ? `"${thing}"` : 'هاد الصنف';
+      const sodaItem = ctx.items.find((i) => /غازي|سبرايت|فانتا|بيبسي|(?:^|\s)كولا(?:\s|$)/.test(i.name)); // بالاسم بس ("شوكولاتة" فيها كولا)
+      if (SODA_WORDS.test(tn) && sodaItem) {
+        return { reply: `أكيد، عنا ${sodaItem.name} بـ${fmt(sodaItem.price, cur)}: ${sodaItem.desc} 🧊`, suggestions: cards([sodaItem]) };
+      }
       if (SODA_WORDS.test(tn)) {
         const fresh = byPop(ctx.items.filter((i) => ['juice', 'cold'].includes(i.categoryId))).slice(0, 2);
         return { reply: `ما عنا مشروبات غازية للأسف، بس عنا اشي منعش أطيب: ${asText(fresh)} 🧊`, suggestions: cards(fresh) };
       }
       if (FOOD_WORDS.test(tn)) {
         const alt = byPop(food).slice(0, 2);
+        if (rest) return { reply: `${name} مش من أطباقنا للأسف 🙏 بس عنا ${asText(byPop(mains).slice(0, 2))}، وما رح تندم.`, suggestions: cards(byPop(mains).slice(0, 2)) };
         return { reply: `${name} مش موجود عنا للأسف 🙏 الأكل عنا خفيف: ${food.map((i) => i.name).join('، ')}. جرّب ${asText(alt)}.`, suggestions: cards(alt) };
       }
       if (SWEET_WORDS.test(tn)) {
@@ -396,13 +414,13 @@ export function basicBarista(ctx, history, freshTable) {
 
     if (q.greeting) {
       return {
-        reply: `${pick(['يا هلا فيك! نوّرت', 'أهلين وسهلين، نوّرت', 'يا مية هلا'])} ${s.cafeName} ☕ أنا ${s.baristaName}. شو جاي عبالك: اشي سخن يدفّيك ولا بارد ينعشك؟`,
+        reply: `${pick(['يا هلا فيك! نوّرت', 'أهلين وسهلين، نوّرت', 'يا مية هلا'])} ${s.cafeName} ${rest ? '🍽️' : '☕'} أنا ${s.baristaName}. ${rest ? 'جوعان؟ بدك طبخة بيتية ولا مشاوي ولا اشي خفيف؟' : 'شو جاي عبالك: اشي سخن يدفّيك ولا بارد ينعشك؟'}`,
         suggestions: popTwo(),
       };
     }
     return {
       reply: pick([
-        'ما فهمت عليك منيح 😅 بس ولا يهمك: احكيلي شو جاي عبالك (سخن ولا بارد، حلو ولا مر)، أو كم واحد إنتو، أو معك قديش.',
+        `ما فهمت عليك منيح 😅 بس ولا يهمك: احكيلي شو جاي عبالك (${rest ? 'لحمة ولا جاج، طبخة ولا مشاوي' : 'سخن ولا بارد، حلو ولا مر'})، أو كم واحد إنتو، أو معك قديش.`,
         'سامحني ما لقطتها 🙈 جرّب تحكيلي مزاجك بكلمتين، أو اسألني عن أي مشروب وبشرحلك من شو بيتكوّن.',
         'خليني أساعدك أحسن: بدك اشي يصحصح، اشي منعش، ولا اشي حلو؟ وهاي اللي ماشية كتير عنا اليوم 👇',
       ]),
@@ -413,12 +431,12 @@ export function basicBarista(ctx, history, freshTable) {
   // اختيار المشروبات
   const count = q.people ?? (q.budget && !q.popular ? 1 : q.popular ? 3 : 1);
   const lowCount = q.lowSugar === -1 ? count : Math.min(q.lowSugar, count);
-  let pool = drinks.filter((i) => !excluded.has(i.id) && !(temp === 'hot' && i.temp === 'cold') && !(temp === 'cold' && i.temp === 'hot'));
+  let pool = mains.filter((i) => !excluded.has(i.id) && (rest || (!(temp === 'hot' && i.temp === 'cold') && !(temp === 'cold' && i.temp === 'hot'))));
   if (q.noCaffeine) pool = pool.filter((i) => i.caffeine === 0).length ? pool.filter((i) => i.caffeine === 0) : pool;
   if (q.coffee && pool.some(isCoffee)) pool = pool.filter(isCoffee);
   // التعبان بدّه كافيين حقيقي، حتى لو طاولته بتحب النسكافيه
   if (q.tired && !q.noCaffeine && pool.some((i) => i.caffeine >= 2)) pool = pool.filter((i) => i.caffeine >= 2);
-  if (!pool.length) pool = drinks;
+  if (!pool.length) pool = mains;
   const ranked = [...pool].sort((a, b) => score(b) - score(a));
   const lowPool = ranked.filter((i) => i.sugar <= 1);
 
@@ -442,7 +460,11 @@ export function basicBarista(ctx, history, freshTable) {
     while (total() > q.budget && guard++ < 40) {
       picks.sort((a, b) => b.item.price - a.item.price);
       const worst = picks[0];
-      const alt = cheap.find((i) => i.price < worst.item.price && (worst.for_whom !== 'للي ما بحبوا السكر' || i.sugar <= 1));
+      const okSugar = (i) => worst.for_whom !== 'للي ما بحبوا السكر' || i.sugar <= 1;
+      // أحسن صنف بيزبط بالباقي من المبلغ (مش بس الأرخص)، وإذا ما في، الأرخص منه
+      const room = q.budget - (total() - worst.item.price);
+      const alt = [...pool].filter((i) => i.price <= room && okSugar(i)).sort((a, b) => score(b) - score(a))[0]
+        ?? cheap.find((i) => i.price < worst.item.price && okSugar(i));
       if (alt) worst.item = alt; else picks.shift();
       if (!picks.length) break;
     }
@@ -456,9 +478,15 @@ export function basicBarista(ctx, history, freshTable) {
       .find((i) => i.price <= remaining() && (lowCount !== count || i.sugar <= 2));
     if (choice) extras.push({ item: choice, sugar: '', for_whom: label });
   };
-  if (q.sweet || (q.people && q.people >= 3 && !q.budget)) addExtra(desserts, q.people ? 'للمشاركة' : '');
-  if (q.hungry) addExtra(food, '');
-  else if (q.budget && !q.people && !q.sweet && remaining() >= 6) addExtra([...food, ...desserts], 'جنب المشروب');
+  if (rest) {
+    if (q.people && q.people >= 2) addExtra(starters, 'للمشاركة');
+    if (q.sweet) addExtra(desserts, '');
+    for (let k = 0; k < (q.people ?? 1); k++) addExtra(drinks, 'مع الأكل'); // مشروب لكل شخص إذا بيزبط بالمبلغ
+  } else {
+    if (q.sweet || (q.people && q.people >= 3 && !q.budget)) addExtra(desserts, q.people ? 'للمشاركة' : '');
+    if (q.hungry) addExtra(food, '');
+    else if (q.budget && !q.people && !q.sweet && remaining() >= 6) addExtra([...food, ...desserts], 'جنب المشروب');
+  }
 
   // تجميع الاقتراحات بالكميات
   const merged = [];
@@ -469,7 +497,7 @@ export function basicBarista(ctx, history, freshTable) {
   const sum = merged.reduce((s, m) => s + m._item.price * m.qty, 0);
 
   if (!merged.length) {
-    const cheapest = [...drinks].sort((a, b) => a.price - b.price)[0];
+    const cheapest = [...mains].sort((a, b) => a.price - b.price)[0];
     parts.push(`المبلغ ما بيكفي للأسف، أرخص اشي عنا ${cheapest.name} بـ${fmt(cheapest.price, cur)}.`);
     return { reply: parts.join(' '), suggestions: [] };
   }
