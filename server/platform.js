@@ -1,31 +1,25 @@
 // منصة CoffeeFlow: سجل المحلات (كافيهات ومطاعم) وحسابات أصحاب المنصة ولوحة التحكم المشتركة
-// السجل محفوظ بـ data/platform.json، وكل محل بياناته بملف لحاله (db.js)
-import fs from 'node:fs';
-import path from 'node:path';
-import crypto from 'node:crypto';
-import { withTenant, db, save, createTenantData, DATA_DIR, DEFAULT_TENANT } from './db.js';
+// السجل محفوظ بـ data/platform.json (platform-store.js)، وكل محل بياناته لحاله (db.js)
+// نفس الملف بيشتغل بنسخة الموقع الثابت داخل المتصفح (التخزين هناك standalone/demo-registry.js)
+import { withTenant, db, save, createTenantData, DEFAULT_TENANT } from './db.js';
+import { readRegistry, writeRegistry, hashPassword, samePassword, randomHex, newId } from './platform-store.js';
 import { buildSeed } from './seed.js';
 import { registerToken, randomToken, dropSessions } from './core.js';
 import { HttpError, monthKey, OPEN_STATUSES } from './logic.js';
 import { summarize } from './reports.js';
 
-const FILE = path.join(DATA_DIR, 'platform.json');
 export const PLATFORM_NAME = 'CoffeeFlow';
 const TYPES = { cafe: 'كافيه', restaurant: 'مطعم' };
 let reg = null;
 
 const now = () => new Date().toISOString();
 const str = (v, max = 200) => String(v ?? '').trim().slice(0, max);
-const write = () => {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(FILE + '.tmp', JSON.stringify(reg, null, 2));
-  fs.renameSync(FILE + '.tmp', FILE);
-};
-const setupCode = () => crypto.randomBytes(4).toString('hex').toUpperCase().replace(/(.{4})/, '$1-');
+const write = () => writeRegistry(reg);
+const setupCode = () => randomHex(4).toUpperCase().replace(/(.{4})/, '$1-');
 
 function registry() {
   if (reg) return reg;
-  if (fs.existsSync(FILE)) reg = JSON.parse(fs.readFileSync(FILE, 'utf8'));
+  reg = readRegistry();
   if (!reg) {
     // أول تشغيل للمنصة: المحل الموجود (كافي محمد) بيصير أول محل
     const s = withTenant(DEFAULT_TENANT, () => db().settings);
@@ -59,16 +53,10 @@ export const tenantInfo = (id) => registry().tenants.find((t) => t.id === String
 export const setupKey = () => (registry().users.length ? null : registry().setupKey);
 
 // ───────── كلمات السر والجلسات ─────────
-function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
-  return { salt, hash: crypto.scryptSync(String(password), salt, 32).toString('hex') };
-}
-function checkPassword(user, password) {
-  const { hash } = hashPassword(password, user.salt);
-  return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(user.hash, 'hex'));
-}
+const checkPassword = (user, password) => samePassword(user, password);
 const sessions = new Map(); // token → { userId, exp }
 function startSession(user) {
-  const token = crypto.randomBytes(24).toString('hex');
+  const token = randomHex(24);
   sessions.set(token, { userId: user.id, exp: Date.now() + 7 * 24 * 3600 * 1000 });
   return token;
 }
@@ -88,7 +76,7 @@ function validUser(body) {
   return { username, name, password };
 }
 function addUser({ username, name, password }, by) {
-  const user = { id: crypto.randomUUID(), username, name, ...hashPassword(password), createdAt: now(), createdBy: by };
+  const user = { id: newId(), username, name, ...hashPassword(password), createdAt: now(), createdBy: by };
   registry().users.push(user);
   write();
   return user;

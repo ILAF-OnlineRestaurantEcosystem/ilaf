@@ -6,9 +6,61 @@
 - **لوحة الكاشير** (`/1001/admin`): الطلبات بتوصلها بنفس اللحظة مع صوت.
 - **مساعد ذكي** اسمه "نديم": باريستا بالكافيه، ومضيف بالمطعم. بيدردش مع الزبون وبيقترح عليه وبيعرف شو خلص من المخزن.
 
-> أول محل (`1001`) هو "كافي محمد". **📦 للتسليم لخبير قواعد البيانات والسيرفر: شوف [docs/HANDOVER.md](docs/HANDOVER.md) و [docs/schema.sql](docs/schema.sql).**
+## 🔗 جرّبه هلأ (بدون تنزيل، من أي جوال أو كمبيوتر)
 
-**جرّب نسخة المحل الواحد أونلاين:** https://mohammed131207.github.io/cafe-mohammad/ (لوحة الكاشير: الرمز **1234**). المنصة بمحلاتها بدها السيرفر.
+| شو | الرابط | ملاحظة |
+|---|---|---|
+| 🏠 **صفحة التجربة** (كل الروابط) | https://mohammed131207.github.io/cafe-mohammad/ | ابدأ من هون |
+| 🧭 **لوحة منصة CoffeeFlow** | https://mohammed131207.github.io/cafe-mohammad/platform.html | بتدخل لحالها بحساب التجربة (`demo` / `coffeeflow`) |
+| ☕ كافي محمد: صفحة الزبون | https://mohammed131207.github.io/cafe-mohammad/customer.html | محل رقم 1001 (كافيه) |
+| ☕ كافي محمد: لوحة الكاشير | https://mohammed131207.github.io/cafe-mohammad/admin.html | الرمز **1234** |
+| 🍽️ مطعم السرايا: صفحة الزبون | https://mohammed131207.github.io/cafe-mohammad/customer.html?store=1002 | محل رقم 1002 (مطعم) |
+| 🍽️ مطعم السرايا: لوحة الكاشير | https://mohammed131207.github.io/cafe-mohammad/admin.html?store=1002 | الرمز **1234** |
+
+**شو تجرّب:**
+1. افتح **لوحة المنصة**: بتشوف المحلّين وإحصائياتهم. اكبس "محل جديد" واختار كافيه أو مطعم.
+2. اكبس ❄️ على أي محل (**تجميد الحساب**) وافتح صفحة زباينه: بتلاقيها مسكّرة. وبعدين "فك التجميد".
+3. افتح **لوحة الكاشير** على الكمبيوتر (الرمز 1234)، وامسح الـ QR من قسم "الطاولات" بجوالك، واطلب: الطلب بيوصل للوحة بنفس اللحظة.
+4. اسأل **نديم** بصفحة الزبون (بالكافيه باريستا، وبالمطعم مضيف). وعشان يحكي بذكاء Gemini، حط مفتاح Gemini المجاني من إعدادات لوحة الكاشير.
+
+> ⚠️ هاي **نسخة تجربة بتشتغل بالمتصفح بس** (GitHub Pages، بدون سيرفر): كل زائر إله بياناته بمتصفحه، وما حدا بيشوف بيانات غيره.
+> النسخة الحقيقية (سيرفر + قاعدة بيانات + دومين) هي نفس الكود بمجلد `server/`، وشرح تشغيلها تحت.
+
+## 📦 للتسليم (خبير قواعد البيانات والسيرفر)
+
+| الملف | شو فيه |
+|---|---|
+| [docs/HANDOVER.md](docs/HANDOVER.md) | شرح المشروع كامل، هيكل الكود، كل الـ API، وشو المطلوب: دومين، HTTPS، PostgreSQL |
+| [docs/schema.sql](docs/schema.sql) | تصميم قاعدة البيانات (مرحلة 1 جاهزة، ومرحلة 2 مفصّلة) |
+| [.env.example](.env.example) | متغيرات البيئة (مفاتيح نديم، المنفذ، `DATABASE_URL`) |
+| [server/db.js](server/db.js) و [server/platform-store.js](server/platform-store.js) | **الملفين اللي بيتبدّلوا** لما ننقل التخزين لـ PostgreSQL |
+| [screenshots/](screenshots) | صور كل الشاشات |
+
+**المستودعات:**
+- الكود كامل: https://github.com/mohammed131207/cafe-mohammad-code
+- موقع التجربة (GitHub Pages، ملفات مبنية من الكود): https://github.com/mohammed131207/cafe-mohammad
+
+**على السيرفر الحقيقي** (بعد `npm start`، والدومين بدل `localhost:3000`):
+
+| الصفحة | الرابط |
+|---|---|
+| لوحة المنصة | `http://localhost:3000/platform` (أول مرة: **رمز الإعداد** بيطلع بشاشة السيرفر) |
+| الصفحة الرئيسية (اكتب رقم المحل) | `http://localhost:3000/` |
+| صفحة زبائن محل | `http://localhost:3000/1001` |
+| لوحة كاشير محل | `http://localhost:3000/1001/admin` (الرمز الافتراضي **1234**) |
+
+## 🖼️ صور
+
+<p>
+<img src="screenshots/16-منصة-CoffeeFlow.jpg" width="640" alt="لوحة منصة CoffeeFlow">
+</p>
+<p>
+<img src="screenshots/17-هوية-المطعم.jpg" width="300" alt="هوية المطعم فاتح وغامق">
+<img src="screenshots/18-الحساب-مجمد.jpg" width="320" alt="صفحات الحساب المجمّد">
+</p>
+<p>
+<img src="screenshots/19-كافيه-او-مطعم.jpg" width="640" alt="اختيار كافيه أو مطعم من الإعدادات">
+</p>
 
 ## المنصة (CoffeeFlow)
 - **رقم لكل محل:** `1001`، `1002`… ورابط الزبائن `/<الرقم>` ولوحة الكاشير `/<الرقم>/admin`.
@@ -52,7 +104,7 @@
 | | نسخة السيرفر (Node) | نسخة الموقع الثابت (GitHub Pages) |
 |---|---|---|
 | التشغيل | `npm start` | ملفات HTML بتنبني بـ `npm run build:html` |
-| المحلات | كل المحلات + لوحة المنصة | محل واحد بس |
+| المحلات | كل المحلات + لوحة المنصة | كمان (تجربة بمتصفح كل زائر لحاله، `?store=` لكل محل) |
 | البيانات | `data/platform.json` و `data/tenants/<رقم>.json` (لاحقاً PostgreSQL) | بمتصفح جهاز الكاشير (مع نسخة احتياطية) |
 | الربط بين الأجهزة | Socket.io | وسيط MQTT عام ومجاني (`standalone/relay.js`) |
 | نديم الذكي | مفتاح بملف `.env` | المفتاح بيتحط من إعدادات لوحة الكاشير |
@@ -80,7 +132,7 @@
 - `npm run reset`: بيرجّع البيانات التجريبية.
 - `npm run build:html`: بيبني نسخة الموقع بمجلد `hosting/`، وملفّين مستقلين بمجلد `dist/`.
 
-**تحديث موقع GitHub Pages:** ابني بـ `npm run build:html`، وانسخ ملفات `hosting/` (index.html وcustomer.html وadmin.html) لمستودع [cafe-mohammad](https://github.com/mohammed131207/cafe-mohammad).
+**تحديث موقع GitHub Pages:** ابني بـ `npm run build:html`، وانسخ ملفات `hosting/` (index.html وcustomer.html وadmin.html وplatform.html) لمستودع [cafe-mohammad](https://github.com/mohammed131207/cafe-mohammad).
 
 ## وين بتلاقي كل اشي
 
@@ -106,7 +158,8 @@ public/
 standalone/
   runtime.js     تشغيل core.js جوّا المتصفح (نسخة الموقع)
   relay.js       الربط بين الأجهزة بدون سيرفر (MQTT)، والكاشير الواحد، وطابور الطلبات
-  db-browser.js  حفظ البيانات بالمتصفح
+  db-browser.js  حفظ البيانات بالمتصفح (كل محل لحاله)
+  demo-registry.js, platform-runtime.js  تجربة المنصة بالمتصفح (حساب demo، محلات، تجميد)
 scripts/build-standalone.mjs   بيبني نسخة الموقع
 ```
 

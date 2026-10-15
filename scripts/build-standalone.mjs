@@ -15,6 +15,7 @@ const ADMIN_FILE = 'لوحة-التحكم.html';
 const ALIASES = {
   'server/db.js': 'standalone/db-browser.js',
   'server/barista/claude.js': 'standalone/claude-stub.js',
+  'server/platform-store.js': 'standalone/demo-registry.js',
 };
 
 const rel = (abs) => path.relative(ROOT, abs).split(path.sep).join('/');
@@ -83,13 +84,14 @@ function __req(id) {
   return `(function () {\n${prelude}\n${body}\n${run}\n})();`.replace(/<\/script/gi, '<\\/script');
 }
 
-function inlineHtml(htmlFile, entry, { replace = [] } = {}) {
+function inlineHtml(htmlFile, entry, { replace = [], runtime = 'standalone/runtime.js' } = {}) {
   let html = read(htmlFile);
   html = html.replace(/<link rel="stylesheet" href="\/css\/([\w.-]+)">/g, (_, f) => `<style>\n${read('public/css/' + f)}\n</style>`);
   const favicon = 'data:image/svg+xml;base64,' + Buffer.from(read('public/favicon.svg')).toString('base64');
   html = html.replace('href="/favicon.svg"', `href="${favicon}"`);
+  html = html.replace('href="/coffeeflow.svg"', `href="data:image/svg+xml;base64,${Buffer.from(read('public/coffeeflow.svg')).toString('base64')}"`);
   html = html.replace(/\s*<script src="\/socket\.io\/socket\.io\.js"><\/script>/, '');
-  const js = bundle(['standalone/runtime.js', entry]);
+  const js = bundle([runtime, entry]);
   html = html.replace(/<script type="module" src="\/js\/[\w.-]+"><\/script>/, () => `<script>\n${js}\n</script>`);
   for (const [a, b] of replace) html = html.split(a).join(b);
   if (/(?:src|href)="\/(?!\/)/.test(html)) {
@@ -116,7 +118,10 @@ const HOST = path.join(ROOT, 'hosting');
 fs.mkdirSync(HOST, { recursive: true });
 // ?v= بيجبر الجوال يجيب آخر نسخة بدل اللي بذاكرته (GitHub Pages بيخلّي الصفحة 10 دقايق بالكاش)
 const stamp = Date.now().toString(36);
-fs.writeFileSync(path.join(HOST, 'index.html'), read('standalone/landing.html').replace(/href="(admin|customer)\.html"/g, `href="$1.html?v=${stamp}"`));
+fs.writeFileSync(path.join(HOST, 'index.html'), read('standalone/landing.html').replace(/href="(admin|customer|platform)\.html(?:\?([^"]*))?"/g, (_, p, q) => `href="${p}.html?${q ? q + '&' : ''}v=${stamp}"`));
 fs.writeFileSync(path.join(HOST, 'customer.html'), customer);
 fs.writeFileSync(path.join(HOST, 'admin.html'), admin.split(`href="${CUSTOMER_FILE}"`).join('href="customer.html"'));
-console.log('✔ hosting/  (index.html + customer.html + admin.html) جاهز للرفع');
+// تجربة منصة CoffeeFlow كاملة بالمتصفح (محلات، مطعم، تجميد) — بتفتح customer.html و admin.html?store=…
+const platform = inlineHtml('public/platform.html', 'public/js/platform.js', { runtime: 'standalone/platform-runtime.js' });
+fs.writeFileSync(path.join(HOST, 'platform.html'), platform);
+console.log(`✔ hosting/  (index.html + customer.html + admin.html + platform.html ${Math.round(Buffer.byteLength(platform) / 1024)} KB) جاهز للرفع`);

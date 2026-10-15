@@ -3,12 +3,20 @@ import { $, $$, esc, moneyText, toast, openSheet, closeSheet, timeAgo, THEMES, t
 import { icon } from './art.js';
 
 const TOKEN_KEY = 'cf.platform.token';
+// نسخة التجربة على الموقع الثابت (GitHub Pages): المنصة كلها بتشتغل بمتصفح الزائر بدون سيرفر
+const DEMO = window.__CAFE_DEMO__?.platform ?? null;
 const P = { token: null, me: null, tenants: [], filter: 'all', q: '', view: 'tenants' };
 
 const read = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 const write = (k, v) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { /* */ } };
 
 async function papi(path, { method = 'GET', body } = {}) {
+  if (DEMO) {
+    const r = await DEMO.api(path, { method, body, token: P.token });
+    if (r.status === 401 && path !== '/login' && path !== '/setup') { signOut(); }
+    if (r.status >= 400) throw Object.assign(new Error(r.data?.error || 'صار خطأ، جرب كمان مرة.'), { status: r.status });
+    return r.data;
+  }
   const headers = {};
   if (body !== undefined) headers['content-type'] = 'application/json';
   if (P.token) headers['x-platform-token'] = P.token;
@@ -42,6 +50,10 @@ async function showAuth() {
     ? 'أول مرة: اعمل حسابك (ID وكلمة سر)، وبعدين ضيف شريكك من قسم الفريق.'
     : 'لوحة تحكم المحلات المشتركة بـ CoffeeFlow';
   $('#authBtn').textContent = setupMode ? 'اعمل الحساب وادخل' : 'دخول';
+  if (DEMO && !setupMode) {
+    $('#authSub').textContent = `نسخة تجربة: ادخل بـ ${DEMO.login.username} وكلمة السر ${DEMO.login.password}`;
+    $('#a_user').value = DEMO.login.username;
+  }
   $('#a_pass').autocomplete = setupMode ? 'new-password' : 'current-password';
   (setupMode ? $('#a_key') : $('#a_user')).focus();
 }
@@ -78,6 +90,10 @@ async function enterApp() {
   $('#app').hidden = false;
   $('#meName').innerHTML = `${icon('user')}<span>${esc(P.me.name)}</span><small dir="ltr">@${esc(P.me.username)}</small>`;
   renderThemeBtn();
+  if (DEMO && !$('.pf-demo')) {
+    $('.pf-brand').insertAdjacentHTML('beforeend', '<span class="pf-demo" title="كل البيانات بمتصفحك بس">تجربة</span>');
+    $('[data-pf="tenants"] .pf-head').insertAdjacentHTML('afterend', `<p class="pf-demo-note">${icon('sparkle')}<span>هاي <b>نسخة تجربة</b> بتشتغل بمتصفحك بس: جرّب تضيف محل، تفتح صفحة الزباين ولوحة الكاشير، وتجمّد حساب. البيانات ما بتوصل لحدا، والنسخة الحقيقية بتشتغل على سيرفر.</span></p>`);
+  }
   setView(P.view);
   await loadTenants();
 }
@@ -138,7 +154,7 @@ function renderTenants() {
         ${frozen(t)
           ? `<button class="btn btn-brass btn-sm" type="button" data-unfreeze="${esc(t.id)}">${icon('unlock')}فك التجميد</button>`
           : `<button class="btn btn-brass btn-sm" type="button" data-open-admin="${esc(t.id)}">${icon('grid')}لوحة الكاشير</button>
-        <a class="btn btn-ghost btn-sm" href="/${esc(t.id)}" target="_blank" rel="noopener">${icon('bag')}صفحة الزبائن</a>`}
+        <a class="btn btn-ghost btn-sm" href="${esc(storeHref(t.id))}" target="_blank" rel="noopener">${icon('bag')}صفحة الزبائن</a>`}
       </footer>
     </article>`).join('') : `<div class="empty"><p>${all.length ? 'ما في محلات مطابقة.' : 'لسا ما في محلات. ضيف أول محل من الزر فوق.'}</p></div>`;
 }
@@ -161,7 +177,9 @@ const val = (id) => $('#' + id)?.value ?? '';
 const seg = (name, options, current) => `<div class="segmented" style="--n:${options.length}" role="group">${options.map(([v, l]) => `<button type="button" data-seg="${name}" data-v="${v}" aria-pressed="${v === current}">${l}</button>`).join('')}</div>`;
 const segVal = (name) => $(`[data-seg="${name}"][aria-pressed="true"]`)?.dataset.v;
 const randomPin = () => String(Math.floor(1000 + Math.random() * 9000));
-const links = (id) => ({ customer: `${location.origin}/${id}`, admin: `${location.origin}/${id}/admin` });
+// روابط صفحات المحل: على السيرفر /1001 و /1001/admin، وبنسخة التجربة customer.html?store=…
+const storeHref = (id, admin = false) => (DEMO ? DEMO.storeUrl(id, admin) : `/${id}${admin ? '/admin' : ''}`);
+const links = (id) => ({ customer: new URL(storeHref(id), location.href).href, admin: new URL(storeHref(id, true), location.href).href });
 function qrSvg(url) {
   if (typeof window.qrcode !== 'function') return '';
   const q = window.qrcode(0, 'M');
@@ -289,7 +307,7 @@ async function openAdmin(id, btn) {
   const win = window.open('about:blank', '_blank');
   try {
     const { token } = await papi(`/tenants/${id}/session`, { method: 'POST' });
-    const url = `/${id}/admin#cf=${token}`;
+    const url = `${storeHref(id, true)}#cf=${token}`;
     if (win) win.location.href = url; else location.href = url;
   } catch (err) {
     win?.close();
@@ -387,6 +405,7 @@ async function boot() {
   $('#newTenant').innerHTML = `${icon('plus')}محل جديد`;
   $('#newUser').innerHTML = `${icon('plus')}ضيف شريك`;
   bind();
+  if (DEMO) await DEMO.ready; // حساب التجربة بيدخل لحاله
   P.token = read(TOKEN_KEY);
   if (!P.token) return showAuth();
   try {

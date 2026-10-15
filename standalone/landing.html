@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMCI+PHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjNmU0ZjFkIi8+PHN0b3Agb2Zmc2V0PSIuMyIgc3RvcC1jb2xvcj0iI2Q5YjQ2YyIvPjxzdG9wIG9mZnNldD0iLjUiIHN0b3AtY29sb3I9IiNmNmUzYjQiLz48c3RvcCBvZmZzZXQ9Ii43MiIgc3RvcC1jb2xvcj0iI2M3OWE0ZiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzVlNDIxNyIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgcng9IjE2IiBmaWxsPSIjMGIxZjI0Ii8+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoOSA0KSBzY2FsZSguNCkiPjxwYXRoIGQ9Ik00MiAxMDJDMjYgOTQgMTUgNzYgNyA1MmMtMS0zIDIuNS00LjUgNC41LTJDMjEgNzAgMzIgODQgNDcgOTB6IiBmaWxsPSJ1cmwoI2cpIi8+PHBhdGggZD0iTTc2IDcyYzIyLTIgMjggMjYgMTAgNDQiIGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNnKSIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMzggMTI4QzI3IDExNCAyOCA5OCA0NCA4NmM1LTQgNi0xMiAyLTE5aDI4Yy00IDctMyAxNSAyIDE5IDE2IDEyIDE3IDI4IDYgNDJ6IiBmaWxsPSJ1cmwoI2cpIi8+PHBhdGggZD0iTTQ0IDY3YzItMTMgMTAtMTkgMTYtMjkgNiAxMCAxNCAxNiAxNiAyOXoiIGZpbGw9InVybCgjZykiLz48Y2lyY2xlIGN4PSI2MCIgY3k9IjM0IiByPSI0LjUiIGZpbGw9InVybCgjZykiLz48cGF0aCBkPSJNMzUgMTI4aDUwbC0zIDZIMzh6IiBmaWxsPSIjYTc3ZDM4Ii8+PC9nPjwvc3ZnPgo=">
-<title>كافي محمد</title>
+<title>CoffeeFlow — تجربة</title>
 <script>
   // رابطين مباشرين لنفس الاستضافة: ‎#customer للزبون و ‎#admin للوحة التحكم
   function openFromHash() {
-    var page = { customer: 'customer.html', admin: 'admin.html' }[(location.hash || '').slice(1)];
+    var page = { customer: 'customer.html', admin: 'admin.html', platform: 'platform.html', restaurant: 'customer.html?store=1002', 'restaurant-admin': 'admin.html?store=1002' }[(location.hash || '').slice(1)];
     if (page) location.replace(page);
   }
   openFromHash();
@@ -57,6 +57,9 @@
   .how h2 { font-size: 16px; margin: 0; color: var(--brown-dk); }
   .how ol { margin: 0; padding-inline-start: 1.3em; display: grid; gap: 6px; color: var(--ink); }
   .how b { color: var(--brown-dk); }
+  h1.brand { font-family: var(--font-body); font-weight: 800; letter-spacing: -.5px; direction: ltr; }
+  h1.brand b { color: var(--gold); font-weight: 800; }
+  .group { margin: 8px 4px -2px; font-size: 13.5px; font-weight: 700; color: var(--ink-2); }
   .note { font-size: 12.5px; color: var(--ink-2); text-align: center; margin: 0; }
   @media (prefers-reduced-motion: reduce) { .door { transition: none; } }
 </style>
@@ -73,19 +76,36 @@
         <circle cx="60" cy="33" r="4.5" fill="url(#br)"/><path d="M35 128h50l-3 6H38z" fill="#c9a056"/>
       </svg>
     </span>
-    <h1>كافي محمد</h1>
-    <p class="lede">نظام طلب من الطاولة: الزبون بيطلب من جواله، والكاشير بيشوف الطلب بلوحته بنفس اللحظة.</p>
+    <h1 class="brand">Coffee<b>Flow</b></h1>
+    <p class="lede">منصة الطلب الذكي للكافيهات والمطاعم: الزبون بيطلب من جواله، والكاشير بيشوف الطلب بلوحته بنفس اللحظة.</p>
   </header>
 
   <nav class="doors" aria-label="الصفحات">
-    <a class="door primary" href="admin.html">
+    <a class="door primary" href="platform.html">
       <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg></span>
-      <span><strong>لوحة الكاشير</strong><small>رمز الدخول 1234 · افتحها أول على جهاز الكاشير</small></span>
+      <span><strong>لوحة منصة CoffeeFlow</strong><small>كل المحلات، محل جديد، تجميد حساب · بتدخل لحالها بحساب التجربة</small></span>
       <span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14.5 6l-6 6 6 6"/></svg></span>
     </a>
+    <p class="group">☕ كافي محمد (كافيه، رقم 1001)</p>
     <a class="door" href="customer.html">
       <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg></span>
-      <span><strong>صفحة الزبون</strong><small>تجربة سريعة على نفس الجهاز</small></span>
+      <span><strong>صفحة الزبون</strong><small>المنيو، السلة، ونديم الباريستا الذكي</small></span>
+      <span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14.5 6l-6 6 6 6"/></svg></span>
+    </a>
+    <a class="door" href="admin.html">
+      <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 9.5h12v4.5a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5z"/><path d="M16.5 11h1.3a2.6 2.6 0 0 1 0 5.2h-1.6"/><path d="M8.5 3.5c-.9 1.1.9 1.9 0 3.2M12.5 3.5c-.9 1.1.9 1.9 0 3.2"/></svg></span>
+      <span><strong>لوحة الكاشير</strong><small>رمز الدخول 1234</small></span>
+      <span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14.5 6l-6 6 6 6"/></svg></span>
+    </a>
+    <p class="group">🍽️ مطعم السرايا (مطعم، رقم 1002)</p>
+    <a class="door" href="customer.html?store=1002">
+      <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg></span>
+      <span><strong>صفحة الزبون</strong><small>هوية الفخار وقائمة المطعم ونديم المضيف</small></span>
+      <span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14.5 6l-6 6 6 6"/></svg></span>
+    </a>
+    <a class="door" href="admin.html?store=1002">
+      <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v7a2 2 0 0 0 2 2v9M11 3v7a2 2 0 0 1-2 2M9 3v6M16.5 21V3c-2 1.3-3 4-3 7.5h3"/></svg></span>
+      <span><strong>لوحة الكاشير</strong><small>رمز الدخول 1234</small></span>
       <span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14.5 6l-6 6 6 6"/></svg></span>
     </a>
   </nav>
@@ -93,14 +113,14 @@
   <section class="how" aria-labelledby="howTitle">
     <h2 id="howTitle">كيف تطلب من جوال ثاني</h2>
     <ol>
-      <li>افتح <b>لوحة الكاشير</b> على جهازك وادخل بالرمز <b>1234</b>. لما يصير جنب الساعة <b>"مربوط"</b> يعني جاهزة.</li>
+      <li>افتح <b>لوحة الكاشير</b> (للكافيه أو المطعم) على جهازك وادخل بالرمز <b>1234</b>. لما يصير جنب الساعة <b>"مربوط"</b> يعني جاهزة.</li>
       <li>من قسم <b>الطاولات</b> امسح الـ QR من أي جوال، أو اضغط <b>"انسخ الرابط"</b> وابعته على واتساب.</li>
       <li>من الجوال اكتب رقم طاولة (مثلاً <b>20</b>) واطلب. بتضوي الطاولة عند الكاشير مع صوت بنفس اللحظة.</li>
       <li>بدك نديم يحكي بذكاء؟ من <b>الإعدادات</b> بلوحة الكاشير حط مفتاح Gemini المجاني.</li>
     </ol>
   </section>
 
-  <p class="note">لوحة الكاشير هي اللي بتستقبل الطلبات وبتحفظ الحسابات، فلازم تضل مفتوحة على جهاز الكاشير.</p>
+  <p class="note">هاي نسخة تجربة بتشتغل بالمتصفح بدون سيرفر: كل زائر إله بياناته بمتصفحه. لوحة الكاشير هي اللي بتستقبل الطلبات، فلازم تضل مفتوحة على جهاز الكاشير. النسخة الحقيقية (سيرفر وقاعدة بيانات ودومين) شرحها بالمستودع.</p>
 </main>
 </body>
 </html>

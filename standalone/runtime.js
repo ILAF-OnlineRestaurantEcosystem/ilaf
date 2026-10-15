@@ -4,15 +4,23 @@
 // - ومن أي جهاز ثاني عبر relay.js: اللوحة بتستقبل طلبات الرابط اللي فيه كودها (?c=) وبترد عليها
 import { handle, validToken, registerToken } from '../server/core.js';
 import { geminiReset } from '../server/barista/gemini.js';
-import { reloadFromStorage, DB_KEY } from './db-browser.js';
+import { reloadFromStorage, dbKey, setTenant, DEFAULT_TENANT } from './db-browser.js';
+import { readRegistry, REG_KEY } from './demo-registry.js';
 import { createHost, createClient, randomId, cleanCode, siteCode } from './relay.js';
 
-const EVT_KEY = 'cafe-mohammad-demo-event';
-const TOKEN_KEY = 'cm.admin.token';
-const HOST_ID_KEY = 'cm.relay.hostId';   // معرّف ثابت لهالجهاز كـ"كاشير"
-const HOSTED_KEY = 'cm.relay.hostedAt';  // آخر مرة كان هالمتصفح هو الكاشير
-const ME_KEY = 'cm.relay.me';            // معرّف ثابت لهالجهاز كزبون
-const QUEUED_KEY = 'cm.relay.queued';    // طلبات زبون محفوظة لسا ما رد عليها الكاشير
+// تجربة CoffeeFlow: ?store=1002 بيفتح محل ثاني من نفس الموقع (1001 = المحل الأصلي بدون باراميتر)
+const STORE = (() => {
+  const s = String(new URLSearchParams(location.search).get('store') ?? '').replace(/\D/g, '').slice(0, 8);
+  return s && s !== DEFAULT_TENANT ? s : null;
+})();
+setTenant(STORE ?? DEFAULT_TENANT);
+const sk = (k) => (STORE ? `${k}.${STORE}` : k); // كل محل مفاتيحه لحاله (والمحل الأصلي نفس المفاتيح القديمة)
+const EVT_KEY = sk('cafe-mohammad-demo-event');
+const TOKEN_KEY = `cm.${STORE ? STORE + '.' : ''}admin.token`; // نفس storeKey('admin.token') بـ common.js
+const HOST_ID_KEY = sk('cm.relay.hostId');   // معرّف ثابت لهالجهاز كـ"كاشير"
+const HOSTED_KEY = sk('cm.relay.hostedAt');  // آخر مرة كان هالمتصفح هو الكاشير
+const ME_KEY = sk('cm.relay.me');            // معرّف ثابت لهالجهاز كزبون
+const QUEUED_KEY = sk('cm.relay.queued');    // طلبات زبون محفوظة لسا ما رد عليها الكاشير
 const GEMINI_KEY = 'cm.gemini.key';
 const seen = new Set();
 const sockets = new Set();
@@ -71,11 +79,12 @@ function deliver(ev) {
 
 let channel = null;
 try {
-  channel = new BroadcastChannel('cafe-mohammad-demo');
+  channel = new BroadcastChannel(sk('cafe-mohammad-demo'));
   channel.onmessage = (m) => { reloadFromStorage(); deliver(m.data); };
 } catch { /* متصفح قديم */ }
 addEventListener('storage', (e) => {
-  if (e.key === DB_KEY) reloadFromStorage();
+  if (e.key === dbKey()) reloadFromStorage();
+  if (e.key === REG_KEY) checkBlocked(); // لوحة المنصة جمّدت المحل أو فكّته
   if (e.key === EVT_KEY && e.newValue) {
     reloadFromStorage();
     try { deliver(JSON.parse(e.newValue)); } catch { /* */ }
@@ -111,7 +120,7 @@ const LIMITS = [['POST', /^\/orders$/, 10], ['POST', /\/call$/, 6], ['POST', /^\
 const OFFLINE_MSG = 'ما قدرنا نوصل للكاشير هلق 😕 تأكد من الإنترنت وجرب كمان مرة.';
 
 // كود المحل ثابت من رابط الموقع (?cafe= بيغيّره للتجربة بس). رابط ?c= القديم بيشتغل عادي.
-const CODE = cleanCode(new URLSearchParams(location.search).get('cafe')) || siteCode();
+const CODE = cleanCode(new URLSearchParams(location.search).get('cafe')) || siteCode() + (STORE ? 't' + STORE : '');
 const readJson = (k, d) => { try { return JSON.parse(read(k)) ?? d; } catch { return d; } };
 const writeJson = (k, v) => write(k, JSON.stringify(v));
 const persistentId = (k) => { let v = cleanCode(read(k)); if (v.length < 8) { v = randomId(12); write(k, v); } return v; };
@@ -209,6 +218,7 @@ function limited(from, method, path) {
 async function serve(msg) {
   if (!msg || typeof msg.id !== 'string' || msg.id.length > 40 || !/^[a-z0-9]{6,32}$/.test(msg.from ?? '')) return null;
   if (servedIds.has(msg.id)) return null;
+  if (blockedKind()) return { id: msg.id, status: 423, data: { error: 'المحل مش متاح هلأ.' } };
   servedIds.add(msg.id);
   if (servedIds.size > 500) servedIds.delete(servedIds.values().next().value);
   const method = String(msg.method);
@@ -257,9 +267,50 @@ document.addEventListener('visibilitychange', () => {
   keepAwake();
 });
 
+// ───────── تجميد المحل من لوحة المنصة (تجربة الموقع: نفس المتصفح) ─────────
+const storeInfo = () => readRegistry().tenants.find((t) => t.id === (STORE ?? DEFAULT_TENANT)) ?? null;
+function blockedKind() {
+  const t = storeInfo();
+  return !t ? 'missing' : t.status === 'suspended' ? 'frozen' : null;
+}
+let blockedShown = false;
+function showBlocked(kind) {
+  if (blockedShown) return;
+  blockedShown = true;
+  const admin = Boolean(document.querySelector('#loginLogo, #sideNav'));
+  const [title, msg] = kind === 'missing'
+    ? ['ما في محل بهالرقم', 'تأكد من الرابط أو الـ QR، أو ارجع للوحة المنصة.']
+    : admin
+      ? ['الحساب مجمّد', 'حساب المحل مجمّد مؤقتاً من إدارة CoffeeFlow، وكل بياناتك محفوظة. تواصل معنا عشان نرجّعه.']
+      : ['المحل مش متاح هلأ', 'الطلب من الطاولة متوقف مؤقتاً. اطلب من الكاشير مباشرة، وشكراً لصبرك 🙏'];
+  const hide = document.createElement('style');
+  hide.textContent = 'body{display:none!important}';
+  document.head.append(hide);
+  const box = document.createElement('div');
+  box.setAttribute('role', 'alert');
+  box.style.cssText = 'position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;padding:24px 16px;background:#eef3f7;font-family:Alexandria,system-ui,sans-serif;direction:rtl;overflow:auto';
+  box.innerHTML = `<div style="width:min(420px,100%);display:grid;gap:14px;justify-items:center;text-align:center;padding:34px 26px;border-radius:28px;background:#fff;box-shadow:0 24px 50px -30px rgba(20,40,60,.55);color:#1d2b36">
+    <span style="width:76px;height:76px;display:grid;place-items:center;border-radius:50%;background:#dfeaf3;color:#2c5a7a"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9"/><path d="M9.5 4.5 12 7l2.5-2.5M9.5 19.5 12 17l2.5 2.5"/></svg></span>
+    <h1 style="margin:4px 0 0;font-size:24px;font-weight:800">${title}</h1>
+    <p style="margin:0;color:#566874;line-height:1.7;max-width:32ch">${msg}</p>
+    <span style="margin-top:6px;font-size:12.5px;color:#566874;direction:ltr">Coffee<b style="color:#1d2b36">Flow</b></span></div>`;
+  document.documentElement.append(box);
+}
+function checkBlocked() {
+  const kind = blockedKind();
+  if (kind) showBlocked(kind);
+  else if (blockedShown) location.reload(); // انفك التجميد
+}
+if (document.readyState === 'loading') addEventListener('DOMContentLoaded', checkBlocked); else checkBlocked();
+
 window.io = (opts = {}) => new DemoSocket(opts.auth);
 window.__CAFE_DEMO__ = {
   async api(path, { method = 'GET', body, token } = {}) {
+    const blocked = blockedKind();
+    if (blocked) {
+      showBlocked(blocked);
+      throw Object.assign(new Error(blocked === 'frozen' ? 'الحساب مجمّد مؤقتاً.' : 'ما في محل بهالرقم.'), { status: blocked === 'frozen' ? 423 : 404 });
+    }
     if (isCustomerRoute(method, path) && getClient()) return viaRelay(method, path, body);
     // جلسة الكاشير تضل شغّالة بعد تحديث الصفحة
     try { if (token && !validToken(token) && read(TOKEN_KEY) === token) registerToken(token); } catch { /* */ }
@@ -280,7 +331,10 @@ window.__CAFE_DEMO__ = {
   relay: {
     code: () => CODE,
     /** رابط ?cafe= للتجربة بيضل بالرابط اللي بنشاركه */
-    customerParams: () => (new URLSearchParams(location.search).get('cafe') ? { cafe: CODE } : {}),
+    customerParams: () => ({
+      ...(new URLSearchParams(location.search).get('cafe') ? { cafe: CODE } : {}),
+      ...(STORE ? { store: STORE } : {}),
+    }),
     get state() { return relayState; },
     onChange(fn) { relayListeners.add(fn); fn(relayState); },
     /** "خلّي هالجهاز هو الكاشير" */
@@ -290,14 +344,16 @@ window.__CAFE_DEMO__ = {
       // بنفس المتصفح تبويب واحد بس بيستقبل، عشان الطلب ما ينحسب مرتين
       if (navigator.locks?.request) {
         setRelayState('tab');
-        navigator.locks.request('cafe-mohammad-relay-host', () => { startHosting(); return new Promise(() => {}); })
+        navigator.locks.request(sk('cafe-mohammad-relay-host'), () => { startHosting(); return new Promise(() => {}); })
           .catch(() => { if (!host) startHosting(); });
       } else startHosting();
     },
   },
 
   /** حجم البيانات المحفوظة بهالمتصفح (ك.ب) — المتصفح بيسمح بحوالي 5 ميغا */
-  storageKB() { const v = read(DB_KEY); return v ? Math.round(v.length / 1024) : 0; },
+  storageKB() { const v = read(dbKey()); return v ? Math.round(v.length / 1024) : 0; },
+  /** المحل انجمّد (common.js → frozenNow) */
+  frozen() { checkBlocked(); },
 
   gemini: {
     get configured() { return Boolean(process.env.GEMINI_API_KEY); },

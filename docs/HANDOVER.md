@@ -3,6 +3,10 @@
 هاد الملف بيشرح المشروع لمين رح يعمل **الدومين والسيرفر وقاعدة البيانات**.
 الكود كله شغّال هلأ على ملفات JSON، والمطلوب ننقله لـ **PostgreSQL** على سيرفر حقيقي بدومين و HTTPS.
 
+**جرّب قبل ما تبلّش** (نسخة تجربة بالمتصفح على GitHub Pages، نفس الواجهات):
+لوحة المنصة https://mohammed131207.github.io/cafe-mohammad/platform.html ·
+كل الروابط https://mohammed131207.github.io/cafe-mohammad/
+
 ---
 
 ## 1. شو هو المشروع
@@ -33,8 +37,9 @@
 ```
 server/
   index.js          ← Express + Socket.io، توجيه المسارات لكل محل، حدود الطلبات، التجميد اللحظي
-  db.js             ← ★ طبقة التخزين (هاد الملف اللي بدّك تبدّله)
-  platform.js       ← المنصة: الحسابات، سجل المحلات، الإحصائيات، التجميد
+  db.js             ← ★ تخزين بيانات المحلات (بتبدّله)
+  platform-store.js ← ★ تخزين سجل المنصة + تشفير كلمات السر (بتبدّله)
+  platform.js       ← المنصة: الحسابات، سجل المحلات، الإحصائيات، التجميد (منطق بس، ما بيلمس الملفات)
   core.js           ← كل مسارات API المحل كدوال صافية handle(method, url, body) → { status, data, events }
   logic.js          ← منطق الطلبات والفواتير والمخزن والتقارير
   reports.js        ← تلخيص المبيعات والأرباح
@@ -42,7 +47,8 @@ server/
   seed-restaurant.js← قائمة المطعم الجاهزة
   barista/          ← "نديم": prompt.js، context.js، gemini.js، claude.js، fallback.js (بدون ذكاء)
 public/             ← الواجهات (index.html زبون، admin.html كاشير، platform.html منصة، home.html، frozen.html)
-standalone/         ← نسخة المتصفح (db-browser.js بديل db.js داخل المتصفح)
+standalone/         ← نسخة التجربة على GitHub Pages: نفس كود server/ بيشتغل بالمتصفح
+                      (db-browser.js و demo-registry.js بدائل التخزين بـ localStorage — للتجربة بس، مش للإنتاج)
 data/               ← (مش بالـ git) البيانات الحالية
   platform.json     ← الحسابات وسجل المحلات
   tenants/1001.json ← كل بيانات محل 1001
@@ -74,8 +80,9 @@ data/               ← (مش بالـ git) البيانات الحالية
 | `createTenantData(id, state)` | محل جديد من المنصة |
 | `uid(prefix)` | معرّف عشوائي |
 
-### `server/platform.js`
+### `server/platform.js` و `server/platform-store.js`
 - `data/platform.json`: `{ users, tenants, nextId, setupKey }`.
+- كل القراءة والكتابة والتشفير بـ `platform-store.js` بس: `readRegistry()`، `writeRegistry(reg)`، `hashPassword()`، `samePassword()`، `randomHex()`، `newId()`.
 - كلمات السر **scrypt** مع salt (`crypto.scryptSync`).
 - جلسات المنصة (7 أيام) وجلسات الكاشير (12 ساعة) **بالذاكرة**، وبتروح إذا السيرفر رجع اشتغل.
 
@@ -127,7 +134,7 @@ data/               ← (مش بالـ git) البيانات الحالية
 
 **المرحلة 1 (أسرع وآمنة، بنصح فيها أول):**
 - جدول `tenant_state` فيه state كل محل كـ **JSONB** (صف لكل محل)، وجداول حقيقية لـ `platform_users` و `tenants` و `sessions`.
-- بتبدّل بس **`db.js`** وأجزاء التخزين بـ **`platform.js`**، وباقي الكود ما بيتغيّر:
+- بتبدّل بس **`db.js`** و **`platform-store.js`**، وباقي الكود ما بيتغيّر:
   - `readTenant(id)` ← `SELECT state FROM tenant_state WHERE tenant_id = $1`
   - `writeNow(id)` ← `INSERT … ON CONFLICT (tenant_id) DO UPDATE SET state = $2, updated_at = now()`
 - ⚠️ **`db()` متزامنة** و pg غير متزامن. الحل: حمّل المحل قبل ما يدخل الطلب:

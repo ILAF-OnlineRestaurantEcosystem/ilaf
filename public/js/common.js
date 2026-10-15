@@ -20,7 +20,13 @@ export function moneyText(n, cur = '₪') {
 }
 
 // CoffeeFlow: كل محل إله مسار (/1001) و API خاص (/api/t/1001)، وتخزين خاص بالجهاز
-export const TENANT = (location.pathname.match(/^\/(\d{3,8})(?:\/|$)/) || [])[1] ?? null;
+export const TENANT = (location.pathname.match(/^\/(\d{3,8})(?:\/|$)/) || [])[1] ?? demoStore();
+/** نسخة التجربة على الموقع الثابت: customer.html?store=1002 (المحل 1001 هو الأصلي بدون رقم) */
+function demoStore() {
+  if (!window.__CAFE_DEMO__) return null;
+  const s = String(new URLSearchParams(location.search).get('store') ?? '').replace(/\D/g, '').slice(0, 8);
+  return s && s !== '1001' ? s : null;
+}
 export const tenantPath = TENANT ? `/${TENANT}` : '';
 const API_BASE = TENANT ? `/api/t/${TENANT}` : '/api';
 /** مفتاح التخزين بالمتصفح: كل محل لحاله (عشان زبون زار محلين ما تتلخبط سلّته) */
@@ -28,7 +34,8 @@ export const storeKey = (k) => `cm.${TENANT ? TENANT + '.' : ''}${k}`;
 
 /** المحل انجمّد من المنصة: بنعيد تحميل الصفحة، والسيرفر بيعرض "الحساب مجمّد" */
 export function frozenNow() {
-  if (window.__CAFE_DEMO__ || frozenNow.done) return;
+  if (window.__CAFE_DEMO__) { window.__CAFE_DEMO__.frozen?.(); return; }
+  if (frozenNow.done) return;
   frozenNow.done = true;
   location.reload();
 }

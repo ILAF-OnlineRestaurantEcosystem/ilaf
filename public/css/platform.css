@@ -125,3 +125,8 @@ body.pf { background: var(--harbor); min-height: 100dvh; }
 [data-theme="dark"] .badge-ice, [data-theme="dark"] .pf-frozen, [data-theme="dark"] .pf-freeze-info { background: #1c2a35; color: #b4d0e4; }
 [data-theme="dark"] .pf-freeze { color: #9fc3dc; }
 [data-theme="dark"] .pf-card.is-frozen { box-shadow: var(--shadow-card), inset 0 0 0 1.5px #3d5a70; background: linear-gradient(180deg, #1d2328, var(--tide) 60%); }
+
+/* نسخة التجربة (GitHub Pages) */
+.pf-demo { font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--gold-soft); color: var(--brass-hi); }
+.pf-demo-note { display: flex; gap: 10px; align-items: flex-start; margin: -4px 0 16px; padding: 12px 14px; border-radius: 16px; background: var(--gold-soft); color: var(--foam); font-size: 13.5px; line-height: 1.7; }
+.pf-demo-note svg { width: 18px; height: 18px; flex: none; margin-top: 3px; color: var(--brass-hi); }
