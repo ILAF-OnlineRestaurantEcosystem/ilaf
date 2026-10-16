@@ -1,11 +1,11 @@
-// نسخة الموقع الثابت (تجربة CoffeeFlow بدون سيرفر): سجل المنصة بمتصفح الزائر
+// نسخة الموقع الثابت (تجربة CafeFlow بدون سيرفر): سجل المنصة بمتصفح الزائر
 // نفس دوال server/platform-store.js، بس التخزين localStorage وكل زائر إله نسخته لحاله.
 // أول مرة: حساب تجربة جاهز ومحلّين (كافيه 1001 ومطعم 1002) عشان أي حد يجرّب على طول.
 
 export const DB_KEY = 'cafe-mohammad-demo-db';          // بيانات المحل الأول (نفس نسخة المحل الواحد القديمة)
-export const REG_KEY = 'coffeeflow-demo-platform';      // سجل المنصة
+export const REG_KEY = 'cafeflow-demo-platform';      // سجل المنصة
 export const DEMO = true;
-export const DEMO_LOGIN = { username: 'demo', password: 'coffeeflow' };
+export const DEMO_LOGIN = { username: 'demo', password: 'cafeflow' };
 
 const getItem = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 

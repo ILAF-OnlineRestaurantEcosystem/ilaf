@@ -8,7 +8,7 @@ import { reloadFromStorage, dbKey, setTenant, DEFAULT_TENANT } from './db-browse
 import { readRegistry, REG_KEY } from './demo-registry.js';
 import { createHost, createClient, randomId, cleanCode, siteCode } from './relay.js';
 
-// تجربة CoffeeFlow: ?store=1002 بيفتح محل ثاني من نفس الموقع (1001 = المحل الأصلي بدون باراميتر)
+// تجربة CafeFlow: ?store=1002 بيفتح محل ثاني من نفس الموقع (1001 = المحل الأصلي بدون باراميتر)
 const STORE = (() => {
   const s = String(new URLSearchParams(location.search).get('store') ?? '').replace(/\D/g, '').slice(0, 8);
   return s && s !== DEFAULT_TENANT ? s : null;
@@ -281,7 +281,7 @@ function showBlocked(kind) {
   const [title, msg] = kind === 'missing'
     ? ['ما في محل بهالرقم', 'تأكد من الرابط أو الـ QR، أو ارجع للوحة المنصة.']
     : admin
-      ? ['الحساب مجمّد', 'حساب المحل مجمّد مؤقتاً من إدارة CoffeeFlow، وكل بياناتك محفوظة. تواصل معنا عشان نرجّعه.']
+      ? ['الحساب مجمّد', 'حساب المحل مجمّد مؤقتاً من إدارة CafeFlow، وكل بياناتك محفوظة. تواصل معنا عشان نرجّعه.']
       : ['المحل مش متاح هلأ', 'الطلب من الطاولة متوقف مؤقتاً. اطلب من الكاشير مباشرة، وشكراً لصبرك 🙏'];
   const hide = document.createElement('style');
   hide.textContent = 'body{display:none!important}';
@@ -293,7 +293,7 @@ function showBlocked(kind) {
     <span style="width:76px;height:76px;display:grid;place-items:center;border-radius:50%;background:#dfeaf3;color:#2c5a7a"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9"/><path d="M9.5 4.5 12 7l2.5-2.5M9.5 19.5 12 17l2.5 2.5"/></svg></span>
     <h1 style="margin:4px 0 0;font-size:24px;font-weight:800">${title}</h1>
     <p style="margin:0;color:#566874;line-height:1.7;max-width:32ch">${msg}</p>
-    <span style="margin-top:6px;font-size:12.5px;color:#566874;direction:ltr">Coffee<b style="color:#1d2b36">Flow</b></span></div>`;
+    <span style="margin-top:6px;font-size:12.5px;color:#566874;direction:ltr">Cafe<b style="color:#1d2b36">Flow</b></span></div>`;
   document.documentElement.append(box);
 }
 function checkBlocked() {

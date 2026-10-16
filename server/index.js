@@ -1,4 +1,4 @@
-// سيرفر CoffeeFlow: Express للملفات والـ API + Socket.io للتحديث المباشر
+// سيرفر CafeFlow: Express للملفات والـ API + Socket.io للتحديث المباشر
 // كل محل إله مسار: /1001 للزباين، /1001/admin للكاشير، و/api/t/1001 للـ API
 // المنصة (إنت وشريكك): /platform و/api/platform
 // منطق المحل كله بـ core.js (نفسه بيشتغل بنسخة الـ HTML المستقلة)
@@ -94,7 +94,7 @@ app.use('/api/platform', async (req, res) => {
 async function tenantApi(tid, req, res, url) {
   const t = tenantInfo(tid);
   if (!t) return res.status(404).json({ error: 'ما في محل بهالرقم.' });
-  if (isFrozen(t)) return res.status(423).json({ error: 'الحساب مجمّد مؤقتاً. تواصل مع إدارة CoffeeFlow.', frozen: true });
+  if (isFrozen(t)) return res.status(423).json({ error: 'الحساب مجمّد مؤقتاً. تواصل مع إدارة CafeFlow.', frozen: true });
   if (limited(req, tid)) return tooMany(res);
   const r = await withTenant(tid, () => handle(req.method, url, req.body, { token: req.get('x-admin-token'), hooks }));
   r.events.forEach((e) => emit(tid, e));

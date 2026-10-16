@@ -89,7 +89,7 @@ function inlineHtml(htmlFile, entry, { replace = [], runtime = 'standalone/runti
   html = html.replace(/<link rel="stylesheet" href="\/css\/([\w.-]+)">/g, (_, f) => `<style>\n${read('public/css/' + f)}\n</style>`);
   const favicon = 'data:image/svg+xml;base64,' + Buffer.from(read('public/favicon.svg')).toString('base64');
   html = html.replace('href="/favicon.svg"', `href="${favicon}"`);
-  html = html.replace('href="/coffeeflow.svg"', `href="data:image/svg+xml;base64,${Buffer.from(read('public/coffeeflow.svg')).toString('base64')}"`);
+  html = html.replace('href="/cafeflow.svg"', `href="data:image/svg+xml;base64,${Buffer.from(read('public/cafeflow.svg')).toString('base64')}"`);
   html = html.replace(/\s*<script src="\/socket\.io\/socket\.io\.js"><\/script>/, '');
   const js = bundle([runtime, entry]);
   html = html.replace(/<script type="module" src="\/js\/[\w.-]+"><\/script>/, () => `<script>\n${js}\n</script>`);
@@ -121,7 +121,7 @@ const stamp = Date.now().toString(36);
 fs.writeFileSync(path.join(HOST, 'index.html'), read('standalone/landing.html').replace(/href="(admin|customer|platform)\.html(?:\?([^"]*))?"/g, (_, p, q) => `href="${p}.html?${q ? q + '&' : ''}v=${stamp}"`));
 fs.writeFileSync(path.join(HOST, 'customer.html'), customer);
 fs.writeFileSync(path.join(HOST, 'admin.html'), admin.split(`href="${CUSTOMER_FILE}"`).join('href="customer.html"'));
-// تجربة منصة CoffeeFlow كاملة بالمتصفح (محلات، مطعم، تجميد) — بتفتح customer.html و admin.html?store=…
+// تجربة منصة CafeFlow كاملة بالمتصفح (محلات، مطعم، تجميد) — بتفتح customer.html و admin.html?store=…
 const platform = inlineHtml('public/platform.html', 'public/js/platform.js', { runtime: 'standalone/platform-runtime.js' });
 fs.writeFileSync(path.join(HOST, 'platform.html'), platform);
 console.log(`✔ hosting/  (index.html + customer.html + admin.html + platform.html ${Math.round(Buffer.byteLength(platform) / 1024)} KB) جاهز للرفع`);

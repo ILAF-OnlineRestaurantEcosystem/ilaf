@@ -12,8 +12,8 @@
       document.documentElement.dataset.theme = dark ? 'dark' : 'light';
     } catch (e) { /* */ }
   </script>
-  <title>الحساب مجمّد — CoffeeFlow</title>
-  <link rel="icon" href="/coffeeflow.svg" type="image/svg+xml">
+  <title>الحساب مجمّد — CafeFlow</title>
+  <link rel="icon" href="/cafeflow.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alexandria:wght@400;500;600;700;800&display=swap">
@@ -38,13 +38,13 @@
     <h1 id="title">المحل مش متاح هلأ</h1>
     <p id="msg">الطلب من الطاولة متوقف مؤقتاً. اطلب من الكاشير مباشرة، وشكراً لصبرك 🙏</p>
     <button type="button" onclick="location.reload()">جرّب كمان مرة</button>
-    <span class="foot">Coffee<b>Flow</b></span>
+    <span class="foot">Cafe<b>Flow</b></span>
   </main>
   <script>
     // لوحة الكاشير بتشوف السبب الحقيقي، الزبون بيشوف رسالة لطيفة
     if (/\/admin\/?$/.test(location.pathname)) {
       document.getElementById('title').textContent = 'الحساب مجمّد';
-      document.getElementById('msg').textContent = 'حساب المحل مجمّد مؤقتاً من إدارة CoffeeFlow، وكل بياناتك محفوظة. تواصل معنا عشان نرجّعه.';
+      document.getElementById('msg').textContent = 'حساب المحل مجمّد مؤقتاً من إدارة CafeFlow، وكل بياناتك محفوظة. تواصل معنا عشان نرجّعه.';
     }
   </script>
 </body>

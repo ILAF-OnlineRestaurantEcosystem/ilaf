@@ -1,4 +1,4 @@
-// منصة CoffeeFlow: سجل المحلات (كافيهات ومطاعم) وحسابات أصحاب المنصة ولوحة التحكم المشتركة
+// منصة CafeFlow: سجل المحلات (كافيهات ومطاعم) وحسابات أصحاب المنصة ولوحة التحكم المشتركة
 // السجل محفوظ بـ data/platform.json (platform-store.js)، وكل محل بياناته لحاله (db.js)
 // نفس الملف بيشتغل بنسخة الموقع الثابت داخل المتصفح (التخزين هناك standalone/demo-registry.js)
 import { withTenant, db, save, createTenantData, DEFAULT_TENANT } from './db.js';
@@ -8,7 +8,7 @@ import { registerToken, randomToken, dropSessions } from './core.js';
 import { HttpError, monthKey, OPEN_STATUSES } from './logic.js';
 import { summarize } from './reports.js';
 
-export const PLATFORM_NAME = 'CoffeeFlow';
+export const PLATFORM_NAME = 'CafeFlow';
 const TYPES = { cafe: 'كافيه', restaurant: 'مطعم' };
 let reg = null;
 

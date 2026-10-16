@@ -1,4 +1,4 @@
-// تجربة لوحة منصة CoffeeFlow بالموقع الثابت (بدون سيرفر): نفس server/platform.js بيشتغل داخل المتصفح
+// تجربة لوحة منصة CafeFlow بالموقع الثابت (بدون سيرفر): نفس server/platform.js بيشتغل داخل المتصفح
 // كل زائر إله نسخته: حساب تجربة جاهز، كافيه 1001 ومطعم 1002، وفيه يضيف محلات ويجمّدها.
 import { platformHandle } from '../server/platform.js';
 import { DEMO_LOGIN } from './demo-registry.js';

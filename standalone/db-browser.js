@@ -1,12 +1,12 @@
 // نسخة المتصفح من مخزن البيانات: نفس واجهة server/db.js لكن على localStorage
-// تجربة CoffeeFlow بالموقع: كل محل إله مفتاح لحاله (1001 = نفس بيانات نسخة المحل الواحد القديمة)
+// تجربة CafeFlow بالموقع: كل محل إله مفتاح لحاله (1001 = نفس بيانات نسخة المحل الواحد القديمة)
 import { buildSeed, migrate } from '../server/seed.js';
 import { DB_KEY, readRegistry } from './demo-registry.js';
 
 export { DB_KEY };
 export const DEFAULT_TENANT = '1001';
 const norm = (id) => (id == null || id === '' || id === 'local' ? DEFAULT_TENANT : String(id));
-export const keyOf = (id) => (norm(id) === DEFAULT_TENANT ? DB_KEY : `coffeeflow-demo-db-${norm(id)}`);
+export const keyOf = (id) => (norm(id) === DEFAULT_TENANT ? DB_KEY : `cafeflow-demo-db-${norm(id)}`);
 
 let current = DEFAULT_TENANT; // صفحة المحل بتثبّته من الرابط (?store=)
 const states = new Map();
