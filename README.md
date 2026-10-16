@@ -51,6 +51,8 @@
 
 ## 🖼️ صور
 
+**كل الشاشات (36 صورة):** مجلد [screenshots/all](screenshots/all)
+
 <p>
 <img src="screenshots/16-منصة-CafeFlow.jpg" width="640" alt="لوحة منصة CafeFlow">
 </p>
