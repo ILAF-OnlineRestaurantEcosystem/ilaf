@@ -176,3 +176,21 @@
 [data-theme="dark"][data-biz="restaurant"] .side { background: linear-gradient(180deg, #2c1b14, #1a100c); }
 [data-theme="dark"][data-biz="restaurant"] .tabbar button[aria-current="page"] { color: #a8482a; }
 [data-biz="restaurant"] [data-cafe-only] { display: none !important; }
+
+/* ─────────────────────────────────────────────
+   ثيم الألوان اللي اختاره الكاشير (palette.js بيحط المتغيرات على :root[data-palette])
+   هون بس الأجزاء اللي ألوانها ثابتة بالتصميم الأصلي
+   ───────────────────────────────────────────── */
+:root[data-palette] .side, :root[data-palette][data-theme="dark"] .side { background: linear-gradient(180deg, var(--side-a), var(--side-b)); color: var(--side-ink); }
+:root[data-palette] .side-brand .brand-mark-name { color: var(--side-ink); }
+:root[data-palette] .nav-btn[aria-current="page"] { background: var(--harbor); color: var(--brass-hi); }
+:root[data-palette][data-theme="dark"] .nav-btn[aria-current="page"] { background: color-mix(in srgb, var(--brass) 18%, transparent); color: var(--brass); }
+:root[data-palette] .offer, :root[data-palette][data-theme="dark"] .offer { background: linear-gradient(150deg, var(--offer-a), var(--offer-b)); box-shadow: var(--shadow-card), inset 0 0 0 1px var(--line); }
+:root[data-palette] .offer-arts .art, :root[data-palette][data-theme="dark"] .offer-arts .art { box-shadow: 0 0 0 3px var(--offer-a); }
+:root[data-palette] .fab, :root[data-palette][data-theme="dark"] .fab { background: var(--fab-bg); }
+:root[data-palette] .fab::after, :root[data-palette][data-theme="dark"] .fab::after { box-shadow: 0 0 0 2px var(--fab-bg); }
+:root[data-palette] .btn-brass:hover, :root[data-palette][data-theme="dark"] .btn-brass:hover { background: var(--brass-hi); }
+:root[data-palette] .btn-ghost, :root[data-palette][data-theme="dark"] .btn-ghost { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--brass) 45%, transparent); }
+:root[data-palette][data-theme="dark"] .tabbar button[aria-current="page"] { color: var(--tab-on); }
+:root[data-palette][data-theme="dark"] .tabbar button[aria-current="page"]::before { background: var(--gold); }
+:root[data-palette][data-theme="dark"] .search:focus-within { box-shadow: 0 10px 24px -14px rgba(0, 0, 0, .8), inset 0 0 0 1.5px var(--gold); }

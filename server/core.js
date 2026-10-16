@@ -383,6 +383,15 @@ route('POST', '/admin/restore', ({ body }) => {
 }, { admin: true });
 route('GET', '/admin/months/:key', ({ p }) => monthReport(p.key), { admin: true });
 route('GET', '/admin/table-insight/:n', ({ p }) => tableInsight(p.n), { admin: true });
+// ثيم الألوان: جاهز (palette) أو لون المحل (custom + color)، وبيتطبّق على المنيو أو اللوحة أو الاثنين
+const PALETTE_IDS = ['default', 'custom', 'terracotta', 'olive', 'purple', 'navy', 'burgundy', 'teal', 'rose', 'blue', 'charcoal'];
+function cleanTheme(t) {
+  const palette = PALETTE_IDS.includes(t?.palette) ? t.palette : 'default';
+  const color = /^#[0-9a-f]{6}$/i.test(String(t?.color ?? '')) ? String(t.color).toLowerCase() : null;
+  if (palette === 'custom' && !color) throw new HttpError(400, 'اختار لون المحل.');
+  const applyTo = ['menu', 'admin', 'both'].includes(t?.applyTo) ? t.applyTo : 'menu';
+  return { palette, color, applyTo };
+}
 route('PUT', '/admin/settings', ({ body: b = {} }) => {
   const s = db().settings;
   if (b.cafeName != null) s.cafeName = str(b.cafeName, 40) || s.cafeName;
@@ -395,6 +404,7 @@ route('PUT', '/admin/settings', ({ body: b = {} }) => {
   if (b.hours != null) s.hours = str(b.hours, 100);
   if (b.cafeNotes != null) s.cafeNotes = str(b.cafeNotes, 600);
   if (b.businessType != null) s.businessType = b.businessType === 'restaurant' ? 'restaurant' : 'cafe';
+  if (b.theme != null) s.theme = cleanTheme(b.theme);
   if (b.city != null) s.city = str(b.city, 40);
   if (b.lat != null && b.lat !== '') s.lat = num(b.lat, { min: -90, max: 90 });
   if (b.lon != null && b.lon !== '') s.lon = num(b.lon, { min: -180, max: 180 });

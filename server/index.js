@@ -31,7 +31,7 @@ app.disable('x-powered-by');
 app.use(express.json({ limit: '25mb' })); // النسخة الاحتياطية ممكن تكون كبيرة
 // ───────── الصفحات ─────────
 const page = (file) => (_req, res) => res.sendFile(path.join(PUBLIC, file));
-app.get('/', page('home.html'));
+app.get('/', (_req, res) => res.redirect('/platform')); // الزبون بيوصل من الـ QR والكاشير من رابطه، فالرئيسية = لوحة المنصة
 app.get('/platform', page('platform.html'));
 app.get(['/admin', '/admin.html'], (_req, res) => res.redirect(`/${DEFAULT_TENANT}/admin`)); // الروابط القديمة
 app.get(['/index', '/index.html'], (_req, res) => res.redirect(`/${DEFAULT_TENANT}`));

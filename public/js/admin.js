@@ -1,5 +1,6 @@
 import { $, $$, esc, api, money, moneyText, toast, openSheet, closeSheet, chime, unlockAudio, timeAgo, STATUS, SUGAR, THEMES, themePref, setTheme, TENANT, tenantPath, storeKey, frozenNow, bizWords, applyBusiness } from './common.js';
 import { brandLogo, fitLogo, brandMark, artTile, itemArt, icon, ART_KEYS, ART_LABELS, setBusiness } from './art.js';
+import { PALETTES, APPLY_TO, previewVars, varsToStyle, applyPalette } from './palette.js';
 
 const S = {
   token: null,
@@ -110,6 +111,7 @@ function renderShell() {
   const s = S.data.settings;
   setBusiness(s.businessType); // مطعم = قدرة الفخار وألوانه
   applyBusiness(s.businessType);
+  applyPalette(s.theme, 'admin', storeKey('palette.admin')); // ثيم الألوان (إذا مطبّق على اللوحة)
   renderThemeBtn();
   document.title = `لوحة الكاشير — ${s.cafeName}`;
   $('#sideBrand').innerHTML = `${brandMark(s.cafeName)}<small>لوحة الكاشير</small>`;
@@ -273,7 +275,7 @@ function orderCard(o, { inKanban = false } = {}) {
         ${next ? `<button class="btn ${o.status === 'new' ? 'btn-brass' : 'btn-ghost'} btn-sm" type="button" data-advance="${o.id}" data-to="${next[0]}">${icon(next[0] === 'served' ? 'check' : next[0] === 'ready' ? 'bell' : 'flame')}${next[1]}</button>` : ''}
         ${OPEN.includes(o.status) ? `<button class="icon-btn" type="button" data-edit-order="${o.id}" aria-label="عدّل الطلب" title="عدّل الطلب (زيد أو شيل أصناف)">${icon('edit')}</button>` : ''}
         <button class="icon-btn" type="button" data-print="${o.id}" aria-label="اطبع تذكرة المطبخ" title="اطبع تذكرة المطبخ">${icon('printer')}</button>
-        ${o.status === 'new' ? `<button class="icon-btn" type="button" data-cancel="${o.id}" aria-label="إلغاء الطلب" title="إلغاء الطلب">${icon('close')}</button>` : ''}
+        ${OPEN.includes(o.status) ? `<button class="icon-btn" type="button" data-cancel="${o.id}" aria-label="إلغاء الطلب" title="إلغاء الطلب">${icon('close')}</button>` : ''}
       </div>
     </article>`;
 }
@@ -368,6 +370,15 @@ function openOrderEditor({ order = null, table = null } = {}) {
   openEditor({
     title: order ? `تعديل طلب #${order.no}` : 'طلب جديد',
     saveLabel: order ? 'احفظ التعديل' : 'أرسل الطلب',
+    // طلب موجود: الكاشير بيقدر يلغيه من هون كمان (المخزن بيرجع والزبون بيشوف إنه انلغى)
+    ...(order ? {
+      deleteLabel: 'ألغِ الطلب',
+      onDelete: async () => {
+        const o = await call(`/orders/${order.id}`, { method: 'PATCH', body: { status: 'cancelled' } });
+        applyOrder(o);
+        toast(`انلغى طلب #${o.no}`, 'ok');
+      },
+    } : {}),
     body: `
       ${order ? `<p class="muted">${esc(placeLabel(order))}${order.manualDiscount ? ' · انتبه: الخصم اليدوي على هالطلب بينشال لما تعدّله' : ''}</p>` : `
         ${segmented('oeType', [['table', 'على طاولة'], ['takeaway', 'طلب خارجي (تيك أواي)']], type)}
@@ -563,11 +574,11 @@ function askConfirm(message, okLabel = 'تأكيد') {
 
 // ───────── المحرر العام ─────────
 let editorSave = null;
-function openEditor({ title, body, onSave, onDelete, saveLabel = 'حفظ' }) {
+function openEditor({ title, body, onSave, onDelete, saveLabel = 'حفظ', deleteLabel = 'حذف' }) {
   $('#editorTitle').textContent = title;
   $('#editorForm').innerHTML = body + '<p class="form-err" id="formErr" role="alert"></p>';
   $('#editorFoot').innerHTML = `
-    ${onDelete ? `<button class="btn btn-quiet btn-danger" type="button" id="editorDelete">${icon('trash')}حذف</button>` : ''}
+    ${onDelete ? `<button class="btn btn-quiet btn-danger" type="button" id="editorDelete">${icon('trash')}${deleteLabel}</button>` : ''}
     <button class="btn btn-brass" type="button" id="editorSave">${icon('check')}${saveLabel}</button>`;
   editorSave = async () => {
     const btn = $('#editorSave');
@@ -579,7 +590,7 @@ function openEditor({ title, body, onSave, onDelete, saveLabel = 'حفظ' }) {
     let armed = false;
     $('#editorDelete').onclick = async () => {
       const b = $('#editorDelete');
-      if (!armed) { armed = true; b.classList.add('is-armed'); b.innerHTML = `${icon('trash')}متأكد؟ اضغط كمان مرة`; setTimeout(() => { armed = false; if (b.isConnected) { b.classList.remove('is-armed'); b.innerHTML = `${icon('trash')}حذف`; } }, 4000); return; }
+      if (!armed) { armed = true; b.classList.add('is-armed'); b.innerHTML = `${icon('trash')}متأكد؟ اضغط كمان مرة`; setTimeout(() => { armed = false; if (b.isConnected) { b.classList.remove('is-armed'); b.innerHTML = `${icon('trash')}${deleteLabel}`; } }, 4000); return; }
       try { await onDelete(); closeSheet($('#editor')); } catch (err) { $('#formErr').textContent = err.message; }
     };
   }
@@ -893,8 +904,26 @@ function renderTablesView() {
   $('#tableGrid').innerHTML = tables.map((t) => `
     <div class="tcard">
       <span class="num">${t.number}</span>
+      <button class="icon-btn tlink" type="button" data-tlink="${t.number}" aria-label="انسخ رابط طاولة ${t.number}" title="رابط هالطاولة (الزبون بيفتحه وطاولته جاهزة)">${icon('qr')}</button>
       <select class="select" data-tzone="${t.number}" aria-label="منطقة طاولة ${t.number}">${zones.map((z) => `<option value="${esc(z.id)}" ${z.id === t.zoneId ? 'selected' : ''}>${esc(z.name)}</option>`).join('')}</select>
     </div>`).join('');
+}
+/** رابط طاولة معيّنة: الزبون بيمسحه وبتنحط طاولته لحالها */
+function tableLink(n) {
+  const u = new URL(qrTarget(), location.href);
+  u.searchParams.set('table', n);
+  return u.href;
+}
+function printTableQrs() {
+  const s = S.data.settings;
+  $('#printArea').innerHTML = `<div class="cards">${S.data.tables.map((t) => `
+    <div class="tent">
+      ${brandMark(s.cafeName)}
+      <p class="tno">طاولة ${t.number}</p>
+      <div class="qr">${qrSvg(tableLink(t.number))}</div>
+      <p><b>امسح الكود واطلب من طاولتك</b></p>
+    </div>`).join('')}</div>`;
+  window.print();
 }
 function printTableCards() {
   const s = S.data.settings;
@@ -1336,7 +1365,14 @@ function renderSettings() {
     : ai.standalone
       ? 'الوضع الأساسي: بيفهم الطلبات الشائعة. حط مفتاح Gemini المجاني تحت، وبيصير نديم يحكي ويتناقش مع الزباين بذكاء.'
       : 'الوضع الأساسي: بيفهم الطلبات الشائعة. لتفعيل المحادثة الكاملة حط GEMINI_API_KEY (مجاني) أو ANTHROPIC_API_KEY بملف .env وأعد تشغيل السيرفر.';
+  S.themeDraft ??= { palette: 'default', applyTo: 'menu', ...(s.theme ?? {}), color: s.theme?.color || '#6b3fa0' };
   $('#settings').innerHTML = `
+    <section class="panel theme-panel">
+      <div class="panel-head"><h2>ثيم الألوان</h2></div>
+      <p class="muted">اختار ألوان بتناسب هوية محلك (أو حط لون محلك نفسه)، وقرّر وين تطبّقها. المعاينة تحت بتتغيّر قبل ما تحفظ.</p>
+      <div id="palPicker"></div>
+      <div class="pal-preview" id="palPreview"></div>
+    </section>
     <div class="settings-grid">
       <section class="panel">
         <div class="panel-head"><h2>الهوية</h2></div>
@@ -1412,9 +1448,89 @@ function renderSettings() {
     fitLogo($('#logoPreview svg'));
   };
   drawLogo();
+  renderPalPicker();
   let t;
-  $('#settings').oninput = (e) => { if (['s_name', 's_word'].includes(e.target.id)) { clearTimeout(t); t = setTimeout(drawLogo, 250); } };
+  $('#settings').oninput = (e) => {
+    if (['s_name', 's_word'].includes(e.target.id)) { clearTimeout(t); t = setTimeout(() => { drawLogo(); renderPalPreview(); }, 250); }
+    if (e.target.id === 'palColor') { S.themeDraft.palette = 'custom'; S.themeDraft.color = e.target.value; syncPalPicker(); }
+  };
 }
+// ───────── ثيم الألوان: الاختيارات والمعاينة ─────────
+function renderPalPicker() {
+  const th = S.themeDraft;
+  const biz = S.bizDraft ?? S.data.settings.businessType ?? 'cafe';
+  const swatch = (theme) => {
+    const v = previewVars(theme, 'light', biz);
+    return `<span class="pal-sw" style="background:linear-gradient(135deg, ${v['--brass']} 0 50%, ${v['--gold']} 50% 70%, ${v['--harbor']} 70%)"></span>`;
+  };
+  const opt = (id, name) => `<button type="button" class="pal-opt" data-pal="${id}" aria-pressed="${th.palette === id}">${swatch({ palette: id })}<span>${name}</span></button>`;
+  $('#palPicker').innerHTML = `
+    <div class="pal-grid" role="group" aria-label="ثيمات الألوان">
+      ${opt('default', biz === 'restaurant' ? 'هوية المطعم الأصلية' : 'هوية الكافيه الأصلية')}
+      ${PALETTES.map((p) => opt(p.id, p.name)).join('')}
+      <label class="pal-opt pal-custom" aria-pressed="${th.palette === 'custom'}">
+        <span class="pal-sw" style="background:${esc(th.color || '#6b3fa0')}"><input type="color" id="palColor" value="${esc(th.color || '#6b3fa0')}" aria-label="لون محلك"></span>
+        <span>لون محلك <small class="pal-cv" dir="ltr">${th.palette === 'custom' ? esc(th.color) : ''}</small></span>
+      </label>
+    </div>
+    <div class="field pal-apply">
+      <span>طبّق الثيم على</span>
+      <div class="segmented" style="--n:3" role="radiogroup" aria-label="وين ينطبق الثيم">${APPLY_TO.map(([k, label]) => `<button type="button" role="radio" data-apply-to="${k}" aria-pressed="${th.applyTo === k}" aria-checked="${th.applyTo === k}">${label}</button>`).join('')}</div>
+    </div>`;
+  renderPalPreview();
+}
+/** تحديث الاختيار بدون ما نعيد رسم الأزرار (عشان نافذة اختيار اللون تضل مفتوحة) */
+function syncPalPicker() {
+  const th = S.themeDraft;
+  $$('#palPicker [data-pal]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.pal === th.palette)));
+  const c = $('#palPicker .pal-custom');
+  if (c) {
+    c.setAttribute('aria-pressed', String(th.palette === 'custom'));
+    c.querySelector('.pal-sw').style.background = th.color;
+    c.querySelector('.pal-cv').textContent = th.palette === 'custom' ? th.color : '';
+  }
+  $$('#palPicker [data-apply-to]').forEach((b) => { const on = b.dataset.applyTo === th.applyTo; b.setAttribute('aria-pressed', on); b.setAttribute('aria-checked', on); });
+  renderPalPreview();
+}
+function renderPalPreview() {
+  const el = $('#palPreview');
+  if (!el) return;
+  const th = S.themeDraft;
+  const s = S.data.settings;
+  const biz = S.bizDraft ?? s.businessType ?? 'cafe';
+  const menuTheme = ['menu', 'both'].includes(th.applyTo) ? th : null;
+  const adminTheme = ['admin', 'both'].includes(th.applyTo) ? th : null;
+  const name = esc(val('s_name') || s.cafeName);
+  const cats = S.data.categories.slice(0, 2).map((c) => esc(c.name));
+  const items = S.data.items.filter((i) => i.available !== false).slice(0, 2);
+  const item = items[0] ? esc(items[0].name) : 'صنف';
+  const price = items[0] ? moneyText(itemUnitPrice(items[0]), cur()) : '';
+  const phone = (mode) => `
+    <div class="pv-phone" data-mode="${mode}" style="${varsToStyle(previewVars(menuTheme, mode, biz))}">
+      <div class="pv-top"><span class="pv-back"></span><b>${name}</b><span class="pv-chip">05</span></div>
+      <div class="pv-search">ابحث في المنيو…</div>
+      <div class="pv-cats">${cats.map((c, i) => `<div class="pv-cat"><span class="pv-img i${i}"></span><b>${c}</b></div>`).join('')}</div>
+      <div class="pv-offer"><b>عرض اليوم</b><small>${item}${items[1] ? ` مع ${esc(items[1].name)}` : ''}</small><span class="pv-btn">أضف العرض</span></div>
+      <div class="pv-item"><span class="pv-thumb"></span><span class="pv-it"><b>${item}</b><small>${price}</small></span><span class="pv-plus">+</span></div>
+      <div class="pv-tab"><i class="on"></i><i></i><i></i><i></i></div>
+      <span class="pv-fab"></span>
+    </div>`;
+  el.innerHTML = `
+    <figure>${phone('light')}<figcaption>المنيو · فاتح${menuTheme ? '' : ' (بدون الثيم)'}</figcaption></figure>
+    <figure>${phone('dark')}<figcaption>المنيو · غامق${menuTheme ? '' : ' (بدون الثيم)'}</figcaption></figure>
+    <figure class="pv-wide">
+      <div class="pv-cashier" style="${varsToStyle(previewVars(adminTheme, 'light', biz))}">
+        <div class="pv-side"><b>${name}</b><i class="on">الصالة</i><i>الطلبات</i><i>القائمة</i><i>الإعدادات</i></div>
+        <div class="pv-main">
+          <div class="pv-head"><b>الصالة</b><span class="pv-btn">+ طلب جديد</span></div>
+          <div class="pv-tiles"><span class="t-new">1</span><span>2</span><span class="t-ready">3</span><span>4</span><span>5</span><span>6</span></div>
+          <div class="pv-card"><b>طلب #12 · طاولة 1</b><small>${item} ×2</small><span class="pv-btn">ابدأ التحضير</span></div>
+        </div>
+      </div>
+      <figcaption>لوحة الكاشير${adminTheme ? '' : ' (بدون الثيم)'}</figcaption>
+    </figure>`;
+}
+
 async function downloadBackup() {
   try {
     const data = await call('/backup');
@@ -1468,9 +1584,11 @@ async function saveSettings() {
       currency: val('s_cur'), city: val('s_city'), lat: val('s_lat'), lon: val('s_lon'), adminPin: val('s_pin'),
       wifi: val('s_wifi'), hours: val('s_hours'), cafeNotes: val('s_notes'),
       businessType: S.bizDraft ?? S.data.settings.businessType ?? 'cafe',
+      theme: S.themeDraft,
     };
     S.data.settings = await call('/settings', { method: 'PUT', body });
     S.bizDraft = null;
+    S.themeDraft = null;
     renderShell();
     toast('انحفظت الإعدادات', 'ok');
     renderSettings();
@@ -1485,6 +1603,7 @@ function bind() {
     const mrow = e.target.closest('tr[data-month-row]');
     if (mrow) { S.month = mrow.dataset.monthRow; await renderReports(); return $('.month-head')?.scrollIntoView({ behavior: 'smooth' }); }
     if (relay && e.target.closest('#live')) return setView('tables');
+    if (e.target.closest('.pal-custom') && S.themeDraft) { S.themeDraft.palette = 'custom'; syncPalPicker(); } // ونافذة اللون بتنفتح لحالها
     const t = e.target.closest('button, [data-table], a');
     if (!t) return;
     const d = t.dataset;
@@ -1563,6 +1682,21 @@ function bind() {
       return;
     }
     if (t.id === 'printCards') return printTableCards();
+    if (t.id === 'printTableQrs') return printTableQrs();
+    if (d.tlink) {
+      const link = tableLink(d.tlink);
+      try { await navigator.clipboard.writeText(link); toast(`انسخ رابط طاولة ${d.tlink} ✓`, 'ok'); } catch { toast(link); }
+      return;
+    }
+    // ── ثيم الألوان: اختيار ومعاينة، والحفظ بزر "احفظ الإعدادات" ──
+    if (d.pal) {
+      S.themeDraft.palette = d.pal;
+      return syncPalPicker();
+    }
+    if (d.applyTo) {
+      S.themeDraft.applyTo = d.applyTo;
+      return syncPalPicker();
+    }
     if (d.newOrder !== undefined) { e.stopPropagation(); return openOrderEditor({ table: d.forTable != null ? Number(d.forTable) : null }); }
     if (d.editOrder) { e.stopPropagation(); const o = S.orders.find((x) => x.id === d.editOrder); return o && openOrderEditor({ order: o }); }
     if (t.id === 'copyLink') return copyCustomerLink();
@@ -1592,6 +1726,7 @@ function bind() {
       $$('[data-biz-set]').forEach((b) => { const on = b === t; b.setAttribute('aria-pressed', on); b.setAttribute('aria-checked', on); });
       setBusiness(S.bizDraft); applyBusiness(S.bizDraft);
       $('#loadTemplate').innerHTML = `${icon('download')}حمّل قائمة ${S.bizDraft === 'restaurant' ? 'المطعم' : 'الكافيه'} الجاهزة`;
+      renderPalPicker();
       $('#s_barista').closest('.field').querySelector('span').textContent = `اسم ${bizWords(S.bizDraft).hostSmart}`;
       $('#settings').dispatchEvent(new Event('input'));
       const word = val('s_word') || S.data.settings.brandWord;

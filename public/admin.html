@@ -11,6 +11,23 @@
       var dark = t === 'dark' || (t === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
       document.documentElement.dataset.theme = dark ? 'dark' : 'light';
     } catch (e) { /* */ }
+    // نوع المحل وثيم ألوانه من آخر زيارة (عشان ما تومض ألوان غلط لحد ما تيجي الإعدادات)
+    try {
+      var mt = location.pathname.match(/^\/(\d{3,8})(?:\/|$)/);
+      var st = (new URLSearchParams(location.search).get('store') || '').replace(/\D/g, '');
+      var tn = mt ? mt[1] : (st && st !== '1001' ? st : '');
+      var pre = 'cm.' + (tn ? tn + '.' : '');
+      var biz = localStorage.getItem(pre + 'biz');
+      if (biz) document.documentElement.dataset.biz = biz;
+      var pal = localStorage.getItem(pre + 'palette.admin');
+      if (pal) {
+        var ps = document.createElement('style');
+        ps.id = 'cfPalette';
+        ps.textContent = pal;
+        document.head.appendChild(ps);
+        document.documentElement.dataset.palette = 'cached';
+      }
+    } catch (e) { /* */ }
   </script>
   <title>لوحة الكاشير — كافي محمد</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -120,6 +137,7 @@
                 <div class="row">
                   <button class="btn btn-ghost btn-sm" id="copyLink" type="button" hidden></button>
                   <button class="btn btn-brass btn-sm" id="printCards" type="button"></button>
+                  <button class="btn btn-ghost btn-sm" id="printTableQrs" type="button">QR لكل طاولة</button>
                 </div>
               </div>
             </div>

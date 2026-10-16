@@ -176,7 +176,9 @@ export function bizWords(type) {
 }
 /** بيحط نوع المحل على الصفحة (ألوان وهوية المطعم بـ theme.css) */
 export function applyBusiness(type) {
-  document.documentElement.dataset.biz = type === 'restaurant' ? 'restaurant' : 'cafe';
+  const biz = type === 'restaurant' ? 'restaurant' : 'cafe';
+  document.documentElement.dataset.biz = biz;
+  try { localStorage.setItem(storeKey('biz'), biz); } catch { /* */ } // للزيارة الجاية (سكربت الرأس)
 }
 
 export const STATUS = {

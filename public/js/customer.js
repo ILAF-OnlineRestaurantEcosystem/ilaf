@@ -1,6 +1,7 @@
 import { $, $$, esc, api, moneyText, toast, openSheet, closeSheet, reducedMotion, revealOnScroll, chime, SUGAR, STATUS, THEMES, themePref, setTheme, TENANT, storeKey, bizWords, applyBusiness, frozenNow } from './common.js';
 import { brandLogo, fitLogo, brandMark, dallahIcon, artTile, itemArt, icon, weatherIcon, leavesArt, setBusiness, isRestaurant } from './art.js';
 import { recommend, MOODS, SWEETNESS, PEOPLE } from './chooser.js';
+import { applyPalette } from './palette.js';
 
 const LS = {
   get(k, d) { try { return JSON.parse(localStorage.getItem(storeKey(k))) ?? d; } catch { return d; } },
@@ -178,7 +179,9 @@ function renderWelcome() {
   $('#welcomeTitle').textContent = `أهلاً فيك في ${s.cafeName}`;
   updateWelcomeTrack();
   // زبون راجع وعنده طاولة محفوظة: منسأله إذا لسا عليها بدل ما يكتب الرقم من جديد
-  const returning = state.table && !state.forceAsk && (state.session || state.cart.length);
+  // QR طاولة معيّنة (?table=12): رقمها بيطلع جاهز، والزبون بيكبس "ابدأ الطلب" بس
+  const urlTable = takeUrlTable();
+  const returning = state.table && !state.forceAsk && (!urlTable || urlTable === state.table) && (state.session || state.cart.length);
   $('#welcomeAsk').hidden = !!returning;
   $('#welcomeBack').hidden = !returning;
   if (returning) {
@@ -186,7 +189,7 @@ function renderWelcome() {
     $('#keepTable').innerHTML = `أيوه، كمّل على طاولة ${pad2(state.table)} ${icon('arrow', 'arrow')}`;
     return;
   }
-  pickDraft = state.forceAsk && state.table ? String(state.table) : '';
+  pickDraft = urlTable ? String(urlTable) : state.forceAsk && state.table ? String(state.table) : '';
   $('#keypad').innerHTML = [1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button type="button" data-key="${n}">${n}</button>`).join('')
     + `<button type="button" data-key="clear" aria-label="مسح الكل">${icon('close')}</button><button type="button" data-key="0">0</button><button type="button" data-key="back" aria-label="حذف رقم">${icon('arrow')}</button>`;
   $('#pickConfirm').innerHTML = `ابدأ الطلب ${icon('arrow', 'arrow')}`;
@@ -195,6 +198,14 @@ function renderWelcome() {
 
 // ───────── 2. الطاولة ─────────
 let pickDraft = '';
+let urlTableUsed = false;
+/** رقم الطاولة من رابط QR الطاولة (بينستعمل مرة وحدة بس) */
+function takeUrlTable() {
+  if (urlTableUsed) return null;
+  urlTableUsed = true;
+  const n = Number(new URLSearchParams(location.search).get('table'));
+  return Number.isInteger(n) && n >= 1 && n <= (state.menu?.tableCount ?? 300) ? n : null;
+}
 let pickThen = null;
 function tableArtSvg(n) {
   return `
@@ -1083,6 +1094,7 @@ function bind() {
 async function refreshMenu() {
   state.menu = await api('/menu');
   enrichMenu();
+  applyPalette(S().theme, 'menu', storeKey('palette.menu')); // الكاشير ممكن غيّر الثيم
   saveCart();
   const scr = current?.dataset.screen;
   if (scr === 'home') renderHome();
@@ -1135,6 +1147,7 @@ async function boot() {
   enrichMenu();
   setBusiness(S().businessType); // مطعم = قدرة ومغرفة وألوان الفخار بدل الدلّة
   applyBusiness(S().businessType);
+  applyPalette(S().theme, 'menu', storeKey('palette.menu')); // ثيم الألوان اللي اختاره الكاشير
   $('#chatSub').textContent = `${W().host} · ${W().sub}`;
   $('#chatText').placeholder = W().placeholder;
   $('#fab').setAttribute('aria-label', `اسأل ${W().host}`);

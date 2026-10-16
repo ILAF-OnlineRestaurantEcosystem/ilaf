@@ -3,6 +3,8 @@
 هاد الملف بيشرح المشروع لمين رح يعمل **الدومين والسيرفر وقاعدة البيانات**.
 الكود كله شغّال هلأ على ملفات JSON، والمطلوب ننقله لـ **PostgreSQL** على سيرفر حقيقي بدومين و HTTPS.
 
+**ابدأ بـ [REQUIREMENTS.md](REQUIREMENTS.md)**: شو لازم يعمل النظام خطوة خطوة، وقائمة الفحص بعد ما تربط قاعدة البيانات.
+
 **جرّب قبل ما تبلّش** (نسخة تجربة بالمتصفح على GitHub Pages، نفس الواجهات):
 لوحة المنصة https://mohammed131207.github.io/cafe-mohammad/platform.html ·
 كل الروابط https://mohammed131207.github.io/cafe-mohammad/
@@ -18,7 +20,7 @@
 | أصحاب المنصة (2 شركاء) | `/platform` | لوحة تحكم مشتركة: كل المحلات، إحصائياتها، إضافة محل، تجميد حساب، الفريق |
 | الكاشير (صاحب المحل) | `/1001/admin` | الطلبات لحظياً، الطاولات، القائمة، المخزن، العروض، التقارير، الإعدادات |
 | الزبون | `/1001` | المنيو، السلة، تتبّع الطلب، نداء النادل، المساعد الذكي "نديم" |
-| الصفحة الرئيسية | `/` | بيكتب رقم المحل وبيدخل |
+| الدومين نفسه | `/` | بيحوّل للوحة المنصة (الزبون دايماً بيوصل من QR المحل، والكاشير من رابط لوحته) |
 
 - **كل محل إله رقم (ID)** من 4 أرقام: `1001`، `1002`… (أول محل `1001` هو "كافي محمد").
 - **نوع المحل**: `cafe` أو `restaurant`، وبيغيّر الهوية والألوان وكلام نديم والقائمة الجاهزة.
@@ -46,7 +48,7 @@ server/
   seed.js           ← بيانات أولية للكافيه + الترقيات (migrate)
   seed-restaurant.js← قائمة المطعم الجاهزة
   barista/          ← "نديم": prompt.js، context.js، gemini.js، claude.js، fallback.js (بدون ذكاء)
-public/             ← الواجهات (index.html زبون، admin.html كاشير، platform.html منصة، home.html، frozen.html)
+public/             ← الواجهات (index.html زبون، admin.html كاشير، platform.html منصة، frozen.html المحل المجمّد)
 standalone/         ← نسخة التجربة على GitHub Pages: نفس كود server/ بيشتغل بالمتصفح
                       (db-browser.js و demo-registry.js بدائل التخزين بـ localStorage — للتجربة بس، مش للإنتاج)
 data/               ← (مش بالـ git) البيانات الحالية
@@ -91,7 +93,8 @@ data/               ← (مش بالـ git) البيانات الحالية
 {
   version, menuVersion, imagesSeeded,
   settings:   { cafeName, brandWord, tagline, businessType, currency, currencyName, city, lat, lon,
-                adminPin, baristaName, wifi, hours, cafeNotes, dayOpenedAt },
+                adminPin, baristaName, wifi, hours, cafeNotes, dayOpenedAt,
+                theme: { palette, color, applyTo } },   // ثيم الألوان: palette جاهز أو custom + color، applyTo = menu | admin | both
   categories: [{ id, name, en, desc, temp, icon, image, order }],
   items:      [{ id, categoryId, name, desc, price, cost, image, available, stock, recipe, art, hue,
                  sugar, caffeine, sugarChoice, tags[], order }],
