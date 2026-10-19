@@ -1916,7 +1916,7 @@ async function boot() {
 
 S.sound = store.get('sound') !== '0';
 bind();
-// "افتح لوحة الكاشير" من منصة CafeFlow بتيجي برمز جاهز (#cf=...) بدل ما تكتب الرمز
+// "افتح لوحة الكاشير" من منصة إيلاف بتيجي برمز جاهز (#cf=...) بدل ما تكتب الرمز
 {
   const m = location.hash.match(/(?:^#|&)cf=([0-9a-f]{20,})/);
   if (m) { store.set('token', m[1]); history.replaceState(null, '', location.pathname + location.search); }

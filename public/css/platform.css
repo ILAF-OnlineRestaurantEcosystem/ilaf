@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────
-   CafeFlow — لوحة المنصة (نفس ألوان المنتج: بيج + بني + ذهبي)
+   إيلاف — لوحة المنصة (نفس ألوان المنتج: بيج + بني + ذهبي)
    ───────────────────────────────────────────── */
 :root { --pf-mark: #4a2c1d; }
 body.pf { background: var(--harbor); min-height: 100dvh; }
@@ -10,15 +10,15 @@ body.pf { background: var(--harbor); min-height: 100dvh; }
 .pf-auth-card h1 { margin: 4px 0 0; font-size: 24px; }
 .pf-auth-card .muted { margin: -6px 0 6px; }
 .pf-auth-card form { width: 100%; text-align: start; }
-.pf-logo { width: 72px; height: 72px; }
-.pf-logo.sm { width: 36px; height: 36px; }
-.pf-logo svg { width: 100%; height: 100%; border-radius: 22%; box-shadow: 0 12px 26px -14px rgba(43, 26, 18, .9); }
+.pf-logo { width: 190px; }
+.pf-logo.sm { width: 68px; }
+.pf-logo img { display: block; width: 100%; height: auto; border-radius: 18px; box-shadow: 0 12px 26px -16px rgba(43, 26, 18, .7); }
+.pf-logo.sm img { border-radius: 10px; box-shadow: 0 6px 14px -10px rgba(43, 26, 18, .8); }
 
 /* الشريط العلوي */
 .pf-top { position: sticky; top: 0; z-index: 30; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 12px max(16px, calc((100% - 1200px) / 2)); background: color-mix(in srgb, var(--harbor) 92%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: inset 0 -1px 0 var(--line); }
 .pf-brand { display: flex; align-items: center; gap: 10px; }
-.pf-word { font-size: 20px; font-weight: 800; letter-spacing: -.3px; direction: ltr; color: var(--foam); }
-.pf-word b { color: var(--gold); font-weight: 800; }
+.pf-word { font-size: 14px; font-weight: 700; letter-spacing: 4px; direction: ltr; color: var(--brass-hi); }
 .pf-nav { display: flex; gap: 4px; padding: 4px; border-radius: 14px; background: rgba(var(--tint), .06); }
 .pf-nav button { padding: 8px 16px; border-radius: 10px; font-size: 14px; color: var(--foam-2); }
 .pf-nav button[aria-current="page"] { background: var(--tide); color: var(--brass-hi); font-weight: 700; box-shadow: var(--shadow-card); }

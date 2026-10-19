@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMCI+PHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjNmU0ZjFkIi8+PHN0b3Agb2Zmc2V0PSIuMyIgc3RvcC1jb2xvcj0iI2Q5YjQ2YyIvPjxzdG9wIG9mZnNldD0iLjUiIHN0b3AtY29sb3I9IiNmNmUzYjQiLz48c3RvcCBvZmZzZXQ9Ii43MiIgc3RvcC1jb2xvcj0iI2M3OWE0ZiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzVlNDIxNyIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgcng9IjE2IiBmaWxsPSIjMGIxZjI0Ii8+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoOSA0KSBzY2FsZSguNCkiPjxwYXRoIGQ9Ik00MiAxMDJDMjYgOTQgMTUgNzYgNyA1MmMtMS0zIDIuNS00LjUgNC41LTJDMjEgNzAgMzIgODQgNDcgOTB6IiBmaWxsPSJ1cmwoI2cpIi8+PHBhdGggZD0iTTc2IDcyYzIyLTIgMjggMjYgMTAgNDQiIGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNnKSIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMzggMTI4QzI3IDExNCAyOCA5OCA0NCA4NmM1LTQgNi0xMiAyLTE5aDI4Yy00IDctMyAxNSAyIDE5IDE2IDEyIDE3IDI4IDYgNDJ6IiBmaWxsPSJ1cmwoI2cpIi8+PHBhdGggZD0iTTQ0IDY3YzItMTMgMTAtMTkgMTYtMjkgNiAxMCAxNCAxNiAxNiAyOXoiIGZpbGw9InVybCgjZykiLz48Y2lyY2xlIGN4PSI2MCIgY3k9IjM0IiByPSI0LjUiIGZpbGw9InVybCgjZykiLz48cGF0aCBkPSJNMzUgMTI4aDUwbC0zIDZIMzh6IiBmaWxsPSIjYTc3ZDM4Ii8+PC9nPjwvc3ZnPgo=">
-<title>CafeFlow — تجربة</title>
+<link rel="icon" href="__ILAF_ICON__" type="image/png">
+<title>إيلاف ILAF — تجربة</title>
 <script>
   // رابطين مباشرين لنفس الاستضافة: ‎#customer للزبون و ‎#admin للوحة التحكم
   function openFromHash() {
@@ -57,8 +57,9 @@
   .how h2 { font-size: 16px; margin: 0; color: var(--brown-dk); }
   .how ol { margin: 0; padding-inline-start: 1.3em; display: grid; gap: 6px; color: var(--ink); }
   .how b { color: var(--brown-dk); }
-  h1.brand { font-family: var(--font-body); font-weight: 800; letter-spacing: -.5px; direction: ltr; }
-  h1.brand b { color: var(--gold); font-weight: 800; }
+  h1.brand { margin: 0; line-height: 0; }
+  h1.brand img { width: min(300px, 80vw); height: auto; border-radius: 28px; box-shadow: 0 18px 40px -26px rgba(74, 50, 32, .7); }
+  .tag { margin: 0; font-weight: 700; color: var(--brown); letter-spacing: .3px; }
   .group { margin: 8px 4px -2px; font-size: 13.5px; font-weight: 700; color: var(--ink-2); }
   .note { font-size: 12.5px; color: var(--ink-2); text-align: center; margin: 0; }
   @media (prefers-reduced-motion: reduce) { .door { transition: none; } }
@@ -67,23 +68,15 @@
 <body>
 <main class="wrap">
   <header>
-    <span class="mark" aria-hidden="true">
-      <svg viewBox="0 0 120 140"><defs><linearGradient id="br" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8a6a2c"/><stop offset=".35" stop-color="#e2c27e"/><stop offset=".55" stop-color="#f7e6bb"/><stop offset=".78" stop-color="#c9a056"/><stop offset="1" stop-color="#7a5a22"/></linearGradient></defs>
-        <path d="M42 102C26 94 15 76 7 52c-1-3 2.5-4.5 4.5-2C21 70 32 84 47 90z" fill="url(#br)"/>
-        <path d="M76 72c22-2 28 26 10 44" fill="none" stroke="url(#br)" stroke-width="6" stroke-linecap="round"/>
-        <path d="M38 128C27 114 28 98 44 86c5-4 6-12 2-19h28c-4 7-3 15 2 19 16 12 17 28 6 42z" fill="url(#br)"/>
-        <path d="M44 67c2-13 10-19 16-29 6 10 14 16 16 29z" fill="url(#br)"/>
-        <circle cx="60" cy="33" r="4.5" fill="url(#br)"/><path d="M35 128h50l-3 6H38z" fill="#c9a056"/>
-      </svg>
-    </span>
-    <h1 class="brand">Cafe<b>Flow</b></h1>
+    <h1 class="brand"><img src="__ILAF_LOGO__" alt="إيلاف ILAF"></h1>
+    <p class="tag">اكتشف. اختار. استمتع.</p>
     <p class="lede">منصة الطلب الذكي للكافيهات والمطاعم: الزبون بيطلب من جواله، والكاشير بيشوف الطلب بلوحته بنفس اللحظة.</p>
   </header>
 
   <nav class="doors" aria-label="الصفحات">
     <a class="door primary" href="platform.html">
       <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg></span>
-      <span><strong>لوحة منصة CafeFlow</strong><small>كل المحلات، محل جديد، تجميد حساب · بتدخل لحالها بحساب التجربة</small></span>
+      <span><strong>لوحة منصة إيلاف</strong><small>كل المحلات، محل جديد، تجميد حساب · بتدخل لحالها بحساب التجربة</small></span>
       <span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14.5 6l-6 6 6 6"/></svg></span>
     </a>
     <p class="group">☕ كافي محمد (كافيه، رقم 1001)</p>

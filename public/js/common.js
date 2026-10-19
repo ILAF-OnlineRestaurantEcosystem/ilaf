@@ -19,7 +19,7 @@ export function moneyText(n, cur = '₪') {
   return `${Number.isInteger(v) ? v : v.toFixed(1)}${cur}`;
 }
 
-// CafeFlow: كل محل إله مسار (/1001) و API خاص (/api/t/1001)، وتخزين خاص بالجهاز
+// إيلاف: كل محل إله مسار (/1001) و API خاص (/api/t/1001)، وتخزين خاص بالجهاز
 export const TENANT = (location.pathname.match(/^\/(\d{3,8})(?:\/|$)/) || [])[1] ?? demoStore();
 /** نسخة التجربة على الموقع الثابت: customer.html?store=1002 (المحل 1001 هو الأصلي بدون رقم) */
 function demoStore() {

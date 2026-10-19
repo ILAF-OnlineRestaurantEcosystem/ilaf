@@ -1,6 +1,7 @@
-// لوحة منصة CafeFlow: كل الكافيهات والمطاعم المشتركة، مشتركة بين أصحاب المنصة
+// لوحة منصة إيلاف: كل الكافيهات والمطاعم المشتركة، مشتركة بين أصحاب المنصة
 import { $, $$, esc, moneyText, toast, openSheet, closeSheet, timeAgo, THEMES, themePref, setTheme } from './common.js';
 import { icon } from './art.js';
+import { LOGO_MARK } from './brand.js';
 
 const TOKEN_KEY = 'cf.platform.token';
 // نسخة التجربة على الموقع الثابت (GitHub Pages): المنصة كلها بتشتغل بمتصفح الزائر بدون سيرفر
@@ -32,8 +33,8 @@ async function papi(path, { method = 'GET', body } = {}) {
   return data;
 }
 
-// شعار CafeFlow: فنجان وبخار وموجة "فلو"
-const LOGO = `<svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="var(--pf-mark)"/><path d="M17 27h25v9a12.5 12.5 0 0 1-25 0z" fill="none" stroke="#d4a359" stroke-width="3.4" stroke-linejoin="round"/><path d="M42 30h3.5a5 5 0 0 1 0 10H41" fill="none" stroke="#d4a359" stroke-width="3.2" stroke-linecap="round"/><path d="M23 21c0-4 4-4 4-8M30 21c0-4 4-4 4-8" fill="none" stroke="#f6ead4" stroke-width="2.6" stroke-linecap="round"/><path d="M13 52c6-3.5 12 3.5 18 0s12-3.5 18 0" fill="none" stroke="#d4a359" stroke-width="3" stroke-linecap="round"/></svg>`;
+// شعار إيلاف (الكلمة من صورة الشعار، مضمّنة بـ brand.js)
+const LOGO = `<img src="${LOGO_MARK}" alt="إيلاف ILAF">`;
 
 // ───────── الدخول ─────────
 let setupMode = false;
@@ -45,10 +46,10 @@ async function showAuth() {
   setupMode = info.needsSetup;
   $('#keyField').hidden = !setupMode;
   $('#nameField').hidden = !setupMode;
-  $('#authTitle').textContent = setupMode ? 'أهلاً بـ CafeFlow' : 'دخول المنصة';
+  $('#authTitle').textContent = setupMode ? 'أهلاً بإيلاف' : 'دخول المنصة';
   $('#authSub').textContent = setupMode
     ? 'أول مرة: اعمل حسابك (ID وكلمة سر)، وبعدين ضيف شريكك من قسم الفريق.'
-    : 'لوحة تحكم المحلات المشتركة بـ CafeFlow';
+    : 'لوحة تحكم المحلات المشتركة بإيلاف';
   $('#authBtn').textContent = setupMode ? 'اعمل الحساب وادخل' : 'دخول';
   if (DEMO && !setupMode) {
     $('#authSub').textContent = `نسخة تجربة: ادخل بـ ${DEMO.login.username} وكلمة السر ${DEMO.login.password}`;

@@ -84,12 +84,17 @@ function __req(id) {
   return `(function () {\n${prelude}\n${body}\n${run}\n})();`.replace(/<\/script/gi, '<\\/script');
 }
 
+// شعار إيلاف للصفحات المستقلة (مضمّن، بدون ملفات جنبها)
+const dataUri = (file, type) => `data:${type};base64,${fs.readFileSync(path.join(ROOT, file)).toString('base64')}`;
+const ILAF_ICON = dataUri('public/brand/ilaf-icon-64.png', 'image/png');
+const ILAF_LOGO = dataUri('public/brand/ilaf-logo.jpg', 'image/jpeg');
+
 function inlineHtml(htmlFile, entry, { replace = [], runtime = 'standalone/runtime.js' } = {}) {
   let html = read(htmlFile);
   html = html.replace(/<link rel="stylesheet" href="\/css\/([\w.-]+)">/g, (_, f) => `<style>\n${read('public/css/' + f)}\n</style>`);
   const favicon = 'data:image/svg+xml;base64,' + Buffer.from(read('public/favicon.svg')).toString('base64');
   html = html.replace('href="/favicon.svg"', `href="${favicon}"`);
-  html = html.replace('href="/cafeflow.svg"', `href="data:image/svg+xml;base64,${Buffer.from(read('public/cafeflow.svg')).toString('base64')}"`);
+  html = html.replace('href="/brand/ilaf-icon-64.png"', `href="${ILAF_ICON}"`);
   html = html.replace(/\s*<script src="\/socket\.io\/socket\.io\.js"><\/script>/, '');
   const js = bundle([runtime, entry]);
   html = html.replace(/<script type="module" src="\/js\/[\w.-]+"><\/script>/, () => `<script>\n${js}\n</script>`);
@@ -118,10 +123,10 @@ const HOST = path.join(ROOT, 'hosting');
 fs.mkdirSync(HOST, { recursive: true });
 // ?v= بيجبر الجوال يجيب آخر نسخة بدل اللي بذاكرته (GitHub Pages بيخلّي الصفحة 10 دقايق بالكاش)
 const stamp = Date.now().toString(36);
-fs.writeFileSync(path.join(HOST, 'index.html'), read('standalone/landing.html').replace(/href="(admin|customer|platform)\.html(?:\?([^"]*))?"/g, (_, p, q) => `href="${p}.html?${q ? q + '&' : ''}v=${stamp}"`));
+fs.writeFileSync(path.join(HOST, 'index.html'), read('standalone/landing.html').replace('__ILAF_ICON__', ILAF_ICON).replace('__ILAF_LOGO__', ILAF_LOGO).replace(/href="(admin|customer|platform)\.html(?:\?([^"]*))?"/g, (_, p, q) => `href="${p}.html?${q ? q + '&' : ''}v=${stamp}"`));
 fs.writeFileSync(path.join(HOST, 'customer.html'), customer);
 fs.writeFileSync(path.join(HOST, 'admin.html'), admin.split(`href="${CUSTOMER_FILE}"`).join('href="customer.html"'));
-// تجربة منصة CafeFlow كاملة بالمتصفح (محلات، مطعم، تجميد) — بتفتح customer.html و admin.html?store=…
+// تجربة منصة إيلاف كاملة بالمتصفح (محلات، مطعم، تجميد) — بتفتح customer.html و admin.html?store=…
 const platform = inlineHtml('public/platform.html', 'public/js/platform.js', { runtime: 'standalone/platform-runtime.js' });
 fs.writeFileSync(path.join(HOST, 'platform.html'), platform);
 console.log(`✔ hosting/  (index.html + customer.html + admin.html + platform.html ${Math.round(Buffer.byteLength(platform) / 1024)} KB) جاهز للرفع`);
