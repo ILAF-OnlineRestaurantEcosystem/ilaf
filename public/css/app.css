@@ -34,7 +34,7 @@
 /* الحاويات جوّا الشاشات بنفس إيقاع الشاشة: 14px بين كل كرت والثاني */
 #homeMain, #homeResults, #resultBody, #cartBody, #sentBody, #billBody { display: flex; flex-direction: column; gap: 14px; }
 /* الشاشات اللي فيها زر نديم العائم: آخر كرت بيطلع فوق الزر مش تحته */
-.s-home, .s-category, .s-more { padding-bottom: 176px; }
+.s-home, .s-category, .s-more { padding-bottom: 194px; }
 
 .screen-title { font-size: 24px; font-weight: 700; line-height: 1.35; color: var(--foam); }
 .screen-sub { color: var(--foam-2); font-size: 13.5px; margin-top: -8px; }
@@ -363,13 +363,18 @@
 
 /* ───────── الشريط السفلي والزر العائم ───────── */
 .tabbar {
-  position: absolute; z-index: 20; inset-inline: 12px; bottom: max(12px, env(safe-area-inset-bottom)); height: 70px;
+  position: absolute; z-index: 20; inset-inline: 12px; bottom: calc(max(12px, env(safe-area-inset-bottom)) + 18px); height: 70px; /* تحته سطر إيلاف */
   display: grid; grid-template-columns: repeat(4, 1fr); align-items: center; padding: 0 6px; border-radius: 24px;
   background: rgba(251, 246, 239, .93); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 12px 30px -14px rgba(var(--tint), .5), inset 0 0 0 1px var(--line);
   transition: transform .45s var(--ease-out), opacity .3s;
 }
 .tabbar.is-hidden { transform: translateY(130%); opacity: 0; pointer-events: none; }
+/* اسم المنصة تحت الشريط: "— إيلاف · ILAF —" */
+.powered { margin: 0; position: absolute; z-index: 19; inset-inline: 0; bottom: 0; height: calc(max(12px, env(safe-area-inset-bottom)) + 44px); padding-bottom: max(5px, calc(env(safe-area-inset-bottom) - 10px)); display: flex; align-items: flex-end; justify-content: center; gap: 8px; font-size: 11px; font-weight: 600; color: var(--foam-3); letter-spacing: .3px; pointer-events: none; background: linear-gradient(to top, var(--harbor) 62%, transparent); transition: opacity .3s; }
+.powered::before, .powered::after { content: ''; width: 22px; height: 1px; margin-bottom: 7px; background: currentColor; opacity: .5; }
+.powered b { font-weight: 800; letter-spacing: 2.5px; color: var(--brass-hi); }
+.tabbar.is-hidden + .powered { opacity: 0; }
 .tabbar button { position: relative; display: grid; justify-items: center; gap: 3px; font-size: 11px; color: var(--foam-3); padding: 8px 0; transition: color .25s; }
 .tabbar button svg { width: 23px; height: 23px; }
 .tabbar button[aria-current="page"] { color: var(--brass-hi); font-weight: 700; }
@@ -378,7 +383,7 @@
 .tab-count.bump { animation: pop .5s var(--ease-spring); }
 .tab-dot { position: absolute; top: 6px; left: calc(50% - 14px); width: 9px; height: 9px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 0 2px var(--tide); }
 .fab {
-  position: absolute; z-index: 19; left: 18px; bottom: calc(max(12px, env(safe-area-inset-bottom)) + 84px); width: 58px; height: 58px; border-radius: 20px;
+  position: absolute; z-index: 19; left: 18px; bottom: calc(max(12px, env(safe-area-inset-bottom)) + 102px); width: 58px; height: 58px; border-radius: 20px;
   display: grid; place-items: center; background: var(--brass); box-shadow: 0 14px 28px -12px rgba(74, 50, 32, .9);
   transition: transform .45s var(--ease-spring), opacity .3s;
 }
@@ -452,7 +457,7 @@
   background: #f7ecd9; color: #7a5520; font-size: 13px; line-height: 1.6; text-align: center; box-shadow: 0 10px 24px -14px rgba(122, 85, 32, .6), inset 0 0 0 1px rgba(122, 85, 32, .2);
 }
 .pending-bar {
-  position: absolute; z-index: 29; inset-inline: 12px; bottom: calc(max(12px, env(safe-area-inset-bottom)) + 82px); display: flex; align-items: center; gap: 10px;
+  position: absolute; z-index: 29; inset-inline: 12px; bottom: calc(max(12px, env(safe-area-inset-bottom)) + 100px); display: flex; align-items: center; gap: 10px;
   padding: 10px 14px; border-radius: 16px; background: var(--brass); color: var(--on-brass); font-size: 13px; line-height: 1.5; box-shadow: var(--shadow-deep);
 }
 .pending-bar svg { width: 20px; height: 20px; flex: none; }
