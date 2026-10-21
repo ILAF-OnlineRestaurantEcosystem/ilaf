@@ -6,8 +6,8 @@
 **ابدأ بـ [REQUIREMENTS.md](REQUIREMENTS.md)**: شو لازم يعمل النظام خطوة خطوة، وقائمة الفحص بعد ما تربط قاعدة البيانات.
 
 **جرّب قبل ما تبلّش** (نسخة تجربة بالمتصفح على GitHub Pages، نفس الواجهات):
-لوحة المنصة https://mohammed131207.github.io/cafe-mohammad/platform.html ·
-كل الروابط https://mohammed131207.github.io/cafe-mohammad/
+لوحة المنصة https://ilaf-onlinerestaurantecosystem.github.io/ilaf-demo/platform.html ·
+كل الروابط https://ilaf-onlinerestaurantecosystem.github.io/ilaf-demo/
 
 ---
 

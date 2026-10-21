@@ -12,12 +12,12 @@
 
 | شو | الرابط | ملاحظة |
 |---|---|---|
-| 🏠 **صفحة التجربة** (كل الروابط) | https://mohammed131207.github.io/cafe-mohammad/ | ابدأ من هون |
-| 🧭 **لوحة منصة إيلاف** | https://mohammed131207.github.io/cafe-mohammad/platform.html | بتدخل لحالها بحساب التجربة (`demo` / `ilaf2026`) |
-| ☕ كافي محمد: صفحة الزبون | https://mohammed131207.github.io/cafe-mohammad/customer.html | محل رقم 1001 (كافيه) |
-| ☕ كافي محمد: لوحة الكاشير | https://mohammed131207.github.io/cafe-mohammad/admin.html | الرمز **1234** |
-| 🍽️ مطعم السرايا: صفحة الزبون | https://mohammed131207.github.io/cafe-mohammad/customer.html?store=1002 | محل رقم 1002 (مطعم) |
-| 🍽️ مطعم السرايا: لوحة الكاشير | https://mohammed131207.github.io/cafe-mohammad/admin.html?store=1002 | الرمز **1234** |
+| 🏠 **صفحة التجربة** (كل الروابط) | https://ilaf-onlinerestaurantecosystem.github.io/ilaf-demo/ | ابدأ من هون |
+| 🧭 **لوحة منصة إيلاف** | https://ilaf-onlinerestaurantecosystem.github.io/ilaf-demo/platform.html | بتدخل لحالها بحساب التجربة (`demo` / `ilaf2026`) |
+| ☕ كافي محمد: صفحة الزبون | https://ilaf-onlinerestaurantecosystem.github.io/ilaf-demo/customer.html | محل رقم 1001 (كافيه) |
+| ☕ كافي محمد: لوحة الكاشير | https://ilaf-onlinerestaurantecosystem.github.io/ilaf-demo/admin.html | الرمز **1234** |
+| 🍽️ مطعم السرايا: صفحة الزبون | https://ilaf-onlinerestaurantecosystem.github.io/ilaf-demo/customer.html?store=1002 | محل رقم 1002 (مطعم) |
+| 🍽️ مطعم السرايا: لوحة الكاشير | https://ilaf-onlinerestaurantecosystem.github.io/ilaf-demo/admin.html?store=1002 | الرمز **1234** |
 
 **شو تجرّب:**
 1. افتح **لوحة المنصة**: بتشوف المحلّين وإحصائياتهم. اكبس "محل جديد" واختار كافيه أو مطعم.
@@ -40,8 +40,8 @@
 | [screenshots/](screenshots) | صور كل الشاشات |
 
 **المستودعات:**
-- الكود كامل: https://github.com/mohammed131207/cafe-mohammad-code
-- موقع التجربة (GitHub Pages، ملفات مبنية من الكود): https://github.com/mohammed131207/cafe-mohammad
+- الكود كامل: https://github.com/ILAF-OnlineRestaurantEcosystem/ilaf
+- موقع التجربة (GitHub Pages، ملفات مبنية من الكود): https://github.com/ILAF-OnlineRestaurantEcosystem/ilaf-demo
 
 **على السيرفر الحقيقي** (بعد `npm start`، والدومين بدل `localhost:3000`):
 
@@ -144,7 +144,7 @@
 - `npm run reset`: بيرجّع البيانات التجريبية.
 - `npm run build:html`: بيبني نسخة الموقع بمجلد `hosting/`، وملفّين مستقلين بمجلد `dist/`.
 
-**تحديث موقع GitHub Pages:** ابني بـ `npm run build:html`، وانسخ ملفات `hosting/` (index.html وcustomer.html وadmin.html وplatform.html) لمستودع [cafe-mohammad](https://github.com/mohammed131207/cafe-mohammad).
+**تحديث موقع GitHub Pages:** ابني بـ `npm run build:html`، وانسخ ملفات `hosting/` (index.html وcustomer.html وadmin.html وplatform.html) لمستودع [ilaf-demo](https://github.com/ILAF-OnlineRestaurantEcosystem/ilaf-demo).
 
 ## وين بتلاقي كل اشي
 
