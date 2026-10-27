@@ -1,6 +1,6 @@
 import { $, $$, esc, api, money, moneyText, toast, openSheet, closeSheet, chime, unlockAudio, timeAgo, STATUS, SUGAR, THEMES, themePref, setTheme, TENANT, tenantPath, storeKey, frozenNow, bizWords, applyBusiness } from './common.js';
-import { brandLogo, fitLogo, brandMark, artTile, itemArt, icon, ART_KEYS, ART_LABELS, setBusiness } from './art.js';
-import { PALETTES, APPLY_TO, previewVars, varsToStyle, applyPalette } from './palette.js';
+import { brandLogo, fitLogo, brandMark, artTile, itemArt, icon, ART_KEYS, ART_LABELS, setBusiness, setStoreLogo } from './art.js';
+import { PALETTES, TARGETS, normalizeTheme, previewVars, varsToStyle, applyPalette } from './palette.js';
 
 const S = {
   token: null,
@@ -45,8 +45,18 @@ let pin = '';
 function showLogin(message = '') {
   $('#app').hidden = true;
   $('#login').hidden = false;
-  $('#loginLogo').innerHTML = brandLogo({ word: 'محمد', prefix: 'كافي', mode: 'static' });
-  fitLogo($('#loginLogo svg'));
+  // شعار هالمحل (مش اسم ثابت): بنجيب اسمه ونوعه وشعاره من المنيو العام
+  $('#loginLogo').innerHTML = '';
+  api('/menu').then((m) => {
+    const s = m.settings;
+    setBusiness(s.businessType); applyBusiness(s.businessType);
+    setStoreLogo({ icon: s.logoIcon, name: s.logoName });
+    applyPalette(s.theme, 'admin', storeKey('palette.admin'));
+    const word = s.brandWord || s.cafeName.split(/\s+/).pop();
+    $('#loginLogo').innerHTML = brandLogo({ word, prefix: s.cafeName.replace(word, '').trim(), mode: 'static' });
+    fitLogo($('#loginLogo svg'));
+    document.title = `لوحة الكاشير — ${s.cafeName}`;
+  }).catch(() => {});
   $('#pinPad').innerHTML = [1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button type="button" data-pin="${n}">${n}</button>`).join('')
     + `<button type="button" data-pin="back" aria-label="حذف">${icon('arrow')}</button><button type="button" data-pin="0">0</button><button type="button" data-pin="ok" aria-label="دخول">${icon('check')}</button>`;
   pin = '';
@@ -111,6 +121,7 @@ function renderShell() {
   const s = S.data.settings;
   setBusiness(s.businessType); // مطعم = قدرة الفخار وألوانه
   applyBusiness(s.businessType);
+  setStoreLogo({ icon: s.logoIcon, name: s.logoName }); // شعار المحل الخاص إذا رفعه
   applyPalette(s.theme, 'admin', storeKey('palette.admin')); // ثيم الألوان (إذا مطبّق على اللوحة)
   renderThemeBtn();
   document.title = `لوحة الكاشير — ${s.cafeName}`;
@@ -692,11 +703,10 @@ function openItemEditor(it) {
     if (e.target.closest('#f_noimg')) { d.image = null; preview(); e.target.closest('#f_noimg').remove(); }
   };
 }
-function shrinkImage(file) {
+function shrinkImage(file, max = 720) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
-      const max = 720;
       const k = Math.min(1, max / Math.max(img.width, img.height));
       const c = document.createElement('canvas');
       c.width = Math.round(img.width * k);
@@ -1365,11 +1375,16 @@ function renderSettings() {
     : ai.standalone
       ? 'الوضع الأساسي: بيفهم الطلبات الشائعة. حط مفتاح Gemini المجاني تحت، وبيصير نديم يحكي ويتناقش مع الزباين بذكاء.'
       : 'الوضع الأساسي: بيفهم الطلبات الشائعة. لتفعيل المحادثة الكاملة حط GEMINI_API_KEY (مجاني) أو ANTHROPIC_API_KEY بملف .env وأعد تشغيل السيرفر.';
-  S.themeDraft ??= { palette: 'default', applyTo: 'menu', ...(s.theme ?? {}), color: s.theme?.color || '#6b3fa0' };
+  if (!S.themeDraft) {
+    const t = normalizeTheme(s.theme);
+    for (const k of ['menu', 'admin']) { t[k].color ||= '#6b3fa0'; t[k].accent ||= '#d4a359'; }
+    S.themeDraft = t;
+  }
+  S.themeTarget ??= 'menu';
   $('#settings').innerHTML = `
     <section class="panel theme-panel">
       <div class="panel-head"><h2>ثيم الألوان</h2></div>
-      <p class="muted">اختار ألوان بتناسب هوية محلك (أو حط لون محلك نفسه)، وقرّر وين تطبّقها. المعاينة تحت بتتغيّر قبل ما تحفظ.</p>
+      <p class="muted">كل واجهة إلها ألوانها: اختار شو بدك تلوّن، بعدين الألوان، وشوف المعاينة، وآخر اشي اكبس <b>طبّق</b>.</p>
       <div id="palPicker"></div>
       <div class="pal-preview" id="palPreview"></div>
     </section>
@@ -1384,9 +1399,26 @@ function renderSettings() {
           <span>نوع المحل</span>
           <div class="segmented" style="--n:2" role="radiogroup" aria-label="نوع المحل">${[['cafe', 'كافيه', 'cup'], ['restaurant', 'مطعم', 'utensils']].map(([k, label, ic]) => `<button type="button" role="radio" data-biz-set="${k}" aria-pressed="${(s.businessType ?? 'cafe') === k}" aria-checked="${(s.businessType ?? 'cafe') === k}" style="display:inline-flex;align-items:center;justify-content:center;gap:6px">${icon(ic)}${label}</button>`).join('')}</div>
           <small class="muted">بيغيّر الهوية والألوان وكلام صفحة الزباين ونديم. الأصناف بتضل زي ما هي إلا إذا حمّلت القائمة الجاهزة.</small>
-          <button class="btn btn-ghost btn-sm" type="button" id="loadTemplate" style="justify-self:start;margin-top:6px">${icon('download')}حمّل قائمة ${(s.businessType ?? 'cafe') === 'restaurant' ? 'المطعم' : 'الكافيه'} الجاهزة</button>
+          <button class="btn btn-ghost btn-sm" type="button" id="loadTemplate" style="justify-self:start;margin-top:6px">${icon('download')}${templateLabel(s.businessType ?? 'cafe')}</button>
         </div>
         <div class="logo-preview" id="logoPreview"></div>
+        <div class="field">
+          <span>شعار المحل (اختياري)</span>
+          <small class="muted">الافتراضي ${(s.businessType ?? 'cafe') === 'restaurant' ? 'قدرة الفخار' : 'الدلّة'} واسم المحل مكتوب بالخط. فيك تحط صورة بدل الأيقونة، وصورة لاسم المحل بدل الكتابة (PNG بدون خلفية أحلى).</small>
+          <div class="logo-ups">
+            ${[['logoIcon', 'upIcon', 'الأيقونة', (s.businessType ?? 'cafe') === 'restaurant' ? 'بدل القدرة (صورة مربعة)' : 'بدل الدلّة (صورة مربعة)'], ['logoName', 'upName', 'اسم المحل', 'صورة بدل الاسم المكتوب']].map(([key, id, title, hint]) => `
+              <div class="logo-slot">
+                <span class="logo-box">${s[key] ? `<img src="${esc(s[key])}" alt="">` : icon('image')}</span>
+                <div class="logo-slot-info">
+                  <b>${title}</b><small>${hint}</small>
+                  <div class="row">
+                    <label class="btn btn-ghost btn-sm" style="cursor:pointer">${icon('upload')}${s[key] ? 'غيّر الصورة' : 'ارفع صورة'}<input type="file" id="${id}" accept="image/png,image/jpeg,image/webp" hidden></label>
+                    ${s[key] ? `<button class="btn btn-quiet btn-sm" type="button" data-logo-del="${key}">رجّع الافتراضي</button>` : ''}
+                  </div>
+                </div>
+              </div>`).join('')}
+          </div>
+        </div>
         <div class="form-grid">
           <label class="field"><span>اسم المحل</span><input class="input" id="s_name" value="${esc(s.cafeName)}" maxlength="40"></label>
           <label class="field"><span>الكلمة اللي بتتعبّى بالشعار</span><input class="input" id="s_word" value="${esc(s.brandWord)}" maxlength="12"></label>
@@ -1431,8 +1463,10 @@ function renderSettings() {
           <p class="muted">${window.__CAFE_DEMO__?.storageKB
             ? `البيانات محفوظة بمتصفح هالجهاز (${window.__CAFE_DEMO__.storageKB()} ك.ب من حوالي 5000). إذا انمسحت بيانات المتصفح أو غيّرت الجهاز بتروح، فنزّل نسخة احتياطية كل فترة.`
             : 'البيانات محفوظة على السيرفر. نزّل نسخة احتياطية كل فترة للاحتياط.'}</p>
+          <p class="muted"><b>ملف Excel</b> للقراءة والحسابات. <b>النسخة الاحتياطية</b> للاسترجاع بس (ملف بيانات، مش للقراءة).</p>
           <p class="muted">تقرير كل شهر خلص بيتحفظ بالأرشيف للأبد، وطلبات الشهور الأقدم من الشهر الماضي بتنحذف لحالها بعد ما ينحفظ تقريرها.</p>
           <div class="backup-actions">
+            <button class="btn btn-ghost btn-sm" type="button" id="ordersCsvBtn">${icon('download')}نزّل الطلبات (Excel)</button>
             <button class="btn btn-ghost btn-sm" type="button" id="backupBtn">${icon('download')}نزّل نسخة احتياطية</button>
             <label class="btn btn-ghost btn-sm" for="restoreFile">${icon('upload')}استرجع من نسخة</label>
             <input type="file" id="restoreFile" accept=".json,application/json" hidden>
@@ -1452,54 +1486,94 @@ function renderSettings() {
   let t;
   $('#settings').oninput = (e) => {
     if (['s_name', 's_word'].includes(e.target.id)) { clearTimeout(t); t = setTimeout(() => { drawLogo(); renderPalPreview(); }, 250); }
-    if (e.target.id === 'palColor') { S.themeDraft.palette = 'custom'; S.themeDraft.color = e.target.value; syncPalPicker(); }
+    if (e.target.id === 'palColor' || e.target.id === 'palAccent') {
+      const th = S.themeDraft[S.themeTarget];
+      th.palette = 'custom';
+      th[e.target.id === 'palColor' ? 'color' : 'accent'] = e.target.value;
+      syncPalPicker();
+    }
   };
 }
+/** زر القائمة الجاهزة: إذا نفس نوع المحل بيرجّع القائمة الأصلية، وإذا نوع ثاني بيبدّلها */
+function templateLabel(type) {
+  const label = type === 'restaurant' ? 'المطعم' : 'الكافيه';
+  return type === (S.data.settings.businessType ?? 'cafe') ? `رجّع قائمة ${label} الأصلية (بتمسح تعديلاتك على القائمة)` : `حمّل قائمة ${label} الجاهزة بدل قائمتك`;
+}
 // ───────── ثيم الألوان: الاختيارات والمعاينة ─────────
+const palName = (t, biz) => (!t || t.palette === 'default' ? (biz === 'restaurant' ? 'هوية المطعم الأصلية' : 'هوية الكافيه الأصلية')
+  : t.palette === 'custom' ? 'لون المحل' : PALETTES.find((p) => p.id === t.palette)?.name ?? '');
+const sameTheme = (a, b) => a.palette === b.palette && (a.palette !== 'custom' || (a.color === b.color && a.accent === b.accent));
 function renderPalPicker() {
-  const th = S.themeDraft;
+  const th = S.themeDraft[S.themeTarget];
   const biz = S.bizDraft ?? S.data.settings.businessType ?? 'cafe';
+  const saved = normalizeTheme(S.data.settings.theme);
   const swatch = (theme) => {
     const v = previewVars(theme, 'light', biz);
     return `<span class="pal-sw" style="background:linear-gradient(135deg, ${v['--brass']} 0 50%, ${v['--gold']} 50% 70%, ${v['--harbor']} 70%)"></span>`;
   };
   const opt = (id, name) => `<button type="button" class="pal-opt" data-pal="${id}" aria-pressed="${th.palette === id}">${swatch({ palette: id })}<span>${name}</span></button>`;
+  const targetName = TARGETS.find(([k]) => k === S.themeTarget)[1].replace('ألوان ', '');
   $('#palPicker').innerHTML = `
-    <div class="pal-grid" role="group" aria-label="ثيمات الألوان">
-      ${opt('default', biz === 'restaurant' ? 'هوية المطعم الأصلية' : 'هوية الكافيه الأصلية')}
-      ${PALETTES.map((p) => opt(p.id, p.name)).join('')}
-      <label class="pal-opt pal-custom" aria-pressed="${th.palette === 'custom'}">
-        <span class="pal-sw" style="background:${esc(th.color || '#6b3fa0')}"><input type="color" id="palColor" value="${esc(th.color || '#6b3fa0')}" aria-label="لون محلك"></span>
-        <span>لون محلك <small class="pal-cv" dir="ltr">${th.palette === 'custom' ? esc(th.color) : ''}</small></span>
-      </label>
+    <div class="field">
+      <span>١. شو بدك تلوّن؟</span>
+      <div class="segmented pal-targets" style="--n:2" role="radiogroup" aria-label="الواجهة">${TARGETS.map(([k, label]) => `<button type="button" role="radio" data-pal-target="${k}" aria-pressed="${S.themeTarget === k}" aria-checked="${S.themeTarget === k}">${label}<small>هلق: ${palName(saved[k], biz)}</small></button>`).join('')}</div>
     </div>
-    <div class="field pal-apply">
-      <span>طبّق الثيم على</span>
-      <div class="segmented" style="--n:3" role="radiogroup" aria-label="وين ينطبق الثيم">${APPLY_TO.map(([k, label]) => `<button type="button" role="radio" data-apply-to="${k}" aria-pressed="${th.applyTo === k}" aria-checked="${th.applyTo === k}">${label}</button>`).join('')}</div>
+    <div class="field">
+      <span>٢. اختار الألوان</span>
+      <div class="pal-grid" role="group" aria-label="ثيمات الألوان">
+        ${opt('default', palName(null, biz))}
+        ${PALETTES.map((p) => opt(p.id, p.name)).join('')}
+        <div class="pal-opt pal-custom" aria-pressed="${th.palette === 'custom'}">
+          <button type="button" class="pal-pick" data-pal="custom"><span class="pal-sw" id="palCustomSw" style="background:linear-gradient(135deg, ${esc(th.color)} 0 55%, ${esc(th.accent)} 55%)"></span><span>لون محلك</span></button>
+          <div class="pal-colors">
+            <label title="اللون الأساسي (الأزرار والعناوين)"><input type="color" id="palColor" value="${esc(th.color)}"><span>أساسي</span></label>
+            <label title="اللون الثاني (اللمسات والأيقونات)"><input type="color" id="palAccent" value="${esc(th.accent)}"><span>ثاني</span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pal-actions">
+      <button class="btn btn-brass" type="button" data-pal-apply="${S.themeTarget}">${icon('check')}طبّق على ${targetName}</button>
+      <button class="btn btn-ghost btn-sm" type="button" data-pal-apply="both">نفس الألوان للاثنين</button>
+      <span class="pal-state" id="palState"></span>
     </div>`;
   renderPalPreview();
 }
 /** تحديث الاختيار بدون ما نعيد رسم الأزرار (عشان نافذة اختيار اللون تضل مفتوحة) */
 function syncPalPicker() {
-  const th = S.themeDraft;
-  $$('#palPicker [data-pal]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.pal === th.palette)));
+  const th = S.themeDraft[S.themeTarget];
+  $$('#palPicker [data-pal]').forEach((b) => { if (!b.classList.contains('pal-pick')) b.setAttribute('aria-pressed', String(b.dataset.pal === th.palette)); });
   const c = $('#palPicker .pal-custom');
   if (c) {
     c.setAttribute('aria-pressed', String(th.palette === 'custom'));
-    c.querySelector('.pal-sw').style.background = th.color;
-    c.querySelector('.pal-cv').textContent = th.palette === 'custom' ? th.color : '';
+    $('#palCustomSw').style.background = `linear-gradient(135deg, ${th.color} 0 55%, ${th.accent} 55%)`;
   }
-  $$('#palPicker [data-apply-to]').forEach((b) => { const on = b.dataset.applyTo === th.applyTo; b.setAttribute('aria-pressed', on); b.setAttribute('aria-checked', on); });
   renderPalPreview();
+}
+/** الكبسة على "طبّق": بنحفظ ثيم الواجهة (أو الاثنين) فوراً، واللوحة بتتلوّن هلق */
+async function applyThemeNow(target) {
+  const saved = normalizeTheme(S.data.settings.theme);
+  const pick = { ...S.themeDraft[S.themeTarget] };
+  if (target === 'both') { saved.menu = { ...pick }; saved.admin = { ...pick }; S.themeDraft.menu = { ...pick }; S.themeDraft.admin = { ...pick }; }
+  else saved[target] = { ...S.themeDraft[target] };
+  try {
+    S.data.settings = await call('/settings', { method: 'PUT', body: { theme: saved } });
+    applyPalette(S.data.settings.theme, 'admin', storeKey('palette.admin'));
+    toast(target === 'both' ? 'انطبقت الألوان على المنيو ولوحة الكاشير ✓' : target === 'menu' ? 'انطبقت الألوان على المنيو ✓ الزباين بيشوفوها هلق' : 'انطبقت الألوان على لوحة الكاشير ✓', 'ok');
+    renderPalPicker();
+  } catch (err) { toast(err.message, 'err'); }
 }
 function renderPalPreview() {
   const el = $('#palPreview');
   if (!el) return;
-  const th = S.themeDraft;
   const s = S.data.settings;
   const biz = S.bizDraft ?? s.businessType ?? 'cafe';
-  const menuTheme = ['menu', 'both'].includes(th.applyTo) ? th : null;
-  const adminTheme = ['admin', 'both'].includes(th.applyTo) ? th : null;
+  const menuTheme = S.themeDraft.menu;
+  const adminTheme = S.themeDraft.admin;
+  const saved = normalizeTheme(s.theme);
+  const dirty = !sameTheme(S.themeDraft[S.themeTarget], saved[S.themeTarget]);
+  const st = $('#palState');
+  if (st) { st.textContent = dirty ? 'في تغيير لسا ما انطبق' : 'هاد المطبّق هلق ✓'; st.classList.toggle('is-dirty', dirty); }
   const name = esc(val('s_name') || s.cafeName);
   const cats = S.data.categories.slice(0, 2).map((c) => esc(c.name));
   const items = S.data.items.filter((i) => i.available !== false).slice(0, 2);
@@ -1516,9 +1590,9 @@ function renderPalPreview() {
       <span class="pv-fab"></span>
     </div>`;
   el.innerHTML = `
-    <figure>${phone('light')}<figcaption>المنيو · فاتح${menuTheme ? '' : ' (بدون الثيم)'}</figcaption></figure>
-    <figure>${phone('dark')}<figcaption>المنيو · غامق${menuTheme ? '' : ' (بدون الثيم)'}</figcaption></figure>
-    <figure class="pv-wide">
+    <figure class="${S.themeTarget === 'menu' ? 'pv-on' : ''}">${phone('light')}<figcaption>المنيو · فاتح</figcaption></figure>
+    <figure class="${S.themeTarget === 'menu' ? 'pv-on' : ''}">${phone('dark')}<figcaption>المنيو · غامق</figcaption></figure>
+    <figure class="pv-wide ${S.themeTarget === 'admin' ? 'pv-on' : ''}">
       <div class="pv-cashier" style="${varsToStyle(previewVars(adminTheme, 'light', biz))}">
         <div class="pv-side"><b>${name}</b><i class="on">الصالة</i><i>الطلبات</i><i>القائمة</i><i>الإعدادات</i></div>
         <div class="pv-main">
@@ -1527,14 +1601,15 @@ function renderPalPreview() {
           <div class="pv-card"><b>طلب #12 · طاولة 1</b><small>${item} ×2</small><span class="pv-btn">ابدأ التحضير</span></div>
         </div>
       </div>
-      <figcaption>لوحة الكاشير${adminTheme ? '' : ' (بدون الثيم)'}</figcaption>
+      <figcaption>لوحة الكاشير</figcaption>
     </figure>`;
 }
 
 async function downloadBackup() {
   try {
     const data = await call('/backup');
-    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+    // مرتّبة بأسطر و BOM عشان العربي يطلع صح لو انفتحت بأي برنامج (هي للاسترجاع مش للقراءة)
+    const blob = new Blob(['\ufeff' + JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = `نسخة ${S.data.settings.cafeName} ${new Date().toISOString().slice(0, 10)}.json`;
@@ -1543,6 +1618,28 @@ async function downloadBackup() {
     a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
     toast('نزلت النسخة الاحتياطية ✓ خبّيها بمكان آمن (إيميل أو درايف)', 'ok');
+  } catch (err) { toast(err.message, 'err'); }
+}
+/** الطلبات كملف Excel (CSV بالعربي) للقراءة والحسابات */
+async function downloadOrdersCsv() {
+  try {
+    const data = await call('/backup');
+    const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const rows = [['رقم الطلب', 'التاريخ', 'الساعة', 'الطاولة', 'الأصناف', 'المجموع', 'التكلفة', 'الحالة']];
+    for (const o of [...data.orders].sort((a, b) => b.createdAt.localeCompare(a.createdAt))) {
+      const at = new Date(o.createdAt);
+      rows.push([o.no, at.toLocaleDateString('en-GB'), at.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }), o.table === 0 ? `خارجي${o.takeaway?.name ? ` (${o.takeaway.name})` : ''}` : o.table,
+        o.lines.map((l) => `${l.name} ×${l.qty}`).join(' + '), o.total, o.cost ?? '', STATUS[o.status]?.label ?? o.status]);
+    }
+    const csv = '\ufeff' + rows.map((r) => r.map(cell).join(',')).join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = `طلبات ${S.data.settings.cafeName} ${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    toast(`نزل ملف الطلبات (${rows.length - 1} طلب) ✓ بينفتح بـ Excel`, 'ok');
   } catch (err) { toast(err.message, 'err'); }
 }
 async function restoreBackup(input) {
@@ -1603,7 +1700,7 @@ function bind() {
     const mrow = e.target.closest('tr[data-month-row]');
     if (mrow) { S.month = mrow.dataset.monthRow; await renderReports(); return $('.month-head')?.scrollIntoView({ behavior: 'smooth' }); }
     if (relay && e.target.closest('#live')) return setView('tables');
-    if (e.target.closest('.pal-custom') && S.themeDraft) { S.themeDraft.palette = 'custom'; syncPalPicker(); } // ونافذة اللون بتنفتح لحالها
+    if (e.target.closest('.pal-colors') && S.themeDraft) { S.themeDraft[S.themeTarget].palette = 'custom'; syncPalPicker(); } // ونافذة اللون بتنفتح لحالها
     const t = e.target.closest('button, [data-table], a');
     if (!t) return;
     const d = t.dataset;
@@ -1689,13 +1786,15 @@ function bind() {
       return;
     }
     // ── ثيم الألوان: اختيار ومعاينة، والحفظ بزر "احفظ الإعدادات" ──
+    if (d.palTarget) { S.themeTarget = d.palTarget; return renderPalPicker(); }
     if (d.pal) {
-      S.themeDraft.palette = d.pal;
+      S.themeDraft[S.themeTarget].palette = d.pal;
       return syncPalPicker();
     }
-    if (d.applyTo) {
-      S.themeDraft.applyTo = d.applyTo;
-      return syncPalPicker();
+    if (d.palApply) return applyThemeNow(d.palApply);
+    if (d.logoDel) {
+      try { S.data.settings = await call('/settings', { method: 'PUT', body: { [d.logoDel]: '' } }); renderShell(); renderSettings(); toast('رجع الشعار الافتراضي', 'ok'); } catch (err) { toast(err.message, 'err'); }
+      return;
     }
     if (d.newOrder !== undefined) { e.stopPropagation(); return openOrderEditor({ table: d.forTable != null ? Number(d.forTable) : null }); }
     if (d.editOrder) { e.stopPropagation(); const o = S.orders.find((x) => x.id === d.editOrder); return o && openOrderEditor({ order: o }); }
@@ -1705,6 +1804,7 @@ function bind() {
     if (t.id === 'takeoverBtn') { relay?.takeover(); return toast('هلق هالجهاز هو الكاشير ✓', 'ok'); }
     if (t.id === 'saveGemini') return saveGeminiKey();
     if (t.id === 'backupBtn') return downloadBackup();
+    if (t.id === 'ordersCsvBtn') return downloadOrdersCsv();
     if (t.id === 'clearGemini') return saveGeminiKey(true);
     if (t.id === 'saveSettings') return saveSettings();
     if (t.id === 'geoBtn') {
@@ -1725,7 +1825,7 @@ function bind() {
       S.bizDraft = t.dataset.bizSet;
       $$('[data-biz-set]').forEach((b) => { const on = b === t; b.setAttribute('aria-pressed', on); b.setAttribute('aria-checked', on); });
       setBusiness(S.bizDraft); applyBusiness(S.bizDraft);
-      $('#loadTemplate').innerHTML = `${icon('download')}حمّل قائمة ${S.bizDraft === 'restaurant' ? 'المطعم' : 'الكافيه'} الجاهزة`;
+      $('#loadTemplate').innerHTML = `${icon('download')}${templateLabel(S.bizDraft)}`;
       renderPalPicker();
       $('#s_barista').closest('.field').querySelector('span').textContent = `اسم ${bizWords(S.bizDraft).hostSmart}`;
       $('#settings').dispatchEvent(new Event('input'));
@@ -1744,7 +1844,7 @@ function bind() {
         S.data = await call('/bootstrap');
         S.bizDraft = null;
         renderShell();
-        renderSettings();
+        setView('menu'); // بنفرجيه القائمة الجديدة
         toast(`انحطت قائمة ${label}: ${r.categories} أقسام و${r.items} صنف`, 'ok');
       } catch (err) { toast(err.message, 'err'); }
       return;
@@ -1757,6 +1857,17 @@ function bind() {
 
   document.addEventListener('change', async (e) => {
     const el = e.target;
+    if ((el.id === 'upIcon' || el.id === 'upName') && el.files[0]) {
+      try {
+        const dataUrl = await shrinkImage(el.files[0], el.id === 'upIcon' ? 256 : 640);
+        const { url } = await call('/upload', { method: 'POST', body: { dataUrl } });
+        S.data.settings = await call('/settings', { method: 'PUT', body: { [el.id === 'upIcon' ? 'logoIcon' : 'logoName']: url } });
+        renderShell();
+        renderSettings();
+        toast('انحط الشعار ✓ وبيطلع للزباين هلق', 'ok');
+      } catch (err) { toast(err.message, 'err'); }
+      return;
+    }
     if (el.dataset.avail) {
       try {
         const it = await call(`/items/${el.dataset.avail}`, { method: 'PUT', body: { available: el.checked } });

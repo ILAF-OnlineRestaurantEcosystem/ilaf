@@ -13,7 +13,20 @@ export const PALETTES = [
   { id: 'blue', name: 'أزرق', color: '#2f6fb0' },
   { id: 'charcoal', name: 'فحمي وذهبي', color: '#2b2b2b', accent: '#c9a24d' },
 ];
-export const APPLY_TO = [['menu', 'المنيو (الزباين)'], ['admin', 'لوحة الكاشير'], ['both', 'الاثنين']];
+// كل واجهة إلها ثيمها لحالها: المنيو (الزباين) ولوحة الكاشير
+export const TARGETS = [['menu', 'ألوان المنيو (الزباين)'], ['admin', 'ألوان لوحة الكاشير']];
+const HEX_RE = /^#[0-9a-f]{6}$/i;
+
+/** الثيم المحفوظ (الشكل الجديد أو القديم) ← { menu: {...}, admin: {...} } */
+export function normalizeTheme(theme) {
+  const def = { palette: 'default', color: null, accent: null };
+  if (!theme) return { menu: { ...def }, admin: { ...def } };
+  if (theme.menu || theme.admin) return { menu: { ...def, ...(theme.menu ?? {}) }, admin: { ...def, ...(theme.admin ?? {}) } };
+  // الشكل القديم: ثيم واحد + applyTo
+  const one = { ...def, palette: theme.palette ?? 'default', color: theme.color ?? null };
+  const to = theme.applyTo ?? 'menu';
+  return { menu: ['menu', 'both'].includes(to) ? one : { ...def }, admin: ['admin', 'both'].includes(to) ? { ...one } : { ...def } };
+}
 
 // ───────── رياضيات الألوان ─────────
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
@@ -147,7 +160,8 @@ const BASE = {
 /** الثيم المحفوظ بإعدادات المحل → لون أساسي (أو null = الهوية الأصلية) */
 export function themeColors(theme) {
   if (!theme || !theme.palette || theme.palette === 'default') return null;
-  if (theme.palette === 'custom') return /^#[0-9a-f]{6}$/i.test(theme.color ?? '') ? { color: theme.color, accent: null } : null;
+  // لون المحل: لون أساسي (الأزرار والعناوين) + لون ثاني اختياري (اللمسات)
+  if (theme.palette === 'custom') return HEX_RE.test(theme.color ?? '') ? { color: theme.color, accent: HEX_RE.test(theme.accent ?? '') ? theme.accent : null } : null;
   const p = PALETTES.find((x) => x.id === theme.palette);
   return p ? { color: p.color, accent: p.accent ?? null } : null;
 }
@@ -168,12 +182,12 @@ export function paletteCss(theme) {
 }
 
 /**
- * بيطبّق ثيم المحل على هالصفحة (page = 'menu' للزبون أو 'admin' للكاشير) إذا الكاشير اختار يطبّقه عليها.
+ * بيطبّق ثيم هالصفحة (page = 'menu' للزبون أو 'admin' للكاشير) من ثيمات المحل.
  * وبيحفظه بالمتصفح عشان المرة الجاية يطلع من أول لحظة (بدون وميض الألوان القديمة).
  */
 export function applyPalette(theme, page, cacheKey = null) {
-  const on = Boolean(themeColors(theme)) && ['both', page].includes(theme.applyTo ?? 'menu');
-  const css = on ? paletteCss(theme) : '';
+  theme = normalizeTheme(theme)[page]; // ثيم هالواجهة بس
+  const css = paletteCss(theme);
   let el = document.getElementById('cfPalette');
   if (css) {
     if (!el) { el = document.createElement('style'); el.id = 'cfPalette'; document.head.append(el); }

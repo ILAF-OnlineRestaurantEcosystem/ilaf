@@ -38,6 +38,11 @@ function brassDefs(gradId, darkId) {
 let BIZ = 'cafe';
 /** نوع المحل بيغيّر رسمة الهوية: كافيه = دلّة، مطعم = قدرة ومغرفة */
 export function setBusiness(kind) { BIZ = kind === 'restaurant' ? 'restaurant' : 'cafe'; }
+// شعار المحل الخاص (من إعدادات الكاشير): صورة بدل الدلّة/القدرة، وصورة بدل كتابة الاسم
+let STORE_ICON = '';
+let STORE_NAME_IMG = '';
+const safeSrc = (u) => String(u ?? '').replace(/["<>]/g, '');
+export function setStoreLogo({ icon = '', name = '' } = {}) { STORE_ICON = safeSrc(icon); STORE_NAME_IMG = safeSrc(name); }
 export const isRestaurant = () => BIZ === 'restaurant';
 
 export function potShape(gradId) {
@@ -63,6 +68,7 @@ export function ladleShape(gradId, darkId) {
 const terraDefs = (id) => `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e8946a"/><stop offset=".45" stop-color="#c4643a"/><stop offset="1" stop-color="#7d3218"/></linearGradient>`;
 
 export function dallahIcon() {
+  if (STORE_ICON) return `<img class="store-icon" src="${STORE_ICON}" alt="">`;
   const g = nextId('dg'), d = nextId('dd');
   if (BIZ === 'restaurant') return `<svg viewBox="0 0 112 140" aria-hidden="true"><defs>${terraDefs(g)}</defs>${potShape(g)}</svg>`;
   return `<svg viewBox="0 0 112 140" aria-hidden="true"><defs>${brassDefs(g, d)}</defs><g transform="translate(-4 2)">${dallahShape(g, d)}</g></svg>`;
@@ -74,6 +80,7 @@ export function dallahIcon() {
  * بعد إدراجه بالصفحة لازم تنادي fitLogo() ليتظبط حجم الكلمة ومستوى القهوة حسب الخط.
  */
 export function brandLogo({ word = 'محمد', prefix = 'كافي', mode = 'pour' } = {}) {
+  if (STORE_NAME_IMG) return `<span class="brand-logo-img"><img src="${STORE_NAME_IMG}" alt="${String(`${prefix} ${word}`).replace(/[<>"&]/g, '')}"></span>`;
   const g = nextId('lg'), d = nextId('ld'), coffee = nextId('cf'), clip = nextId('wc'), crema = nextId('cr');
   const safe = (s) => String(s).replace(/[<>&"]/g, '');
   const w = safe(word), p = safe(prefix);
@@ -164,7 +171,9 @@ export async function fitLogo(svg) {
 
 /** شعار مصغّر للهيدر: دلّة + اسم المحل */
 export function brandMark(name = 'كافي محمد') {
-  return `<span class="brand-mark">${dallahIcon()}<span class="brand-mark-name">${String(name).replace(/[<>&]/g, '')}</span></span>`;
+  const label = String(name).replace(/[<>&"]/g, '');
+  if (STORE_NAME_IMG) return `<span class="brand-mark">${STORE_ICON ? dallahIcon() : ''}<img class="brand-mark-img" src="${STORE_NAME_IMG}" alt="${label}"></span>`;
+  return `<span class="brand-mark">${dallahIcon()}<span class="brand-mark-name">${label}</span></span>`;
 }
 
 // ───────── رسومات الأصناف (64×64، خط نحاسي) ─────────

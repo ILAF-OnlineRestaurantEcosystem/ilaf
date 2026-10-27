@@ -87,7 +87,7 @@ function __req(id) {
 // شعار إيلاف للصفحات المستقلة (مضمّن، بدون ملفات جنبها)
 const dataUri = (file, type) => `data:${type};base64,${fs.readFileSync(path.join(ROOT, file)).toString('base64')}`;
 const ILAF_ICON = dataUri('public/brand/ilaf-icon-64.png', 'image/png');
-const ILAF_LOGO = dataUri('public/brand/ilaf-logo.jpg', 'image/jpeg');
+const ILAF_LOGO = dataUri('public/brand/ilaf-logo-light.png', 'image/png');
 
 function inlineHtml(htmlFile, entry, { replace = [], runtime = 'standalone/runtime.js' } = {}) {
   let html = read(htmlFile);

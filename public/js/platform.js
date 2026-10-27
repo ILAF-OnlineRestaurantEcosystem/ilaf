@@ -1,7 +1,7 @@
 // لوحة منصة إيلاف: كل الكافيهات والمطاعم المشتركة، مشتركة بين أصحاب المنصة
 import { $, $$, esc, moneyText, toast, openSheet, closeSheet, timeAgo, THEMES, themePref, setTheme } from './common.js';
 import { icon } from './art.js';
-import { LOGO_MARK } from './brand.js';
+import { LOGO_MARK, LOGO_MARK_DARK } from './brand.js';
 
 const TOKEN_KEY = 'cf.platform.token';
 // نسخة التجربة على الموقع الثابت (GitHub Pages): المنصة كلها بتشتغل بمتصفح الزائر بدون سيرفر
@@ -34,7 +34,7 @@ async function papi(path, { method = 'GET', body } = {}) {
 }
 
 // شعار إيلاف (الكلمة من صورة الشعار، مضمّنة بـ brand.js)
-const LOGO = `<img src="${LOGO_MARK}" alt="إيلاف ILAF">`;
+const LOGO = `<img class="lg-light" src="${LOGO_MARK}" alt="إيلاف ILAF"><img class="lg-dark" src="${LOGO_MARK_DARK}" alt="">`;
 
 // ───────── الدخول ─────────
 let setupMode = false;

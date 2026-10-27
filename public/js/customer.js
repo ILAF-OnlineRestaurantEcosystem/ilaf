@@ -1,5 +1,5 @@
 import { $, $$, esc, api, moneyText, toast, openSheet, closeSheet, reducedMotion, revealOnScroll, chime, SUGAR, STATUS, THEMES, themePref, setTheme, TENANT, storeKey, bizWords, applyBusiness, frozenNow } from './common.js';
-import { brandLogo, fitLogo, brandMark, dallahIcon, artTile, itemArt, icon, weatherIcon, leavesArt, setBusiness, isRestaurant } from './art.js';
+import { brandLogo, fitLogo, brandMark, dallahIcon, artTile, itemArt, icon, weatherIcon, leavesArt, setBusiness, isRestaurant, setStoreLogo } from './art.js';
 import { recommend, MOODS, SWEETNESS, PEOPLE } from './chooser.js';
 import { applyPalette } from './palette.js';
 
@@ -1146,6 +1146,7 @@ async function boot() {
   }
   enrichMenu();
   setBusiness(S().businessType); // مطعم = قدرة ومغرفة وألوان الفخار بدل الدلّة
+  setStoreLogo({ icon: S().logoIcon, name: S().logoName }); // شعار المحل الخاص إذا رفعه الكاشير
   applyBusiness(S().businessType);
   applyPalette(S().theme, 'menu', storeKey('palette.menu')); // ثيم الألوان اللي اختاره الكاشير
   $('#chatSub').textContent = `${W().host} · ${W().sub}`;

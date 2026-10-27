@@ -11,9 +11,10 @@ body.pf { background: var(--harbor); min-height: 100dvh; }
 .pf-auth-card .muted { margin: -6px 0 6px; }
 .pf-auth-card form { width: 100%; text-align: start; }
 .pf-logo { width: 190px; }
-.pf-logo.sm { width: 68px; }
-.pf-logo img { display: block; width: 100%; height: auto; border-radius: 18px; box-shadow: 0 12px 26px -16px rgba(43, 26, 18, .7); }
-.pf-logo.sm img { border-radius: 10px; box-shadow: 0 6px 14px -10px rgba(43, 26, 18, .8); }
+.pf-logo.sm { width: 64px; }
+.pf-logo img { display: block; width: 100%; height: auto; } /* شعار شفاف: بيندمج مع الخلفية */
+.pf-logo .lg-dark, [data-theme="dark"] .pf-logo .lg-light { display: none; }
+[data-theme="dark"] .pf-logo .lg-dark { display: block; }
 
 /* الشريط العلوي */
 .pf-top { position: sticky; top: 0; z-index: 30; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 12px max(16px, calc((100% - 1200px) / 2)); background: color-mix(in srgb, var(--harbor) 92%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: inset 0 -1px 0 var(--line); }

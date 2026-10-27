@@ -1,4 +1,4 @@
-<p align="center"><img src="public/brand/ilaf-logo.jpg" width="300" alt="إيلاف ILAF — اكتشف. اختار. استمتع."></p>
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="public/brand/ilaf-logo-dark.png"><img src="public/brand/ilaf-logo-light.png" width="280" alt="إيلاف ILAF — اكتشف. اختار. استمتع."></picture></p>
 
 # إيلاف (ILAF): منصة الطلب الذكي للكافيهات والمطاعم
 
@@ -14,10 +14,10 @@
 |---|---|---|
 | 🏠 **صفحة التجربة** (كل الروابط) | https://ilaf-onlinerestaurantecosystem.github.io/ilaf-demo/ | ابدأ من هون |
 | 🧭 **لوحة منصة إيلاف** | https://ilaf-onlinerestaurantecosystem.github.io/ilaf-demo/platform.html | بتدخل لحالها بحساب التجربة (`demo` / `ilaf2026`) |
-| ☕ كافي محمد: صفحة الزبون | https://ilaf-onlinerestaurantecosystem.github.io/ilaf-demo/customer.html | محل رقم 1001 (كافيه) |
-| ☕ كافي محمد: لوحة الكاشير | https://ilaf-onlinerestaurantecosystem.github.io/ilaf-demo/admin.html | الرمز **1234** |
-| 🍽️ مطعم السرايا: صفحة الزبون | https://ilaf-onlinerestaurantecosystem.github.io/ilaf-demo/customer.html?store=1002 | محل رقم 1002 (مطعم) |
-| 🍽️ مطعم السرايا: لوحة الكاشير | https://ilaf-onlinerestaurantecosystem.github.io/ilaf-demo/admin.html?store=1002 | الرمز **1234** |
+| ☕ كافي محمد (مثال): صفحة الزبون | https://ilaf-onlinerestaurantecosystem.github.io/ilaf-demo/customer.html | محل رقم 1001 (كافيه) |
+| ☕ كافي محمد (مثال): لوحة الكاشير | https://ilaf-onlinerestaurantecosystem.github.io/ilaf-demo/admin.html | الرمز **1234** |
+| 🍽️ مطعم السرايا (مثال): صفحة الزبون | https://ilaf-onlinerestaurantecosystem.github.io/ilaf-demo/customer.html?store=1002 | محل رقم 1002 (مطعم) |
+| 🍽️ مطعم السرايا (مثال): لوحة الكاشير | https://ilaf-onlinerestaurantecosystem.github.io/ilaf-demo/admin.html?store=1002 | الرمز **1234** |
 
 **شو تجرّب:**
 1. افتح **لوحة المنصة**: بتشوف المحلّين وإحصائياتهم. اكبس "محل جديد" واختار كافيه أو مطعم.
@@ -176,10 +176,18 @@ scripts/build-standalone.mjs   بيبني نسخة الموقع
 ```
 
 ## الهوية البصرية
-- **الكافيه:** دلّة قهوة بتصب، وكلمة "محمد" بخط الرقعة بتتعبّى قهوة. الألوان: بيج `#F4ECE1`، بني قهوة `#6B4A2F` و`#4A3220`، نحاسي `#A8834F`.
-- **المطعم:** قدرة فخار (أيقونة) ومغرفة نحاس بتصب مرق زعفراني بالكلمة. الألوان: كريمي `#F6EFE6`، تيراكوتا `#A8482A`، زعفران `#D9952E`، وفحم `#140E0B` بالغامق.
-- **إيلاف (ILAF):** شعار المنصة بمجلد `public/brand/` (الشعار كامل، الكلمة، والأيقونة)، والاسم والجملة بـ `public/js/brand.js`.
-- **الخطوط:** Alexandria للنصوص، وAref Ruqaa للشعار.
+
+**هوية المنصة: إيلاف (ILAF)** — "اكتشف. اختار. استمتع."
+- الشعار بمجلد `public/brand/` (نسخة شفافة للفاتح وللغامق، والكلمة، والأيقونة)، والاسم والجملة بـ `public/js/brand.js`.
+- بيطلع بلوحة المنصة، وصفحة التجربة، وصفحة "الحساب مجمّد"، وسطر صغير "إيلاف · ILAF" تحت الشريط السفلي بصفحة الزبون.
+
+**هوية كل محل: إله لحاله** (المنصة بتعطي شكل افتراضي، وصاحب المحل بيغيّره):
+- **الشكل الافتراضي للكافيه:** دلّة بتصب واسم المحل بخط الرقعة، بألوان البيج والبني والنحاسي.
+- **الشكل الافتراضي للمطعم:** قدرة فخار ومغرفة بتصب، بألوان التيراكوتا والزعفران.
+- **صاحب المحل بيقدر** يحط صورة بدل الأيقونة (الدلّة/القدرة)، وصورة لاسم محله بدل الكتابة، ويختار ألوان المنيو وألوان لوحة الكاشير كل وحدة لحالها.
+- **"كافي محمد" و"مطعم السرايا" مثالين تجريبيين بس** عشان تشوف النظام شغّال، ومش جزء من هوية المنصة.
+
+**الخطوط:** Alexandria للنصوص، وAref Ruqaa لأسماء المحلات.
 
 ## التقنيات
 Node.js + Express + Socket.io · Gemini أو Claude لنديم · Open-Meteo للطقس · MQTT عبر WebSocket للربط بنسخة الموقع · HTML/CSS/JS بدون أدوات بناء.

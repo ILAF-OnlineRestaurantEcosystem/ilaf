@@ -4,6 +4,14 @@
 .brand-mark { display: inline-flex; align-items: center; gap: 8px; color: var(--foam); text-decoration: none; }
 .brand-mark svg { width: 30px; height: 37px; }
 .brand-mark-name { font-family: var(--font-display); font-weight: 700; font-size: 24px; line-height: 1; color: var(--brass-hi); }
+/* شعار المحل الخاص (صور من إعدادات الكاشير) */
+.store-icon { width: 34px; height: 34px; object-fit: contain; border-radius: 8px; flex: none; }
+.brand-mark-img { height: 36px; max-width: 170px; width: auto; object-fit: contain; display: block; }
+.brand-logo-img { display: grid; place-items: center; width: 100%; }
+.brand-logo-img img { max-width: min(280px, 80%); max-height: 150px; object-fit: contain; }
+.fab .store-icon, .chat-avatar .store-icon { width: 36px; height: 36px; border-radius: 10px; }
+.side-brand .brand-mark-img { height: 40px; max-width: 150px; }
+.side-brand .store-icon { width: 36px; height: 36px; }
 
 /* الشعار المتحرك: الدلّة بتصب والكلمة بتتعبّى */
 .brand-logo { width: 100%; height: auto; overflow: visible; }

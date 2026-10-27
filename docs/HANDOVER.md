@@ -22,7 +22,7 @@
 | الزبون | `/1001` | المنيو، السلة، تتبّع الطلب، نداء النادل، المساعد الذكي "نديم" |
 | الدومين نفسه | `/` | بيحوّل للوحة المنصة (الزبون دايماً بيوصل من QR المحل، والكاشير من رابط لوحته) |
 
-- **كل محل إله رقم (ID)** من 4 أرقام: `1001`، `1002`… (أول محل `1001` هو "كافي محمد").
+- **كل محل إله رقم (ID)** من 4 أرقام: `1001`، `1002`… (بالتجربة: `1001` "كافي محمد" و`1002` "مطعم السرايا" مثالين تجريبيين بس، مش جزء من المنصة).
 - **نوع المحل**: `cafe` أو `restaurant`، وبيغيّر الهوية والألوان وكلام نديم والقائمة الجاهزة.
 - **تجميد الحساب**: المحل المجمّد ما حدا بيقدر يوصله (صفحات وAPI وSocket)، والبيانات بتضل محفوظة.
 
@@ -94,7 +94,8 @@ data/               ← (مش بالـ git) البيانات الحالية
   version, menuVersion, imagesSeeded,
   settings:   { cafeName, brandWord, tagline, businessType, currency, currencyName, city, lat, lon,
                 adminPin, baristaName, wifi, hours, cafeNotes, dayOpenedAt,
-                theme: { palette, color, applyTo } },   // ثيم الألوان: palette جاهز أو custom + color، applyTo = menu | admin | both
+                theme: { menu: { palette, color, accent }, admin: { palette, color, accent } },  // ثيم كل واجهة لحالها
+                logoIcon, logoName },  // صور شعار المحل (بدل الأيقونة وبدل كتابة الاسم)، فاضي = الافتراضي
   categories: [{ id, name, en, desc, temp, icon, image, order }],
   items:      [{ id, categoryId, name, desc, price, cost, image, available, stock, recipe, art, hue,
                  sugar, caffeine, sugarChoice, tags[], order }],

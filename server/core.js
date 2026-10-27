@@ -385,12 +385,28 @@ route('GET', '/admin/months/:key', ({ p }) => monthReport(p.key), { admin: true 
 route('GET', '/admin/table-insight/:n', ({ p }) => tableInsight(p.n), { admin: true });
 // ثيم الألوان: جاهز (palette) أو لون المحل (custom + color)، وبيتطبّق على المنيو أو اللوحة أو الاثنين
 const PALETTE_IDS = ['default', 'custom', 'terracotta', 'olive', 'purple', 'navy', 'burgundy', 'teal', 'rose', 'blue', 'charcoal'];
-function cleanTheme(t) {
+const hexColor = (v) => (/^#[0-9a-f]{6}$/i.test(String(v ?? '')) ? String(v).toLowerCase() : null);
+function cleanOneTheme(t) {
   const palette = PALETTE_IDS.includes(t?.palette) ? t.palette : 'default';
-  const color = /^#[0-9a-f]{6}$/i.test(String(t?.color ?? '')) ? String(t.color).toLowerCase() : null;
+  const color = hexColor(t?.color);
   if (palette === 'custom' && !color) throw new HttpError(400, 'اختار لون المحل.');
-  const applyTo = ['menu', 'admin', 'both'].includes(t?.applyTo) ? t.applyTo : 'menu';
-  return { palette, color, applyTo };
+  return { palette, color, accent: hexColor(t?.accent) }; // accent = اللون الثاني (اللمسات)
+}
+/** ثيم المنيو وثيم لوحة الكاشير كل واحد لحاله: { menu, admin } (وبنقبل الشكل القديم { palette, applyTo }) */
+function cleanTheme(t) {
+  if (t?.menu || t?.admin) return { menu: cleanOneTheme(t.menu), admin: cleanOneTheme(t.admin) };
+  const one = cleanOneTheme(t);
+  const to = ['menu', 'admin', 'both'].includes(t?.applyTo) ? t.applyTo : 'menu';
+  const def = { palette: 'default', color: null, accent: null };
+  return { menu: ['menu', 'both'].includes(to) ? one : def, admin: ['admin', 'both'].includes(to) ? { ...one } : { ...def } };
+}
+/** صورة شعار المحل: رابط من الرفع (/uploads/…) أو صورة مضمّنة صغيرة (نسخة الموقع)، أو فاضي = الشعار الافتراضي */
+function cleanLogo(v) {
+  const x = String(v ?? '').trim();
+  if (!x) return '';
+  if (/^\/uploads\/[\w.-]+\.(png|jpe?g|webp)$/i.test(x) || /^https:\/\/[^\s"'<>]+$/i.test(x)) return x;
+  if (/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(x) && x.length < 450_000) return x;
+  throw new HttpError(400, 'صورة الشعار مش مقبولة (PNG أو JPG أو WEBP، وحجم صغير).');
 }
 route('PUT', '/admin/settings', ({ body: b = {} }) => {
   const s = db().settings;
@@ -405,6 +421,8 @@ route('PUT', '/admin/settings', ({ body: b = {} }) => {
   if (b.cafeNotes != null) s.cafeNotes = str(b.cafeNotes, 600);
   if (b.businessType != null) s.businessType = b.businessType === 'restaurant' ? 'restaurant' : 'cafe';
   if (b.theme != null) s.theme = cleanTheme(b.theme);
+  if (b.logoIcon != null) s.logoIcon = cleanLogo(b.logoIcon); // بدل الدلّة/القدرة
+  if (b.logoName != null) s.logoName = cleanLogo(b.logoName); // صورة بدل كتابة اسم المحل
   if (b.city != null) s.city = str(b.city, 40);
   if (b.lat != null && b.lat !== '') s.lat = num(b.lat, { min: -90, max: 90 });
   if (b.lon != null && b.lon !== '') s.lon = num(b.lon, { min: -180, max: 180 });
