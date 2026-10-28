@@ -490,10 +490,11 @@
 .cat-tile .art svg { filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .25)); }
 
 /* ═════ الشريط المتحرك أول المنيو (الكاشير بيختار أصنافه) ═════ */
-.feat { display: grid; gap: 2px; margin-bottom: 2px; }
-.feat.is-off { display: none; }
+.strip-slot { display: grid; gap: 14px; }
+.strip-slot:empty, .strip-slot.is-off { display: none; }
+.feat { display: grid; gap: 2px; }
 .feat-view { position: relative; overflow: hidden; border-radius: 24px; touch-action: pan-y; box-shadow: 0 18px 34px -20px var(--promo-b); isolation: isolate; }
-.feat-track { display: flex; transition: transform .6s var(--ease-out); will-change: transform; }
+.feat-track { display: flex; transition: transform var(--feat-move, .6s) var(--ease-out); will-change: transform; }
 .feat-slide { position: relative; flex: 0 0 100%; display: grid; grid-template-columns: minmax(0, 1fr) 44%; min-height: 184px; background: linear-gradient(135deg, var(--promo-a), var(--promo-b)); color: var(--promo-ink); }
 .feat-slide > .art { grid-column: 2; grid-row: 1; height: 100%; min-height: 184px; border-radius: 0; -webkit-mask-image: linear-gradient(to right, #000 62%, transparent); mask-image: linear-gradient(to right, #000 62%, transparent); }
 .feat-slide .item-hit { z-index: 1; }
@@ -516,6 +517,9 @@
 /* شريط التقدّم جوا النقطة: قديش ضايل للصنف الجاي */
 .feat-dots button[aria-current]::after { content: ''; position: absolute; inset-inline-start: calc(50% - 13px); top: calc(50% - 3.5px); width: 26px; height: 7px; border-radius: 9px; background: var(--brass); transform-origin: right; animation: feat-fill var(--feat-dur, 4s) linear forwards; }
 .feat.is-paused .feat-dots button[aria-current]::after { animation-play-state: paused; }
+/* خلّص لفاته ووقف على أول صنف */
+.feat.is-done .feat-dots button[aria-current]::after { display: none; }
+.feat.is-done .feat-dots button[aria-current]::before { background: var(--brass); }
 @keyframes feat-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @media (prefers-reduced-motion: reduce) { .feat-track { transition: none; } .feat-dots button[aria-current]::after { animation: none; transform: none; } }
 

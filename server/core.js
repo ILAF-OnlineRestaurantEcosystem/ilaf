@@ -437,17 +437,23 @@ function cleanLogo(v) {
   throw new HttpError(400, 'صورة الشعار مش مقبولة (PNG أو JPG أو WEBP، وحجم صغير).');
 }
 /**
- * الشريط المتحرك أول صفحة الزبون: عنوان + أصناف بترتيب الكاشير + كم ثانية على كل صنف.
- * بدون أصناف = الأكثر طلباً لحاله.
+ * الشرائط المتحركة بصفحة الزبون (لحد 3): كل شريط إله عنوان، وأصناف بترتيب الكاشير، وكم ثانية على كل صنف،
+ * ووين بيطلع بالصفحة، وكم لفة بيلف (0 = دايماً). شريط بدون أصناف = الأكثر طلباً لحاله.
  */
-function cleanFeatured(f) {
-  const known = new Set(db().items.map((i) => i.id));
-  const items = [...new Set((Array.isArray(f?.items) ? f.items : []).map((x) => String(x)))].filter((id) => known.has(id)).slice(0, 10);
+const STRIP_PLACES = ['top', 'cats', 'offers', 'bottom'];
+function cleanStrip(f, known) {
   return {
     title: str(f?.title, 30) || 'الأكثر طلباً',
-    items,
-    seconds: Math.round(num(f?.seconds ?? 4, { min: 2, max: 10 })),
+    items: [...new Set((Array.isArray(f?.items) ? f.items : []).map((x) => String(x)))].filter((id) => known.has(id)).slice(0, 10),
+    seconds: Math.round(num(f?.seconds ?? 4, { min: 1, max: 10 })),
+    place: STRIP_PLACES.includes(f?.place) ? f.place : 'top',
+    loops: Math.round(num(f?.loops ?? 0, { min: 0, max: 10 })),
   };
+}
+function cleanStrips(list) {
+  if (!Array.isArray(list)) throw new HttpError(400, 'الشرائط لازم تكون قائمة.');
+  const known = new Set(db().items.map((i) => i.id));
+  return list.slice(0, 3).map((f) => cleanStrip(f, known));
 }
 route('PUT', '/admin/settings', async ({ body: b = {} }) => {
   const s = db().settings;
@@ -464,7 +470,8 @@ route('PUT', '/admin/settings', async ({ body: b = {} }) => {
   if (b.theme != null) s.theme = cleanTheme(b.theme);
   if (b.logoIcon != null) s.logoIcon = cleanLogo(b.logoIcon); // بدل الدلّة/القدرة
   if (b.logoName != null) s.logoName = cleanLogo(b.logoName); // صورة بدل كتابة اسم المحل
-  if (b.featured != null) s.featured = cleanFeatured(b.featured);
+  if (b.strips != null) { s.strips = cleanStrips(b.strips); delete s.featured; }
+  else if (b.featured != null) { s.strips = cleanStrips([b.featured]); delete s.featured; } // الشكل القديم (شريط واحد)
   if (b.city != null) s.city = str(b.city, 40);
   if (b.lat != null && b.lat !== '') s.lat = num(b.lat, { min: -90, max: 90 });
   if (b.lon != null && b.lon !== '') s.lon = num(b.lon, { min: -180, max: 180 });
@@ -488,7 +495,8 @@ route('POST', '/admin/menu-template', ({ body }) => {
   d.items = t.items;
   d.offers = t.offers;
   d.settings.businessType = type;
-  if (d.settings.featured) d.settings.featured.items = []; // الأصناف القديمة راحت، فالشريط بيرجع للأكثر طلباً
+  for (const st of d.settings.strips ?? []) st.items = []; // الأصناف القديمة راحت، فالشرائط بترجع للأكثر طلباً
+  if (d.settings.featured) d.settings.featured.items = [];
   save();
   return { data: { ok: true, items: t.items.length, categories: t.categories.length }, events: [toAll('menu:changed')] };
 }, { admin: true });

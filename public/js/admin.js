@@ -586,7 +586,8 @@ function renderMenuView() {
   const q = S.search.trim();
   const list = items.filter((i) => (S.menuCat === 'all' || i.categoryId === S.menuCat) && (!q || i.name.includes(q) || (i.tags ?? []).some((t) => t.includes(q))));
   renderFeatPanel();
-  const featIds = featOf().items;
+  const featIds = curStrip()?.items ?? [];
+  const featN = (S.stripK ?? 0) + 1;
   $('#itemRows').innerHTML = list.length ? list.map((it) => {
     const cat = categories.find((c) => c.id === it.categoryId);
     const inFeat = featIds.includes(it.id);
@@ -597,51 +598,101 @@ function renderMenuView() {
         <span class="irow-cat muted">${esc(cat?.name ?? '')}</span>
         <span>${money(it.price, cur())}${stockBadge(it)}</span>
         <label class="switch"><input type="checkbox" data-avail="${esc(it.id)}" ${it.available ? 'checked' : ''}><span class="track"></span><span class="lbl">${it.available ? 'متوفر' : 'نفد'}</span></label>
-        <button class="icon-btn feat-star" type="button" data-feat-toggle="${esc(it.id)}" aria-pressed="${inFeat}" aria-label="${inFeat ? 'شيل' : 'حط'} ${esc(it.name)} ${inFeat ? 'من' : 'بـ'}الشريط المتحرك" title="${inFeat ? 'بالشريط المتحرك (اكبس لتشيله)' : 'حطه بالشريط المتحرك'}">${icon('star')}</button>
+        <button class="icon-btn feat-star" type="button" data-feat-toggle="${esc(it.id)}" aria-pressed="${inFeat}" aria-label="${inFeat ? 'شيل' : 'حط'} ${esc(it.name)} ${inFeat ? 'من' : 'بـ'}الشريط ${featN}" title="${inFeat ? `بالشريط ${featN} (اكبس لتشيله)` : `حطه بالشريط ${featN}`}">${icon('star')}</button>
         <button class="icon-btn" type="button" data-edit-item="${esc(it.id)}" aria-label="تعديل ${esc(it.name)}">${icon('edit')}</button>
       </div>`;
   }).join('') : '<div class="empty"><p>ما في أصناف هون. ضيف صنف جديد من الزر فوق.</p></div>';
 }
 
-// ───────── الشريط المتحرك أول صفحة الزبون: الكاشير بيختار الأصناف وترتيبها ─────────
-const featOf = () => ({ title: 'الأكثر طلباً', items: [], seconds: 4, ...(S.data.settings.featured ?? {}) });
+// ───────── الشرائط المتحركة بصفحة الزبون ─────────
+// الكاشير بيختار كم شريط (لحد 3)، وأصناف كل واحد وترتيبهم، ووين بيطلع بالصفحة، وكم ثانية على كل صنف، وكم لفة بيلف.
+const STRIP_PLACES = [['top', 'أول الصفحة (فوق)'], ['cats', 'بعد الأقسام'], ['offers', 'قبل العروض'], ['bottom', 'آخر الصفحة']];
+const STRIP_LOOPS = [[0, 'دايماً'], [1, 'لفة وحدة'], [2, 'لفتين'], [3, '3 لفات'], [5, '5 لفات']];
+const STRIP_SECONDS = [1, 2, 3, 4, 5, 6, 8];
+const secLabel = (n) => (n === 1 ? 'ثانية وحدة' : n === 2 ? 'ثانيتين' : `${n} ثواني`);
+const countLabel = (n) => ['بدون شريط', 'شريط واحد', 'شريطين', '3 شرائط'][n];
+const newStrip = (k = 0) => ({ title: k ? 'اقتراحاتنا' : 'الأكثر طلباً', items: [], seconds: 4, place: ['top', 'cats', 'offers'][k] ?? 'top', loops: 0 });
+/** شرائط المحل (وقبل ما الكاشير يغيّر إشي: شريط واحد فوق بالأكثر طلباً) */
+function stripsOf() {
+  const s = S.data.settings;
+  if (Array.isArray(s.strips)) return s.strips.map((x, k) => ({ ...newStrip(k), ...x }));
+  return [{ ...newStrip(0), ...(s.featured ?? {}) }];
+}
+/** الشريط اللي بيتعدّل هلق (النجوم بتضيف عليه) */
+function curStrip() {
+  const list = stripsOf();
+  S.stripK = Math.min(S.stripK ?? 0, Math.max(0, list.length - 1));
+  return list[S.stripK];
+}
 function renderFeatPanel() {
-  const f = featOf();
-  const items = f.items.map((id) => S.data.items.find((i) => i.id === id)).filter(Boolean);
+  const list = stripsOf();
+  const f = curStrip();
+  const k = S.stripK;
+  const items = f ? f.items.map((id) => S.data.items.find((i) => i.id === id)).filter(Boolean) : [];
+  const placeName = (p) => STRIP_PLACES.find(([v]) => v === p)?.[1] ?? '';
+  const opts = (pairs, cur) => pairs.map(([v, label]) => `<option value="${v}" ${String(v) === String(cur) ? 'selected' : ''}>${label}</option>`).join('');
   $('#featPanel').innerHTML = `
-    <section class="feat-panel" aria-label="الشريط المتحرك">
+    <section class="feat-panel" aria-label="الشرائط المتحركة">
       <div class="fp-head">
         <span class="fp-ic">${icon('star')}</span>
-        <div><h3>الشريط المتحرك بصفحة الزبون</h3>
-          <p>أول شي بيشوفه الزبون: صنف ورا صنف، كل واحد ${f.seconds} ثواني. اختار الأصناف من النجمة ${icon('star')} جنب كل صنف تحت.</p></div>
+        <div><h3>الشرائط المتحركة بصفحة الزبون</h3>
+          <p>صنف ورا صنف، كل واحد بيوقف ثواني وبيلف عالي بعده. اختار أصناف الشريط من النجمة ${icon('star')} جنب كل صنف تحت.</p></div>
+        <label class="field fp-count"><span>كم شريط بصفحة الزبون؟</span><select class="input" id="stripCount">${opts([0, 1, 2, 3].map((n) => [n, countLabel(n)]), list.length)}</select></label>
       </div>
-      <div class="fp-items">${items.length ? items.map((it, k) => `
-        <span class="fp-chip"><span class="fp-n">${k + 1}</span>${artTile(it)}<b>${esc(it.name)}</b>
-          ${k ? `<button type="button" class="icon-btn" data-feat-move="${esc(it.id)}" aria-label="قدّم ${esc(it.name)}" title="قدّمه">${icon('back')}</button>` : ''}
+      ${list.length > 1 ? `<div class="fp-tabs" role="tablist" aria-label="الشرائط">${list.map((x, j) => `
+        <button type="button" role="tab" data-strip-tab="${j}" aria-selected="${j === k}"><b>شريط ${j + 1}</b><small>${esc(placeName(x.place))} · ${x.items.length ? `${x.items.length} أصناف` : 'الأكثر طلباً'}</small></button>`).join('')}</div>` : ''}
+      ${f ? `
+      <div class="fp-items">${items.length ? items.map((it, j) => `
+        <span class="fp-chip"><span class="fp-n">${j + 1}</span>${artTile(it)}<b>${esc(it.name)}</b>
+          ${j ? `<button type="button" class="icon-btn" data-feat-move="${esc(it.id)}" aria-label="قدّم ${esc(it.name)}" title="قدّمه">${icon('back')}</button>` : ''}
           <button type="button" class="icon-btn" data-feat-toggle="${esc(it.id)}" aria-label="شيل ${esc(it.name)} من الشريط" title="شيله">${icon('close')}</button></span>`).join('')
-        : `<p class="fp-auto">${icon('flame')}<span>هلق بيطلع <b>الأكثر طلباً</b> لحاله. اكبس النجمة جنب أي صنف عشان تختار انت شو يطلع.</span></p>`}</div>
+        : `<p class="fp-auto">${icon('flame')}<span>${list.length > 1 ? `شريط ${k + 1}` : 'الشريط'} هلق بيعرض <b>الأكثر طلباً</b> لحاله. اكبس النجمة جنب أي صنف عشان تختار انت شو يطلع.</span></p>`}</div>
       <div class="fp-form">
-        <label class="field"><span>العنوان فوق الصنف</span><input class="input" id="featTitle" maxlength="30" value="${esc(f.title)}" placeholder="الأكثر طلباً"></label>
-        <label class="field"><span>كل صنف بيوقف</span><select class="input" id="featSecs">${[3, 4, 5, 6, 8].map((n) => `<option value="${n}" ${n === f.seconds ? 'selected' : ''}>${n} ثواني</option>`).join('')}</select></label>
+        <label class="field fp-title"><span>العنوان فوق الصنف</span><input class="input" id="featTitle" maxlength="30" value="${esc(f.title)}" placeholder="الأكثر طلباً"></label>
+        <label class="field"><span>وين يطلع بالصفحة</span><select class="input" id="featPlace">${opts(STRIP_PLACES, f.place)}</select></label>
+        <label class="field"><span>كل صنف بيوقف</span><select class="input" id="featSecs">${opts(STRIP_SECONDS.map((n) => [n, secLabel(n)]), f.seconds)}</select></label>
+        <label class="field"><span>كم لفة بيلف</span><select class="input" id="featLoops">${opts(STRIP_LOOPS, f.loops)}</select></label>
         <button class="btn btn-brass btn-sm" type="button" id="featSave">${icon('check')}احفظ</button>
-      </div>
+      </div>` : '<p class="fp-auto"><span>ما في شريط بصفحة الزبون هلق. اختار "شريط واحد" أو أكثر من فوق، أو اكبس النجمة جنب أي صنف.</span></p>'}
     </section>`;
 }
-async function saveFeatured(patch, msg) {
+async function saveStrips(list, msg) {
   try {
-    S.data.settings = await call('/settings', { method: 'PUT', body: { featured: { ...featOf(), ...patch } } });
+    S.data.settings = await call('/settings', { method: 'PUT', body: { strips: list } });
     renderMenuView();
     if (msg) toast(msg, 'ok');
   } catch (err) { toast(err.message, 'err'); }
 }
+/** بيعدّل الشريط المختار هلق وبيحفظ */
+function saveCurStrip(patch, msg) {
+  const list = stripsOf();
+  if (!list.length) { list.push(newStrip(0)); S.stripK = 0; } // ما في شريط: النجمة بتعمل واحد
+  const k = Math.min(S.stripK ?? 0, list.length - 1);
+  list[k] = { ...list[k], ...(typeof patch === 'function' ? patch(list[k]) : patch) };
+  return saveStrips(list, msg);
+}
 function toggleFeatured(id) {
-  const f = featOf();
+  const f = curStrip() ?? newStrip(0);
+  const n = (S.stripK ?? 0) + 1;
   const it = S.data.items.find((i) => i.id === id);
-  if (f.items.includes(id)) return saveFeatured({ items: f.items.filter((x) => x !== id) }, `شلت ${it?.name ?? 'الصنف'} من الشريط`);
+  if (f.items.includes(id)) return saveCurStrip((x) => ({ items: x.items.filter((y) => y !== id) }), `شلت ${it?.name ?? 'الصنف'} من الشريط ${n}`);
   if (f.items.length >= 10) return toast('الحد 10 أصناف بالشريط. شيل واحد أول.', 'err');
   if (it && !it.available) toast(`${it.name} مش متوفر هلق، فما رح يطلع للزبون لحد ما يرجع`);
-  return saveFeatured({ items: [...f.items, id] }, `${it?.name ?? 'الصنف'} صار بالشريط ⭐`);
+  return saveCurStrip((x) => ({ items: [...x.items, id] }), `${it?.name ?? 'الصنف'} صار بالشريط ${n} ⭐`);
 }
+/** الكاشير غيّر عدد الشرائط */
+function setStripCount(n) {
+  const list = stripsOf().slice(0, n);
+  while (list.length < n) list.push(newStrip(list.length));
+  S.stripK = Math.min(S.stripK ?? 0, Math.max(0, n - 1));
+  return saveStrips(list, n ? `صار عندك ${countLabel(n)} بصفحة الزبون ✓` : 'شلت الشرائط من صفحة الزبون');
+}
+const stripForm = () => ({
+  title: $('#featTitle').value.trim() || 'الأكثر طلباً',
+  place: $('#featPlace').value,
+  seconds: Number($('#featSecs').value),
+  loops: Number($('#featLoops').value),
+});
 
 /** شارة المخزن بقائمة الأصناف: باقي كم، أو نفد */
 function stockBadge(it) {
@@ -1873,12 +1924,13 @@ function bind() {
     if (d.palApply) return applyThemeNow(d.palApply);
     if (d.featToggle) return toggleFeatured(d.featToggle);
     if (d.featMove) {
-      const a = [...featOf().items];
+      const a = [...(curStrip()?.items ?? [])];
       const k = a.indexOf(d.featMove);
-      if (k > 0) { [a[k - 1], a[k]] = [a[k], a[k - 1]]; return saveFeatured({ items: a }); }
+      if (k > 0) { [a[k - 1], a[k]] = [a[k], a[k - 1]]; return saveCurStrip({ items: a }); }
       return;
     }
-    if (t.id === 'featSave') return saveFeatured({ title: $('#featTitle').value.trim() || 'الأكثر طلباً', seconds: Number($('#featSecs').value) }, 'انحفظ الشريط ✓ الزباين بيشوفوه هلق');
+    if (d.stripTab) { S.stripK = Number(d.stripTab); return renderMenuView(); }
+    if (t.id === 'featSave') return saveCurStrip(stripForm(), 'انحفظ الشريط ✓ الزباين بيشوفوه هلق');
     if (d.logoDel) {
       try { S.data.settings = await call('/settings', { method: 'PUT', body: { [d.logoDel]: '' } }); renderShell(); renderSettings(); toast('رجع الشعار الافتراضي', 'ok'); } catch (err) { toast(err.message, 'err'); }
       return;
@@ -1944,6 +1996,9 @@ function bind() {
 
   document.addEventListener('change', async (e) => {
     const el = e.target;
+    // الشرائط المتحركة: العدد والمكان والسرعة واللفات بينحفظوا أول ما تختار
+    if (el.id === 'stripCount') return setStripCount(Number(el.value));
+    if (['featPlace', 'featSecs', 'featLoops'].includes(el.id)) return saveCurStrip(stripForm(), 'انحفظ ✓');
     if ((el.id === 'upIcon' || el.id === 'upName') && el.files[0]) {
       try {
         const dataUrl = await shrinkImage(el.files[0], el.id === 'upIcon' ? 256 : 640);

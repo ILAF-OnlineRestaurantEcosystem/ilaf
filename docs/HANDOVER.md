@@ -97,7 +97,8 @@ data/               ← (مش بالـ git) البيانات الحالية
   settings:   { cafeName, brandWord, tagline, businessType, currency, currencyName, city, lat, lon,
                 pinHash, pinSalt, pinWeak, baristaName, wifi, hours, cafeNotes, dayOpenedAt,
                 theme: { menu: { palette, color, accent }, admin: { palette, color, accent } },  // ثيم كل واجهة لحالها
-                logoIcon, logoName },  // صور شعار المحل (بدل الأيقونة وبدل كتابة الاسم)، فاضي = الافتراضي
+                logoIcon, logoName,  // صور شعار المحل (بدل الأيقونة وبدل كتابة الاسم)، فاضي = الافتراضي
+                strips: [{ title, items, seconds, place, loops }] },  // الشرائط المتحركة بصفحة الزبون (لحد 3): place = top|cats|offers|bottom، loops 0 = دايماً، items فاضية = الأكثر طلباً
   categories: [{ id, name, en, desc, temp, icon, image, order }],
   items:      [{ id, categoryId, name, desc, price, cost, image, available, stock, recipe, art, hue,
                  sugar, caffeine, sugarChoice, tags[], order }],

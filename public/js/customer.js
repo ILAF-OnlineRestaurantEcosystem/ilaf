@@ -296,7 +296,7 @@ function renderHome() {
     ? `${weatherIcon(w)}<span>${greetingWord()} · ${esc(w.city)} ${w.temp}° ${esc(w.desc)}</span>`
     : `${icon('sun')}<span>${greetingWord()}، شو حابب اليوم؟</span>`;
   const cats = categories.filter((c) => items.some((i) => i.categoryId === c.id));
-  const featAuto = renderFeatured();
+  const featAuto = renderStrips();
   const CAT_TINT = [28, 200, 340, 18, 140, 260, 45];
   $('#catGrid').innerHTML = cats.map((c, i) => `
     <button class="cat-tile ${cats.length % 2 === 1 && i === cats.length - 1 ? 'wide' : ''}" type="button" data-go="category" data-param="${esc(c.id)}" style="--ch:${CAT_TINT[i % CAT_TINT.length]}" data-reveal>
@@ -333,100 +333,133 @@ function renderHome() {
   $('#baristaTitle').textContent = `اسأل ${S().baristaName}، ${W().hostSmart}`;
   doHomeSearch();
 }
-// ───────── الشريط المتحرك أول المنيو ─────────
-// أصناف بيختارها الكاشير (settings.featured)، وإذا ما اختار: الأكثر طلباً لحاله. كل صنف بيوقف ثواني وبيلف عالي بعده.
-const feat = { ids: '', i: 0, n: 0, ms: 4000, timer: null, paused: false };
-function featuredItems() {
-  const chosen = (S().featured?.items ?? []).map(itemById).filter((i) => i?.available);
+// ───────── الشرائط المتحركة بالمنيو ─────────
+// الكاشير بيختار لحد 3 شرائط (settings.strips): أصناف كل شريط، وكم ثانية على كل صنف، ووين بيطلع بالصفحة، وكم لفة بيلف.
+// شريط بدون أصناف = الأكثر طلباً لحاله.
+const strips = []; // حالة كل شريط: الصنف الحالي، المؤقت، اللفات
+function stripDefs() {
+  const s = S();
+  if (Array.isArray(s.strips)) return s.strips;
+  return [{ title: 'الأكثر طلباً', items: [], seconds: 4, place: 'top', loops: 0, ...(s.featured ?? {}) }]; // قبل ما الكاشير يغيّر إشي
+}
+function stripItems(def) {
+  const chosen = (def.items ?? []).map(itemById).filter((i) => i?.available);
   if (chosen.length) return { list: chosen, auto: false };
   const pops = state.menu.popular.map(itemById).filter((i) => i?.available);
   return { list: (pops.length ? pops : state.menu.items.filter((i) => i.available)).slice(0, 6), auto: true };
 }
-/** بيرسم الشريط وبيرجّع true إذا هو تلقائي (الأكثر طلباً) */
-function renderFeatured() {
-  const box = $('#featured');
-  const { list, auto } = featuredItems();
-  const f = S().featured ?? {};
-  const title = f.title || 'الأكثر طلباً';
-  box.hidden = !list.length;
-  const ids = list.map((i) => i.id).join(',');
-  if (ids !== feat.ids) { feat.ids = ids; feat.i = 0; }
-  feat.n = list.length;
-  feat.ms = Math.min(10, Math.max(2, Number(f.seconds) || 4)) * 1000;
-  box.style.setProperty('--feat-dur', `${feat.ms}ms`);
-  box.innerHTML = `
-    <div class="feat-view"><div class="feat-track">${list.map((it, k) => `
-      <article class="feat-slide" data-item="${esc(it.id)}" aria-roledescription="slide" aria-label="${k + 1} من ${list.length}: ${esc(it.name)}">
-        <button class="item-hit" type="button" data-open-item="${esc(it.id)}" aria-label="${esc(it.name)}، التفاصيل"></button>
-        ${artTile(it, 'big')}
-        <div class="fs-info">
-          <span class="fs-tag">${icon(auto ? 'flame' : 'star')}${esc(title)}${auto && list.length > 1 ? ` <b>#${k + 1}</b>` : ''}</span>
-          <h3>${esc(it.name)}</h3>
-          <p>${esc(it.desc ?? '')}</p>
-          <div class="fs-foot"><span class="fs-price">${priceText(it.price)}${it.was ? ` <s>${priceText(it.was)}</s>` : ''}</span>
-            <button class="fs-add" type="button" data-quick-add="${esc(it.id)}">${icon('plus')}أضف</button></div>
-        </div>
-      </article>`).join('')}</div></div>
-    ${list.length > 1 ? `<div class="feat-dots">${list.map((it, k) => `<button type="button" data-feat="${k}" aria-label="${esc(it.name)}"></button>`).join('')}</div>` : ''}`;
-  featShow(feat.i);
-  featStart();
-  return auto;
+/** بيرسم كل الشرائط بأماكنها، وبيرجّع true إذا واحد منها بيعرض الأكثر طلباً */
+function renderStrips() {
+  $$('[data-strip-slot]').forEach((slot) => { slot.innerHTML = ''; });
+  const defs = stripDefs();
+  let anyAuto = false;
+  defs.forEach((def, k) => {
+    const st = (strips[k] ??= { i: 0, ids: '' });
+    clearInterval(st.timer);
+    st.el = null;
+    const { list, auto } = stripItems(def);
+    if (!list.length) return;
+    anyAuto ||= auto;
+    const ids = list.map((i) => i.id).join(',');
+    if (ids !== st.ids) { st.ids = ids; st.i = 0; }
+    Object.assign(st, { n: list.length, ms: Math.min(10, Math.max(1, Number(def.seconds) || 4)) * 1000, loops: Number(def.loops) || 0, rounds: 0, stopped: false, paused: false });
+    const title = def.title || 'الأكثر طلباً';
+    const el = document.createElement('section');
+    el.className = 'feat';
+    el.dataset.strip = k;
+    el.setAttribute('aria-roledescription', 'carousel');
+    el.setAttribute('aria-label', title);
+    el.style.setProperty('--feat-dur', `${st.ms}ms`);
+    el.style.setProperty('--feat-move', `${Math.min(600, st.ms * 0.4)}ms`); // الشريط السريع حركته أسرع
+    el.innerHTML = `
+      <div class="feat-view"><div class="feat-track">${list.map((it, j) => `
+        <article class="feat-slide" data-item="${esc(it.id)}" aria-roledescription="slide" aria-label="${j + 1} من ${list.length}: ${esc(it.name)}">
+          <button class="item-hit" type="button" data-open-item="${esc(it.id)}" aria-label="${esc(it.name)}، التفاصيل"></button>
+          ${artTile(it, 'big')}
+          <div class="fs-info">
+            <span class="fs-tag">${icon(auto ? 'flame' : 'star')}${esc(title)}${auto && list.length > 1 ? ` <b>#${j + 1}</b>` : ''}</span>
+            <h3>${esc(it.name)}</h3>
+            <p>${esc(it.desc ?? '')}</p>
+            <div class="fs-foot"><span class="fs-price">${priceText(it.price)}${it.was ? ` <s>${priceText(it.was)}</s>` : ''}</span>
+              <button class="fs-add" type="button" data-quick-add="${esc(it.id)}">${icon('plus')}أضف</button></div>
+          </div>
+        </article>`).join('')}</div></div>
+      ${list.length > 1 ? `<div class="feat-dots">${list.map((it, j) => `<button type="button" data-feat="${j}" aria-label="${esc(it.name)}"></button>`).join('')}</div>` : ''}`;
+    ($(`[data-strip-slot="${def.place}"]`) ?? $('[data-strip-slot="top"]')).append(el);
+    st.el = el;
+    stripShow(st, st.i);
+    stripStart(st);
+  });
+  strips.slice(defs.length).forEach((st) => clearInterval(st.timer));
+  strips.length = Math.min(strips.length, defs.length);
+  return anyAuto;
 }
-function featShow(i) {
-  const box = $('#featured');
-  const track = box.querySelector('.feat-track');
-  if (!track || !feat.n) return;
-  feat.i = ((i % feat.n) + feat.n) % feat.n;
-  const rtl = getComputedStyle(box).direction === 'rtl'; // بالعربي الصنف الجاي على اليسار
-  track.style.transform = `translateX(${(rtl ? 1 : -1) * feat.i * 100}%)`;
-  box.querySelectorAll('.feat-slide').forEach((el, k) => { el.inert = k !== feat.i; });
-  box.querySelectorAll('[data-feat]').forEach((el) => el.removeAttribute('aria-current'));
-  const dot = box.querySelector(`[data-feat="${feat.i}"]`);
+function stripShow(st, i) {
+  const track = st.el?.querySelector('.feat-track');
+  if (!track || !st.n) return;
+  st.i = ((i % st.n) + st.n) % st.n;
+  const rtl = getComputedStyle(st.el).direction === 'rtl'; // بالعربي الصنف الجاي على اليسار
+  track.style.transform = `translateX(${(rtl ? 1 : -1) * st.i * 100}%)`;
+  st.el.querySelectorAll('.feat-slide').forEach((s, k) => { s.inert = k !== st.i; });
+  st.el.querySelectorAll('[data-feat]').forEach((d) => d.removeAttribute('aria-current'));
+  const dot = st.el.querySelector(`[data-feat="${st.i}"]`);
   if (dot) { void dot.offsetWidth; dot.setAttribute('aria-current', 'true'); } // شريط التقدّم بيبلّش من جديد
 }
-function featStart() {
-  clearInterval(feat.timer);
-  if (feat.n < 2) return;
-  feat.timer = setInterval(() => {
-    if (feat.paused || document.hidden || current?.dataset.screen !== 'home' || $('#featured').hidden) return;
-    featShow(feat.i + 1);
-  }, feat.ms);
+function stripStart(st) {
+  clearInterval(st.timer);
+  if (st.n < 2 || st.stopped) return;
+  st.timer = setInterval(() => {
+    if (st.paused || document.hidden || current?.dataset.screen !== 'home' || !st.el?.isConnected || !st.el.offsetParent) return;
+    // خلّص اللفات اللي اختارها الكاشير: بيوقف على أول صنف
+    if (st.i === st.n - 1 && st.loops && ++st.rounds >= st.loops) {
+      st.stopped = true;
+      clearInterval(st.timer);
+      st.el.classList.add('is-done');
+      stripShow(st, 0);
+      return;
+    }
+    stripShow(st, st.i + 1);
+  }, st.ms);
 }
 /** السحب باليد (يمين/يسار) والنقاط، والشريط بيوقف وانت ماسكه */
-function bindFeatured() {
-  const box = $('#featured');
-  let x0 = null, y0 = 0, swiped = false;
-  const pause = (on) => { feat.paused = on; box.classList.toggle('is-paused', on); };
-  box.addEventListener('pointerdown', (e) => {
-    if (!e.target.closest('.feat-view')) return;
-    x0 = e.clientX; y0 = e.clientY; swiped = false; pause(true);
+function bindStrips() {
+  const home = $('[data-screen="home"]');
+  let drag = null, swiped = false;
+  const stOf = (el) => strips[Number(el?.closest('.feat')?.dataset.strip)];
+  const pause = (st, on) => { st.paused = on; st.el?.classList.toggle('is-paused', on); };
+  home.addEventListener('pointerdown', (e) => {
+    swiped = false;
+    const st = e.target.closest('.feat-view') && stOf(e.target);
+    if (!st) return;
+    drag = { st, x0: e.clientX, y0: e.clientY };
+    pause(st, true);
   });
   const end = (e) => {
-    if (x0 == null) return;
+    if (!drag) return;
+    const { st, x0, y0 } = drag;
+    drag = null;
+    pause(st, false);
     const dx = e.clientX - x0, dy = e.clientY - y0;
-    x0 = null; pause(false);
     if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
       swiped = true;
-      const rtl = getComputedStyle(box).direction === 'rtl';
-      featShow(feat.i + ((dx > 0) === rtl ? 1 : -1));
-    } else featShow(feat.i);
-    featStart();
+      const rtl = getComputedStyle(st.el).direction === 'rtl';
+      stripShow(st, st.i + ((dx > 0) === rtl ? 1 : -1));
+    } else stripShow(st, st.i);
+    stripStart(st);
   };
-  box.addEventListener('pointerup', end);
-  box.addEventListener('pointercancel', end);
-  box.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') pause(true); });
-  box.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse' && x0 == null) { pause(false); featShow(feat.i); featStart(); } });
-  box.addEventListener('click', (e) => {
-    if (swiped) { swiped = false; e.preventDefault(); e.stopPropagation(); return; } // السحب مش كبسة على الصنف
-    const dot = e.target.closest('[data-feat]');
-    if (dot) { featShow(Number(dot.dataset.feat)); featStart(); }
+  document.addEventListener('pointerup', end);
+  document.addEventListener('pointercancel', end);
+  home.addEventListener('click', (e) => {
+    if (swiped && e.target.closest('.feat')) { swiped = false; e.preventDefault(); e.stopPropagation(); return; } // السحب مش كبسة على الصنف
+    const dot = e.target.closest('.feat [data-feat]');
+    if (dot) { const st = stOf(dot); stripShow(st, Number(dot.dataset.feat)); stripStart(st); }
   }, true);
 }
 
 function doHomeSearch() {
   const q = $('#homeSearch').value.trim();
   $('#homeMain').hidden = !!q;
-  $('#featured').classList.toggle('is-off', !!q);
+  $('[data-strip-slot="top"]').classList.toggle('is-off', !!q);
   $('#homeResults').hidden = !q;
   if (!q) return;
   const list = state.menu.items.filter((i) => i.name.includes(q) || i.desc.includes(q) || (i.tags ?? []).some((t) => t.includes(q)));
@@ -1272,7 +1305,7 @@ async function boot() {
   $('#chatWaiter').innerHTML = `${icon('bell')}نادِ نادل إنسان`;
   saveCart();
   bind();
-  bindFeatured();
+  bindStrips();
   connectLive();
   window.__CAFE_DEMO__?.link?.onChange(renderLink);
   renderPending();

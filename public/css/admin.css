@@ -614,7 +614,15 @@ tr.is-current td { background: var(--gold-soft); }
 
 /* ───────── الشريط المتحرك بصفحة الزبون (بقسم القائمة) ───────── */
 .feat-panel { display: grid; gap: 12px; margin-bottom: 14px; padding: 16px; border-radius: 20px; background: var(--tide); box-shadow: var(--shadow-card), inset 0 0 0 1.5px color-mix(in srgb, var(--brass) 35%, transparent); }
-.fp-head { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; }
+.fp-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+.fp-count { margin: 0; min-width: 170px; }
+.fp-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.fp-tabs button { display: grid; gap: 1px; padding: 8px 14px; border-radius: 14px; text-align: start; background: var(--inset); box-shadow: inset 0 0 0 1px var(--line); color: var(--foam); font: inherit; font-size: 13.5px; }
+.fp-tabs small { font-size: 11px; color: var(--foam-3); }
+.fp-tabs button[aria-selected="true"] { background: var(--brass); color: var(--on-brass); box-shadow: none; }
+.fp-tabs button[aria-selected="true"] small { color: inherit; opacity: .8; }
+.fp-title { flex-basis: 220px !important; }
+@media (max-width: 700px) { .fp-head { grid-template-columns: auto minmax(0, 1fr); } .fp-count { grid-column: 1 / -1; } }
 .fp-ic { width: 42px; height: 42px; border-radius: 14px; display: grid; place-items: center; background: #ffd23f; color: #3a2500; }
 .fp-ic svg { width: 22px; height: 22px; fill: currentColor; stroke: none; }
 .fp-head h3 { font-size: 16px; font-weight: 700; }

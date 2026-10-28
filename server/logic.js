@@ -25,7 +25,7 @@ export function comboValue(offer) {
 
 // اللي بيوصل للزبون من إعدادات المحل: قائمة مسموحة بس (أي حقل جديد سري ما بيطلع بالغلط)
 const PUBLIC_SETTINGS = ['cafeName', 'brandWord', 'tagline', 'businessType', 'currency', 'currencyName', 'city', 'lat', 'lon',
-  'baristaName', 'wifi', 'hours', 'cafeNotes', 'theme', 'logoIcon', 'logoName', 'featured'];
+  'baristaName', 'wifi', 'hours', 'cafeNotes', 'theme', 'logoIcon', 'logoName', 'featured', 'strips'];
 export function publicSettings() {
   const s = db().settings;
   return Object.fromEntries(PUBLIC_SETTINGS.filter((k) => s[k] !== undefined).map((k) => [k, s[k]]));
