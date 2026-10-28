@@ -13,6 +13,7 @@ import { db, uid, flush, withTenant, DEFAULT_TENANT } from './db.js';
 import { handle, validToken } from './core.js';
 import { aiStatus } from './barista/ai.js';
 import { platformHandle, tenantInfo, setupKey, PLATFORM_NAME, isFrozen, onTenantChange } from './platform.js';
+import { buildCsp, securityHeaders, bodyLimits, socketOriginCheck } from './security.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(here, '..', 'public');
@@ -25,10 +26,14 @@ withTenant(DEFAULT_TENANT, () => db()); // بيحمّل أول محل (وبين�
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+// Socket.io: بس صفحات نفس الموقع، ورسائل صغيرة
+const io = new Server(server, { allowRequest: socketOriginCheck, maxHttpBufferSize: 64 * 1024 });
 
 app.disable('x-powered-by');
-app.use(express.json({ limit: '25mb' })); // النسخة الاحتياطية ممكن تكون كبيرة
+// ورا proxy (Nginx/Caddy): عشان حدود الطلبات تشوف عنوان الزبون الحقيقي — TRUST_PROXY=1
+if (process.env.TRUST_PROXY) app.set('trust proxy', /^\d+$/.test(process.env.TRUST_PROXY) ? Number(process.env.TRUST_PROXY) : process.env.TRUST_PROXY);
+app.use(securityHeaders(buildCsp(PUBLIC))); // CSP وترويسات الأمان (server/security.js)
+app.use(bodyLimits); // حجم الطلب حسب المسار (الزبون 64KB، الكاشير 4MB، الاسترجاع 25MB)
 // ───────── الصفحات ─────────
 const page = (file) => (_req, res) => res.sendFile(path.join(PUBLIC, file));
 app.get('/', (_req, res) => res.redirect('/platform')); // الزبون بيوصل من الـ QR والكاشير من رابطه، فالرئيسية = لوحة المنصة
@@ -54,6 +59,11 @@ const LIMITS = [
   ['POST', /\/barista$/, 20],
   ['POST', /\/admin\/login$/, 8],
   ['POST', /^\/(login|setup)$/, 8],
+  // القراءة كمان إلها حد (ضد التجريب على أرقام الطاولات والطلبات)
+  ['GET', /\/tables\/\d+\/bill$/, 30],
+  ['GET', /\/tables\/\d+$/, 60],
+  ['GET', /\/(orders|devices)\//, 60],
+  ['POST', /\/admin\/upload$/, 20],
 ];
 const hits = new Map();
 function limited(req, scope) {
@@ -67,6 +77,11 @@ function limited(req, scope) {
   hits.set(key, arr);
   return false;
 }
+// تنظيف دوري عشان الذاكرة ما تكبر
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, arr] of hits) if (!arr.some((t) => now - t < 60_000)) hits.delete(k);
+}, 5 * 60_000).unref();
 const tooMany = (res) => res.status(429).json({ error: 'طلبات كثيرة ورا بعض، استنى لحظة وجرب كمان مرة.' });
 
 const hooks = {
@@ -86,7 +101,7 @@ function emit(tid, { event, payload, room }) {
 // ───────── API المنصة ─────────
 app.use('/api/platform', async (req, res) => {
   if (limited(req, 'platform')) return tooMany(res);
-  const r = await platformHandle(req.method, req.url, req.body, { token: req.get('x-platform-token') });
+  const r = await platformHandle(req.method, req.url, req.body, { token: req.get('x-platform-token'), client: req.ip });
   res.status(r.status).json(r.data);
 });
 
@@ -96,7 +111,7 @@ async function tenantApi(tid, req, res, url) {
   if (!t) return res.status(404).json({ error: 'ما في محل بهالرقم.' });
   if (isFrozen(t)) return res.status(423).json({ error: 'الحساب مجمّد مؤقتاً. تواصل مع إدارة إيلاف.', frozen: true });
   if (limited(req, tid)) return tooMany(res);
-  const r = await withTenant(tid, () => handle(req.method, url, req.body, { token: req.get('x-admin-token'), hooks }));
+  const r = await withTenant(tid, () => handle(req.method, url, req.body, { token: req.get('x-admin-token'), hooks, client: req.ip }));
   r.events.forEach((e) => emit(tid, e));
   res.status(r.status).json(r.data);
 }

@@ -540,3 +540,75 @@ tr.is-current td { background: var(--gold-soft); }
 .logo-slot-info { display: grid; gap: 4px; min-width: 0; }
 .logo-slot-info small { color: var(--foam-3); font-size: 12px; }
 .logo-slot-info .row { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* ═════ ألوان الحالات بالصالة (كل حالة لونها واضح) ═════ */
+.legend span i { width: 12px; height: 12px; border-radius: 4px; }
+.legend .lg-new i { background: var(--st-new); }
+.legend .lg-preparing i { background: var(--st-prep); }
+.legend .lg-ready i { background: var(--st-ready); }
+.legend .lg-served i { background: var(--st-served); }
+.legend .lg-call i { background: var(--st-call); }
+.legend .lg-empty i { background: var(--tide); box-shadow: inset 0 0 0 1.5px var(--line-strong); }
+.legend { color: var(--foam-2); }
+#floor .tile.t-empty .tile-no { color: rgba(var(--tint), .38); }
+#floor .tile.t-empty .tile-state { color: var(--foam-2); font-weight: 600; }
+#floor .tile.t-new { background: var(--st-new-bg); box-shadow: inset 0 0 0 2px var(--st-new), 0 10px 26px -10px var(--st-new); --c: var(--st-new); }
+#floor .tile.t-preparing { background: var(--st-prep-bg); box-shadow: inset 0 0 0 2px var(--st-prep); --c: var(--st-prep); }
+#floor .tile.t-ready { background: var(--st-ready-bg); box-shadow: inset 0 0 0 2px var(--st-ready); --c: var(--st-ready); }
+#floor .tile.t-served { background: var(--st-served-bg); box-shadow: inset 0 0 0 1.5px var(--st-served); --c: var(--st-served); }
+#floor .tile.t-new .tile-no, #floor .tile.t-new .tile-state { color: var(--st-new-ink); }
+#floor .tile.t-preparing .tile-no, #floor .tile.t-preparing .tile-state { color: var(--st-prep-ink); }
+#floor .tile.t-ready .tile-no, #floor .tile.t-ready .tile-state { color: var(--st-ready-ink); }
+#floor .tile.t-served .tile-no, #floor .tile.t-served .tile-state { color: var(--st-served-ink); }
+#floor .tile.has-call { box-shadow: inset 0 0 0 2.5px var(--st-call), 0 10px 26px -10px var(--st-call); }
+#floor .tile.has-call.t-empty { background: var(--st-call-bg); }
+#floor .tile.has-call.t-empty .tile-no, #floor .tile.has-call .tile-state { color: var(--st-call-ink); }
+#floor .tile-call { background: var(--st-call); color: #fff; }
+
+/* النداءات بسطر لحالها (مش فوق العدّادات) */
+.call-banner { display: grid; gap: 8px; }
+.call-banner:empty { display: none; }
+.call-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 16px; background: var(--st-call); color: #fff; box-shadow: 0 10px 24px -14px var(--st-call); animation: msgIn .4s var(--ease-out) both; }
+.call-row svg { width: 20px; height: 20px; flex: none; }
+.call-row b { font-size: 15px; }
+.call-row time { font-size: 12.5px; opacity: .85; margin-inline-start: auto; }
+.call-row .btn { background: rgba(255, 255, 255, .2); color: #fff; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .5); }
+.view[data-view="floor"] > .call-banner, .view[data-view="orders"] > .call-banner { margin-bottom: 14px; }
+.toasts { top: auto; bottom: 18px; } /* التنبيهات تحت، ما بتغطي العدّادات */
+
+/* ═════ صفحة الطلبات: كل مرحلة بلونها + الصالة بنظرة ═════ */
+#kanban.kanban { display: grid; grid-template-columns: minmax(0, 1fr) 224px; gap: 16px; overflow: visible; align-items: start; }
+.kcols { display: grid; grid-template-columns: repeat(4, minmax(176px, 1fr)); gap: 12px; overflow-x: auto; padding-bottom: 8px; align-items: start; }
+.kcol { border-top: 4px solid var(--kc); }
+.kcol.k-new { --kc: var(--st-new); --kb: var(--st-new-bg); --ki: var(--st-new-ink); }
+.kcol.k-preparing { --kc: var(--st-prep); --kb: var(--st-prep-bg); --ki: var(--st-prep-ink); }
+.kcol.k-ready { --kc: var(--st-ready); --kb: var(--st-ready-bg); --ki: var(--st-ready-ink); }
+.kcol.k-served { --kc: var(--st-served); --kb: var(--st-served-bg); --ki: var(--st-served-ink); }
+.kcol-head h3 { font-weight: 700; }
+.kcol-head h3 i { background: var(--kc); width: 11px; height: 11px; }
+.kcol-head .num { min-width: 30px; height: 30px; display: grid; place-items: center; border-radius: 10px; background: var(--kb); color: var(--ki); font-size: 15px; font-weight: 800; }
+.kcard .ocard { box-shadow: var(--shadow-card), inset 3px 0 0 var(--kc); }
+.kcard .ocard-head time { color: var(--ki); font-weight: 700; }
+.kcard .ocard-head time.late { color: var(--st-call-ink); }
+.kcard.is-late .ocard { background: var(--st-call-bg); box-shadow: var(--shadow-card), inset 3px 0 0 var(--st-call); }
+.kcard .btn-step { min-height: 40px; padding: 0 16px; font-size: 14px; font-weight: 700; background: var(--kc); color: #fff; box-shadow: 0 8px 18px -12px var(--kc); }
+.kcard .btn-step:hover { filter: brightness(1.06); }
+.khall { position: sticky; top: 86px; display: grid; gap: 12px; padding: 14px; border-radius: var(--r-lg); background: var(--tide); box-shadow: var(--shadow-card), inset 0 0 0 1px var(--line); }
+.khall h3 { font-size: 15px; font-weight: 700; }
+.khall-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.kt { aspect-ratio: 1; border-radius: 10px; font-weight: 800; font-size: 14px; display: grid; place-items: center; background: rgba(var(--tint), .05); color: var(--foam-3); box-shadow: inset 0 0 0 1px var(--line); }
+.kt.t-new { background: var(--st-new-bg); color: var(--st-new-ink); box-shadow: inset 0 0 0 1.5px var(--st-new); }
+.kt.t-preparing { background: var(--st-prep-bg); color: var(--st-prep-ink); box-shadow: inset 0 0 0 1.5px var(--st-prep); }
+.kt.t-ready { background: var(--st-ready-bg); color: var(--st-ready-ink); box-shadow: inset 0 0 0 1.5px var(--st-ready); }
+.kt.t-served { background: var(--st-served-bg); color: var(--st-served-ink); }
+.kt.has-call { background: var(--st-call-bg); color: var(--st-call-ink); box-shadow: inset 0 0 0 2px var(--st-call); }
+.legend.mini { gap: 8px 10px; font-size: 11.5px; }
+@media (max-width: 1250px) { #kanban.kanban { grid-template-columns: 1fr; } .khall { position: static; } .khall-grid { grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); } }
+
+.kcard .status-pill { display: none; } /* العمود نفسه بيحكي المرحلة */
+/* تنبيه أمان: رمز الدخول الافتراضي */
+.weak-pin { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; padding: 10px 14px; border-radius: 16px; background: var(--st-new-bg); color: var(--st-new-ink); box-shadow: inset 0 0 0 1.5px var(--st-new); }
+.weak-pin[hidden] { display: none; }
+.weak-pin svg { width: 20px; height: 20px; flex: none; }
+.weak-pin span { flex: 1; font-size: 13.5px; }
+.weak-pin .btn { background: var(--st-new); color: #fff; }

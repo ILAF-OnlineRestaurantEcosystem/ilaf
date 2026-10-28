@@ -11,6 +11,7 @@ import { currentWeather, geocode } from './weather.js';
 import { chat } from './barista/index.js';
 import { aiStatus } from './barista/ai.js';
 import { menuTemplate } from './seed.js';
+import { verifyPin, setPin, withoutSecrets } from './pin.js';
 
 export { HttpError };
 
@@ -158,9 +159,36 @@ route('POST', '/barista', ({ body }) => chat({
 }));
 
 // الكاشير
-route('POST', '/admin/login', ({ body }) => {
+// محاولات الدخول الغلط: بعد 5 غلطات من نفس الجهاز بيتسكّر الدخول 10 دقايق (ضد تخمين الرمز)
+const loginFails = new Map(); // `${محل}|${عنوان}` → { n, until }
+const LOCK_AFTER = 5;
+const LOCK_MS = 10 * 60_000;
+function loginLocked(key) {
+  const f = loginFails.get(key);
+  if (f?.until && f.until > Date.now()) return Math.ceil((f.until - Date.now()) / 60_000);
+  if (f?.until) loginFails.delete(key);
+  return 0;
+}
+function loginFailed(key) {
+  const f = loginFails.get(key) ?? { n: 0, until: 0 };
+  f.n += 1;
+  if (f.n >= LOCK_AFTER) { f.until = Date.now() + LOCK_MS; f.n = 0; console.warn(`⚠️  ${LOCK_AFTER} محاولات دخول غلط على لوحة الكاشير (${key}) — انسكّر الدخول 10 دقايق`); }
+  loginFails.set(key, f);
+  if (loginFails.size > 5000) for (const [k, v] of loginFails) if (!v.until || v.until < Date.now()) loginFails.delete(k);
+}
+route('POST', '/admin/login', async ({ body, client }) => {
+  const key = `${currentTenant()}|${client ?? 'local'}`;
+  const wait = loginLocked(key);
+  if (wait) throw new HttpError(429, `محاولات غلط كثيرة. جرّب بعد ${wait} دقيقة.`);
   const pin = str(body?.pin, 12);
-  if (!sameText(pin, String(db().settings.adminPin))) throw new HttpError(401, 'الرمز غير صحيح.');
+  const s = db().settings;
+  if (!/^\d{4,8}$/.test(pin) || !(await verifyPin(s, pin))) {
+    loginFailed(key);
+    throw new HttpError(401, 'الرمز غير صحيح.');
+  }
+  loginFails.delete(key);
+  // رمز قديم محفوظ نص عادي: بيتحوّل لمشفّر هلق
+  if (s.adminPin != null || s.pinWeak == null) { await setPin(s, pin); save(); }
   return { token: registerToken(randomToken()) };
 });
 route('POST', '/admin/logout', ({ token }) => { sessions.delete(token); return { ok: true }; }, { admin: true });
@@ -168,7 +196,7 @@ route('GET', '/admin/bootstrap', ({ hooks }) => {
   maintain(); // مرة باليوم: أرشفة الشهور اللي خلصت وتنظيف الطلبات القديمة
   const d = db();
   return {
-    settings: d.settings,
+    settings: withoutSecrets(d.settings), // الرمز المشفّر ما بيطلع حتى للوحة
     categories: [...d.categories].sort((a, b) => a.order - b.order),
     items: d.items,
     offers: d.offers,
@@ -408,7 +436,7 @@ function cleanLogo(v) {
   if (/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(x) && x.length < 450_000) return x;
   throw new HttpError(400, 'صورة الشعار مش مقبولة (PNG أو JPG أو WEBP، وحجم صغير).');
 }
-route('PUT', '/admin/settings', ({ body: b = {} }) => {
+route('PUT', '/admin/settings', async ({ body: b = {} }) => {
   const s = db().settings;
   if (b.cafeName != null) s.cafeName = str(b.cafeName, 40) || s.cafeName;
   if (b.brandWord != null) s.brandWord = str(b.brandWord, 12) || s.brandWord;
@@ -429,10 +457,11 @@ route('PUT', '/admin/settings', ({ body: b = {} }) => {
   if (b.adminPin != null && b.adminPin !== '') {
     const pin = str(b.adminPin, 12);
     if (!/^\d{4,8}$/.test(pin)) throw new HttpError(400, 'الرمز لازم يكون من 4 إلى 8 أرقام.');
-    s.adminPin = pin;
+    if (pin === '1234') throw new HttpError(400, 'اختار رمز غير 1234 (الرمز الافتراضي معروف).');
+    await setPin(s, pin);
   }
   save();
-  return { data: s, events: [toAll('menu:changed')] };
+  return { data: withoutSecrets(s), events: [toAll('menu:changed')] };
 }, { admin: true });
 // القائمة الجاهزة (كافيه أو مطعم): بتبدّل الأقسام والأصناف والعروض، والطلبات والتقارير والطاولات بتضل
 route('POST', '/admin/menu-template', ({ body }) => {
@@ -471,7 +500,7 @@ route('POST', '/admin/upload', async ({ body, hooks }) => {
  * ينفّذ طلب API ويرجع { status, data, events }
  * path بدون /api في أوله، وممكن يحتوي query string
  */
-export async function handle(method, fullPath, body, { token = null, hooks = {} } = {}) {
+export async function handle(method, fullPath, body, { token = null, hooks = {}, client = null } = {}) {
   const [path, query = ''] = String(fullPath).split('?');
   const q = new URLSearchParams(query);
   for (const r of routes) {
@@ -481,7 +510,7 @@ export async function handle(method, fullPath, body, { token = null, hooks = {} 
     const p = Object.fromEntries(r.keys.map((k, i) => [k, decodeURIComponent(m[i + 1])]));
     try {
       if (r.admin && !validToken(token)) throw new HttpError(401, 'انتهت الجلسة، سجّل الدخول من جديد.');
-      const out = await r.fn({ p, q, body, token, hooks });
+      const out = await r.fn({ p, q, body, token, hooks, client });
       const wrapped = out && typeof out === 'object' && 'data' in out && ('events' in out || 'status' in out);
       return wrapped
         ? { status: out.status ?? 200, data: out.data, events: out.events ?? [] }

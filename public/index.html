@@ -95,12 +95,15 @@
       <div id="homeResults" hidden></div>
       <div id="homeMain">
         <button class="track-banner" type="button" id="homeTrack" data-go="track" hidden></button>
+        <div id="todayPick"></div>
         <div class="cat-grid" id="catGrid"></div>
-        <button class="helper-card" type="button" data-go="helper" data-cafe-only>
-          <span class="helper-ic" data-icon="sparkle"></span>
-          <span><strong>ساعدنا نختارك</strong><small>اكتشف اللي بيناسب ذوقك اليوم</small></span>
-          <span class="chev" data-icon="chev"></span>
-        </button>
+        <div class="helper-card" data-cafe-only>
+          <button class="helper-main" type="button" data-go="helper">
+            <span class="helper-ic" data-icon="sparkle"></span>
+            <span><strong>ساعدنا نختارك</strong><small id="helperSub">ثلاث أسئلة ومنقترحلك</small></span>
+          </button>
+          <button class="helper-ask" type="button" data-open-chat><span id="helperAva"></span><span>اسأل نديم</span></button>
+        </div>
         <section class="block" id="popBlock">
           <header class="block-head"><h2>الأكثر طلباً</h2><span class="muted">هالأسبوعين</span></header>
           <div class="pop-row" id="popRow"></div>
@@ -188,6 +191,7 @@
       <button type="button" data-tab="more"><span data-icon="dots"></span>المزيد</button>
     </nav>
     <p class="powered" aria-label="منصة إيلاف">إيلاف · <b>ILAF</b></p>
+    <button class="cart-bar" type="button" id="cartBar" data-go="cart" hidden></button>
 
     <!-- لوح الصنف -->
     <section class="sheet item-sheet" id="itemSheet" role="dialog" aria-modal="true" aria-labelledby="itemTitle" aria-hidden="true">

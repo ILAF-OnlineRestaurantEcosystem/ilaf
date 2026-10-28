@@ -5,6 +5,8 @@
 
 **ابدأ بـ [REQUIREMENTS.md](REQUIREMENTS.md)**: شو لازم يعمل النظام خطوة خطوة، وقائمة الفحص بعد ما تربط قاعدة البيانات.
 
+**والأمان بـ [SECURITY.md](SECURITY.md)**: الحماية الموجودة، المخاطر المعروفة، والمطلوب عند التشغيل الحقيقي.
+
 **جرّب قبل ما تبلّش** (نسخة تجربة بالمتصفح على GitHub Pages، نفس الواجهات):
 لوحة المنصة https://ilaf-onlinerestaurantecosystem.github.io/ilaf-demo/platform.html ·
 كل الروابط https://ilaf-onlinerestaurantecosystem.github.io/ilaf-demo/
@@ -93,7 +95,7 @@ data/               ← (مش بالـ git) البيانات الحالية
 {
   version, menuVersion, imagesSeeded,
   settings:   { cafeName, brandWord, tagline, businessType, currency, currencyName, city, lat, lon,
-                adminPin, baristaName, wifi, hours, cafeNotes, dayOpenedAt,
+                pinHash, pinSalt, pinWeak, baristaName, wifi, hours, cafeNotes, dayOpenedAt,
                 theme: { menu: { palette, color, accent }, admin: { palette, color, accent } },  // ثيم كل واجهة لحالها
                 logoIcon, logoName },  // صور شعار المحل (بدل الأيقونة وبدل كتابة الاسم)، فاضي = الافتراضي
   categories: [{ id, name, en, desc, temp, icon, image, order }],
@@ -120,7 +122,7 @@ data/               ← (مش بالـ git) البيانات الحالية
 1. سيرفر Linux (VPS) عليه **Node 22+**، والمشروع بيشتغل بـ `npm ci && npm start` (أو PM2 / systemd).
 2. **Reverse proxy** (Caddy أسهل، أو Nginx) مع **HTTPS** (Let's Encrypt) للدومين.
    - لازم يمرّر **WebSocket** لـ Socket.io (`Upgrade` و `Connection` headers).
-   - `app.set('trust proxy', 1)` بـ index.js لما يصير في proxy (عشان حدود الطلبات تشوف IP الزبون الحقيقي).
+   - `TRUST_PROXY=1` بالـ `.env` لما يصير في proxy (عشان حدود الطلبات تشوف IP الزبون الحقيقي).
 3. متغيرات البيئة (ملف `.env`، **ما بينرفع للـ git أبداً**):
 
 | المتغير | ضروري؟ | ملاحظة |
@@ -130,6 +132,10 @@ data/               ← (مش بالـ git) البيانات الحالية
 | `GEMINI_MODEL`, `GEMINI_THINKING` | لا | |
 | `ANTHROPIC_API_KEY`, `CLAUDE_MODEL` | لا | بديل Gemini |
 | `DATABASE_URL` | **جديد** | انت بتضيفه لـ PostgreSQL |
+| `NODE_ENV` | نعم | `production` |
+| `TRUST_PROXY` | نعم ورا proxy | `1` (عدد الـ proxies قدام السيرفر) |
+| `HSTS` | نعم مع HTTPS | `1` بيشغّل `Strict-Transport-Security` |
+| `ALLOWED_ORIGINS` | لا | دومينات ثانية مسموح تفتح اتصال Socket.io، مفصولة بفاصلة |
 
 4. **أول تشغيل**: السيرفر بيطبع **رمز إعداد المنصة** بالـ console. بيفتحوا `/platform` وبيعملوا أول حساب فيه، وبعدها الشريك بينضاف من "الفريق".
 
@@ -190,8 +196,9 @@ data/               ← (مش بالـ git) البيانات الحالية
 ## 7. أمان: أشياء لازم تنتبهلها
 
 - `.env` ومجلد `data/` **ما بينرفعوا** للـ git (موجودين بـ `.gitignore`).
-- رمز الكاشير (`settings.adminPin`) محفوظ نص عادي، وبنصح يصير hash زي كلمات سر المنصة.
-- حدود الطلبات (rate limit) بالذاكرة. مع proxy لازم `trust proxy`.
+- **التفاصيل الكاملة بـ [SECURITY.md](SECURITY.md).**
+- رمز الكاشير محفوظ مشفّر (`pinHash` + `pinSalt`، PBKDF2). احفظوه بقاعدة البيانات زي ما هو، وممنوع يرجع نص عادي.
+- حدود الطلبات والجلسات بالذاكرة. مع proxy لازم `TRUST_PROXY=1`، ومع أكثر من سيرفر انقلوهم لقاعدة البيانات أو Redis.
 - CORS مش مفعّل (الواجهة والـ API من نفس الدومين)، وخلّوه هيك.
 
 ## 8. التشغيل محلياً

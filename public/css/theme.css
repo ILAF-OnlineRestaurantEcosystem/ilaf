@@ -194,3 +194,12 @@
 :root[data-palette][data-theme="dark"] .tabbar button[aria-current="page"] { color: var(--tab-on); }
 :root[data-palette][data-theme="dark"] .tabbar button[aria-current="page"]::before { background: var(--gold); }
 :root[data-palette][data-theme="dark"] .search:focus-within { box-shadow: 0 10px 24px -14px rgba(0, 0, 0, .8), inset 0 0 0 1.5px var(--gold); }
+
+/* حالات الطلب بالغامق */
+[data-theme="dark"] {
+  --st-new: #f0a043; --st-new-bg: #3a2810; --st-new-ink: #f7c98a;
+  --st-prep: #5d9be8; --st-prep-bg: #142740; --st-prep-ink: #a9cbf5;
+  --st-ready: #43c085; --st-ready-bg: #10301f; --st-ready-ink: #94dcb6;
+  --st-served: #b49478; --st-served-bg: #2a2019; --st-served-ink: #dcc6b2;
+  --st-call: #f0675a; --st-call-bg: #3d1915; --st-call-ink: #f7aaa1;
+}

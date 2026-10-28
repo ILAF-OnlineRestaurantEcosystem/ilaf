@@ -212,12 +212,12 @@ export function itemArt(key) {
 
 /** صورة الصنف: صورة مرفوعة إن وُجدت، وإلا الرسم النحاسي على خلفية بلون الصنف */
 export function artTile(item, cls = '') {
-  // الرسم دايماً موجود تحت الصورة: إذا الصورة ما تحمّلت (بدون نت) بتنشال وبيبان الرسم
+  // الرسم دايماً موجود تحت الصورة: إذا الصورة ما تحمّلت (بدون نت) بتنشال وبيبان الرسم (بدون onerror مضمّن عشان سياسة CSP)
   let inner = itemArt(item.art);
   if (item.image) {
     const big = /\bbig\b/.test(cls);
     const src = String(item.image).replace(/([?&]w=)\d+/, `$1${big ? 760 : 360}`).replace(/"/g, '%22');
-    inner += `<img src="${src}" alt="" loading="lazy" decoding="async" onerror="this.remove()">`;
+    inner += `<img src="${src}" alt="" loading="lazy" decoding="async">`; // إذا ما تحمّلت بتنشال (common.js) وبيبان الرسم
   }
   // كل الخلفيات بدرجات البني والبيج (26–40) مع فرق بسيط بين الأصناف، لتضل الهوية متناسقة
   const warm = Math.round(26 + (((Number(item.hue) || 30) % 360) / 360) * 14);

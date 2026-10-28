@@ -122,6 +122,11 @@ function renderShell() {
   setBusiness(s.businessType); // مطعم = قدرة الفخار وألوانه
   applyBusiness(s.businessType);
   setStoreLogo({ icon: s.logoIcon, name: s.logoName }); // شعار المحل الخاص إذا رفعه
+  // تنبيه أمان: رمز الدخول لسا الافتراضي 1234
+  let weak = $('#weakPin');
+  if (!weak) { weak = document.createElement('div'); weak.id = 'weakPin'; weak.className = 'weak-pin'; document.querySelector('.view')?.before(weak); }
+  weak.hidden = !s.pinWeak;
+  weak.innerHTML = `${icon('lock')}<span><b>رمز الدخول لسا 1234 (الافتراضي)</b> وأي حد بيعرفه. غيّره لرمز من 6 أرقام.</span><button class="btn btn-sm" type="button" data-view-btn="settings">غيّره هلق</button>`;
   applyPalette(s.theme, 'admin', storeKey('palette.admin')); // ثيم الألوان (إذا مطبّق على اللوحة)
   renderThemeBtn();
   document.title = `لوحة الكاشير — ${s.cafeName}`;
@@ -141,9 +146,21 @@ function renderShell() {
   $('#printCards').innerHTML = `${icon('printer')}اطبع كروت الـ QR`;
   $$('[data-new-order]').forEach((b) => { b.innerHTML = `${icon('plus')}طلب جديد`; });
   $('#copyLink').innerHTML = `${icon('clipboard')}انسخ الرابط`;
-  $('#legend').innerHTML = [
-    ['var(--gold)', 'طلب جديد'], ['var(--amber)', 'قيد التحضير'], ['var(--seaglass)', 'جاهز'], ['var(--brass)', 'تم التقديم'], ['var(--coral)', 'نداء نادل'],
-  ].map(([c, l]) => `<span><i style="background:${c}"></i>${l}</span>`).join('');
+  $('#legend').innerHTML = LEGEND;
+}
+// مفتاح الألوان: نفس ألوان مربعات الطاولات وأعمدة الطلبات
+const LEGEND = [['new', 'طلب جديد'], ['preparing', 'قيد التحضير'], ['ready', 'جاهز'], ['served', 'تم التقديم'], ['call', 'نداء'], ['empty', 'فاضية']]
+  .map(([k, l]) => `<span class="lg-${k}"><i></i>${l}</span>`).join('');
+/** النداءات بسطر لحالها فوق (ما بتغطي العدّادات)، مع زر "تم" */
+function renderCallBanner() {
+  const html = S.calls.map((c) => `
+    <div class="call-row">
+      ${icon(c.kind === 'bill' ? 'receipt' : 'bell')}
+      <b>${c.table === TAKEAWAY ? 'طلب خارجي' : `طاولة ${c.table}`} ${c.kind === 'bill' ? 'طالبة الحساب' : 'بتنادي نادل'}</b>
+      <time>${timeAgo(c.at)}</time>
+      <button class="btn btn-sm" type="button" data-resolve="${c.id}">${icon('check')}تم</button>
+    </div>`).join('');
+  for (const id of ['callBanner', 'callBannerOrders']) { const el = $('#' + id); if (el) el.innerHTML = html; }
 }
 function renderNav() {
   const newCount = S.orders.filter((o) => o.status === 'new').length;
@@ -210,9 +227,10 @@ function tileHtml(t) {
   const total = os.reduce((s, o) => s + o.total, 0);
   const oldest = os.map((o) => o.createdAt).sort()[0];
   const label = st ? STATUS[st].label : calls.length ? '' : 'فاضية';
+  const empty = !st && !calls.length;
   const callLabel = calls.some((c) => c.kind === 'bill') ? 'طالب الحساب' : calls.length ? 'نداء نادل' : '';
   return `
-    <button class="tile ${st ? 't-' + st : ''} ${calls.length ? 'has-call' : ''} ${S.justIn.has(t.number) ? 'just-in' : ''} ${S.selected === t.number ? 'is-selected' : ''}" type="button" data-table="${t.number}" aria-label="طاولة ${t.number}">
+    <button class="tile ${st ? 't-' + st : ''} ${empty ? 't-empty' : ''} ${calls.length ? 'has-call' : ''} ${S.justIn.has(t.number) ? 'just-in' : ''} ${S.selected === t.number ? 'is-selected' : ''}" type="button" data-table="${t.number}" aria-label="طاولة ${t.number}">
       ${S.justIn.has(t.number) ? '<span class="ripple"></span><span class="ripple"></span><span class="ripple"></span>' : ''}
       ${calls.length ? `<span class="tile-call" title="${callLabel}">${icon(calls.some((c) => c.kind === 'bill') ? 'receipt' : 'bell')}</span>` : ''}
       <span class="tile-no">${t.number}</span>
@@ -248,14 +266,21 @@ function renderFloor() {
       <div class="tiles">${tables.map(tileHtml).join('')}</div>
     </section>`).join('');
   const newCount = S.orders.filter((o) => o.status === 'new').length;
+  renderCallBanner();
   $('#floorAlerts').innerHTML = [
     newCount ? `<span class="badge badge-brass">${newCount} طلب جديد</span>` : '',
-    S.calls.length ? `<span class="badge badge-coral">${S.calls.length} نداء</span>` : '',
     S.orders.filter((o) => o.status === 'ready').length ? `<span class="badge badge-sea">${S.orders.filter((o) => o.status === 'ready').length} جاهز للتقديم</span>` : '',
   ].join('');
 }
 
 // ───────── لوح الطاولة ─────────
+/** من إمتى الطلب بهالمرحلة (آخر تغيير حالة) */
+const statusSince = (o) => [...(o.history ?? [])].reverse().find((h) => h.status === o.status)?.at ?? o.createdAt;
+/** طلب جديد صرله أكتر من 5 دقايق، أو قيد التحضير أكتر من 15: بيبين إنه متأخر */
+function isLate(o) {
+  const mins = (Date.now() - new Date(statusSince(o))) / 60000;
+  return (o.status === 'new' && mins > 5) || (o.status === 'preparing' && mins > 15);
+}
 function orderCard(o, { inKanban = false } = {}) {
   const takeaway = o.table === TAKEAWAY;
   // الطلب الخارجي: بعد ما يجهز بينسلّم وبينحسب لحاله
@@ -269,7 +294,7 @@ function orderCard(o, { inKanban = false } = {}) {
         ${o.source === 'barista' ? `<span class="badge badge-brass" title="الطلب اقترحه الباريستا الذكي">${icon('sparkle')}باريستا</span>` : ''}
         ${o.source === 'cashier' ? `<span class="badge badge-mute" title="الكاشير أدخل الطلب">كاشير</span>` : ''}
         ${o.edited ? `<span class="badge badge-mute" title="الكاشير عدّل الطلب">معدّل</span>` : ''}
-        <time datetime="${o.createdAt}">${timeAgo(o.createdAt)}</time>
+        <time datetime="${o.createdAt}" class="${inKanban && isLate(o) ? 'late' : ''}">${inKanban && isLate(o) ? '⚠ ' : ''}${timeAgo(statusSince(o))}</time>
       </div>
       ${takeaway && (o.takeaway?.name || o.takeaway?.phone) ? `<p class="takeaway-who">${icon('user')}<b>${esc(o.takeaway.name || 'زبون')}</b>${o.takeaway.phone ? ` · <span dir="ltr">${esc(o.takeaway.phone)}</span>` : ''}</p>` : ''}
       <div class="olines">
@@ -283,7 +308,7 @@ function orderCard(o, { inKanban = false } = {}) {
       ${inKanban ? '' : `<div class="ocard-total"><span>مجموع الطلب</span><span>${o.manualDiscount ? `<small>خصم ${moneyText(o.manualDiscount, cur())}</small> ` : ''}${money(o.total, cur())}</span></div>`}
       ${o.note ? `<p class="onote">${esc(o.note)}</p>` : ''}
       <div class="oactions">
-        ${next ? `<button class="btn ${o.status === 'new' ? 'btn-brass' : 'btn-ghost'} btn-sm" type="button" data-advance="${o.id}" data-to="${next[0]}">${icon(next[0] === 'served' ? 'check' : next[0] === 'ready' ? 'bell' : 'flame')}${next[1]}</button>` : ''}
+        ${next ? `<button class="btn ${inKanban ? 'btn-step' : o.status === 'new' ? 'btn-brass' : 'btn-ghost'} btn-sm" type="button" data-advance="${o.id}" data-to="${next[0]}">${icon(next[0] === 'served' ? 'check' : next[0] === 'ready' ? 'bell' : 'flame')}${next[1]}</button>` : ''}
         ${OPEN.includes(o.status) ? `<button class="icon-btn" type="button" data-edit-order="${o.id}" aria-label="عدّل الطلب" title="عدّل الطلب (زيد أو شيل أصناف)">${icon('edit')}</button>` : ''}
         <button class="icon-btn" type="button" data-print="${o.id}" aria-label="اطبع تذكرة المطبخ" title="اطبع تذكرة المطبخ">${icon('printer')}</button>
         ${OPEN.includes(o.status) ? `<button class="icon-btn" type="button" data-cancel="${o.id}" aria-label="إلغاء الطلب" title="إلغاء الطلب">${icon('close')}</button>` : ''}
@@ -491,15 +516,23 @@ function openOrderEditor({ order = null, table = null } = {}) {
 
 // ───────── الطلبات (كانبان) ─────────
 function renderKanban() {
-  const cols = [['new', 'var(--gold)'], ['preparing', 'var(--amber)'], ['ready', 'var(--seaglass)'], ['served', 'var(--brass)']];
-  $('#kanban').innerHTML = cols.map(([s, c]) => {
+  renderCallBanner();
+  const cols = [['new', 'جديد'], ['preparing', 'قيد التحضير'], ['ready', 'جاهز للتقديم'], ['served', 'تم التقديم']];
+  const kcols = cols.map(([s, label]) => {
     const list = S.orders.filter((o) => o.status === s).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
     return `
-      <section class="kcol" aria-label="${STATUS[s].label}">
-        <header class="kcol-head"><h3><i style="background:${c}"></i>${STATUS[s].label}</h3><span class="num">${list.length}</span></header>
-        ${list.length ? list.map((o) => `<div class="kcard">${orderCard(o, { inKanban: true })}</div>`).join('') : '<p class="kempty">ما في طلبات هون</p>'}
+      <section class="kcol k-${s}" aria-label="${label}">
+        <header class="kcol-head"><h3><i></i>${label}</h3><span class="num">${list.length}</span></header>
+        ${list.length ? list.map((o) => `<div class="kcard ${isLate(o) ? 'is-late' : ''}">${orderCard(o, { inKanban: true })}</div>`).join('') : '<p class="kempty">ما في طلبات هون</p>'}
       </section>`;
   }).join('');
+  // الصالة بنظرة: كل طاولة بلون حالتها، والكبسة بتفتح تفاصيلها
+  const hall = S.data.tables.map((t) => {
+    const { st, calls } = tableState(t.number);
+    return `<button class="kt ${st ? 't-' + st : 't-empty'} ${calls.length ? 'has-call' : ''}" type="button" data-table="${t.number}" aria-label="طاولة ${t.number}">${t.number}</button>`;
+  }).join('');
+  $('#kanban').innerHTML = `<div class="kcols">${kcols}</div>
+    <aside class="khall"><h3>الصالة بنظرة</h3><div class="khall-grid">${hall}</div><div class="legend mini">${LEGEND}</div></aside>`;
 }
 
 async function advance(id, to) {
@@ -1949,7 +1982,7 @@ function connect() {
     if (!S.calls.some((x) => x.id === c.id)) S.calls.push(c);
     refreshLive();
     if (S.sound) chime('call');
-    toast(c.kind === 'bill' ? `طاولة ${c.table} طالبة الحساب` : `طاولة ${c.table} بتنادي نادل`, 'err');
+    // النداء بيطلع بسطر أحمر ثابت فوق الصالة والطلبات (renderCallBanner)، فما في داعي لرسالة كمان
   });
   sock.on('call:resolved', (r) => {
     S.calls = S.calls.filter((c) => (r.id ? c.id !== r.id : c.table !== r.table));

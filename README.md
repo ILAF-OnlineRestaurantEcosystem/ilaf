@@ -35,6 +35,7 @@
 | [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md) | **المطلوب خطوة خطوة**: إنشاء محل ← رابط لوحة الكاشير ← روابط الطاولات والمنيو، الطلبات (إنشاء، تعديل، إلغاء)، ثيم الألوان، التجميد، وقائمة فحص بعد الربط |
 | [docs/HANDOVER.md](docs/HANDOVER.md) | الشرح التقني: هيكل الكود، كل الـ API، وكيف تبدّل التخزين بـ PostgreSQL وتحط دومين و HTTPS |
 | [docs/schema.sql](docs/schema.sql) | تصميم قاعدة البيانات (مرحلة 1 جاهزة، ومرحلة 2 مفصّلة) |
+| [docs/SECURITY.md](docs/SECURITY.md) | **الأمان**: الحماية الموجودة بالكود، المخاطر المعروفة، والمطلوب عند التشغيل الحقيقي (للمراجع الأمني) |
 | [.env.example](.env.example) | متغيرات البيئة (مفاتيح نديم، المنفذ، `DATABASE_URL`) |
 | [server/db.js](server/db.js) و [server/platform-store.js](server/platform-store.js) | **الملفين اللي بيتبدّلوا** لما ننقل التخزين لـ PostgreSQL |
 | [screenshots/](screenshots) | صور كل الشاشات |

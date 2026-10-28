@@ -37,10 +37,11 @@
     <span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9"/><path d="M9.5 4.5 12 7l2.5-2.5M9.5 19.5 12 17l2.5 2.5"/></svg></span>
     <h1 id="title">المحل مش متاح هلأ</h1>
     <p id="msg">الطلب من الطاولة متوقف مؤقتاً. اطلب من الكاشير مباشرة، وشكراً لصبرك 🙏</p>
-    <button type="button" onclick="location.reload()">جرّب كمان مرة</button>
+    <button type="button" id="retry">جرّب كمان مرة</button>
     <span class="foot">إيلاف · <b>ILAF</b></span>
   </main>
   <script>
+    document.getElementById('retry').addEventListener('click', function () { location.reload(); });
     // لوحة الكاشير بتشوف السبب الحقيقي، الزبون بيشوف رسالة لطيفة
     if (/\/admin\/?$/.test(location.pathname)) {
       document.getElementById('title').textContent = 'الحساب مجمّد';

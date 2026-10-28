@@ -86,6 +86,9 @@ export function createTenantData(id, state) {
   writeNow(norm(id));
   return state;
 }
+// معرّف فريد: وقت + 12 حرف عشوائي آمن (رقم الطلب برابط المتابعة ما بينخمّن)
 export function uid(prefix = '') {
-  return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const abc = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  const rnd = [...globalThis.crypto.getRandomValues(new Uint8Array(12))].map((x) => abc[x % 36]).join('');
+  return prefix + Date.now().toString(36) + rnd;
 }

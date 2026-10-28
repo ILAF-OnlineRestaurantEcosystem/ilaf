@@ -23,9 +23,12 @@ export function comboValue(offer) {
   return round(offer.itemIds.reduce((s, id) => s + (items.find((i) => i.id === id)?.price ?? 0), 0));
 }
 
+// اللي بيوصل للزبون من إعدادات المحل: قائمة مسموحة بس (أي حقل جديد سري ما بيطلع بالغلط)
+const PUBLIC_SETTINGS = ['cafeName', 'brandWord', 'tagline', 'businessType', 'currency', 'currencyName', 'city', 'lat', 'lon',
+  'baristaName', 'wifi', 'hours', 'cafeNotes', 'theme', 'logoIcon', 'logoName'];
 export function publicSettings() {
-  const { adminPin, ...rest } = db().settings;
-  return rest;
+  const s = db().settings;
+  return Object.fromEntries(PUBLIC_SETTINGS.filter((k) => s[k] !== undefined).map((k) => [k, s[k]]));
 }
 
 export function zoneOf(tableNumber) {

@@ -206,3 +206,9 @@ export function revealOnScroll(root = document) {
   }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
   els.forEach((e) => io.observe(e));
 }
+
+// صورة صنف ما تحمّلت (بدون نت أو رابط خربان): بنشيلها وبيبان الرسم اللي تحتها
+document.addEventListener('error', (e) => {
+  const img = e.target;
+  if (img instanceof HTMLImageElement && img.parentElement?.classList.contains('art')) img.remove();
+}, true);

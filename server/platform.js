@@ -3,6 +3,7 @@
 // نفس الملف بيشتغل بنسخة الموقع الثابت داخل المتصفح (التخزين هناك standalone/demo-registry.js)
 import { withTenant, db, save, createTenantData, DEFAULT_TENANT } from './db.js';
 import { readRegistry, writeRegistry, hashPassword, samePassword, randomHex, newId } from './platform-store.js';
+import { setPin, randomPin, safeEqual } from './pin.js';
 import { buildSeed } from './seed.js';
 import { registerToken, randomToken, dropSessions } from './core.js';
 import { HttpError, monthKey, OPEN_STATUSES } from './logic.js';
@@ -15,7 +16,8 @@ let reg = null;
 const now = () => new Date().toISOString();
 const str = (v, max = 200) => String(v ?? '').trim().slice(0, max);
 const write = () => writeRegistry(reg);
-const setupCode = () => randomHex(4).toUpperCase().replace(/(.{4})/, '$1-');
+// رمز الإعداد لأول حساب: 16 خانة عشوائية (ما بينخمّن)
+const setupCode = () => randomHex(8).toUpperCase().replace(/(.{4})(?=.)/g, '$1-');
 
 function registry() {
   if (reg) return reg;
@@ -30,7 +32,8 @@ function registry() {
     };
   }
   // ما في ولا حساب: رمز إعداد بيطلع بشاشة السيرفر بس (عشان ما حدا غريب ياخد المنصة)
-  if (!reg.users.length && !reg.setupKey) reg.setupKey = setupCode();
+  // رمز إعداد قديم قصير (قبل التحديث) بيتبدّل بواحد أطول
+  if (!reg.users.length && (!reg.setupKey || reg.setupKey.length < 19)) reg.setupKey = setupCode();
   write();
   return reg;
 }
@@ -71,7 +74,7 @@ function validUser(body) {
   if (!/^[a-z0-9_.-]{3,24}$/.test(username)) throw new HttpError(400, 'اسم المستخدم (ID) بالإنجليزي من 3 لـ 24 حرف، مثلاً mohammed.');
   const name = str(body?.name, 40) || username;
   const password = String(body?.password ?? '');
-  if (password.length < 6) throw new HttpError(400, 'كلمة السر لازم تكون 6 أحرف أو أكثر.');
+  if (password.length < 8) throw new HttpError(400, 'كلمة السر لازم تكون 8 أحرف أو أكثر.');
   if (registry().users.some((u) => u.username === username)) throw new HttpError(409, 'اسم المستخدم هاد موجود.');
   return { username, name, password };
 }
@@ -113,10 +116,10 @@ function withStats(t) {
   return { ...t, typeLabel: TYPES[t.type] ?? t.type, stats };
 }
 
-function setTenantPin(id, pin) {
+async function setTenantPin(id, pin) {
   const p = str(pin, 8);
   if (!/^\d{4,8}$/.test(p)) throw new HttpError(400, 'رمز لوحة الكاشير لازم يكون من 4 لـ 8 أرقام.');
-  withTenant(id, () => { db().settings.adminPin = p; save(); });
+  await withTenant(id, async () => { await setPin(db().settings, p); save(); }); // مشفّر، مش نص عادي
 }
 
 // ───────── المسارات ─────────
@@ -131,15 +134,29 @@ route('GET', '/info', () => ({ name: PLATFORM_NAME, needsSetup: registry().users
 route('POST', '/setup', ({ body }) => {
   const r = registry();
   if (r.users.length) throw new HttpError(409, 'المنصة متجهّزة من قبل، سجّل دخول.');
-  if (str(body?.key, 20).toUpperCase() !== r.setupKey) throw new HttpError(403, 'رمز الإعداد غلط. بتلاقيه بشاشة السيرفر لما يشتغل.');
+  if (!r.setupKey || !safeEqual(str(body?.key, 40).toUpperCase(), r.setupKey)) throw new HttpError(403, 'رمز الإعداد غلط. بتلاقيه بشاشة السيرفر لما يشتغل.');
   const user = addUser(validUser(body), 'setup');
   delete r.setupKey;
   write();
   return { token: startSession(user), user: publicUser(user) };
 }, { auth: false });
-route('POST', '/login', ({ body }) => {
-  const user = registry().users.find((u) => u.username === str(body?.username, 24).toLowerCase());
-  if (!user || !checkPassword(user, body?.password ?? '')) throw new HttpError(401, 'اسم المستخدم أو كلمة السر غلط.');
+// محاولات الدخول الغلط للمنصة: 5 غلطات لنفس الحساب من نفس العنوان = قفل 15 دقيقة
+const loginFails = new Map();
+const DUMMY = hashPassword('not-a-real-password'); // عشان وقت الرد ما يكشف إذا اسم المستخدم موجود
+route('POST', '/login', ({ body, client }) => {
+  const username = str(body?.username, 24).toLowerCase();
+  const key = `${username}|${client ?? 'local'}`;
+  const f = loginFails.get(key);
+  if (f?.until > Date.now()) throw new HttpError(429, `محاولات غلط كثيرة. جرّب بعد ${Math.ceil((f.until - Date.now()) / 60_000)} دقيقة.`);
+  const user = registry().users.find((u) => u.username === username);
+  const okPass = checkPassword(user ?? DUMMY, body?.password ?? '');
+  if (!user || !okPass) {
+    const n = (f?.until > Date.now() ? 0 : f?.n ?? 0) + 1;
+    loginFails.set(key, n >= 5 ? { n: 0, until: Date.now() + 15 * 60_000 } : { n, until: 0 });
+    if (n >= 5) console.warn(`⚠️  5 محاولات دخول غلط على المنصة (${key}) — انسكّر 15 دقيقة`);
+    throw new HttpError(401, 'اسم المستخدم أو كلمة السر غلط.');
+  }
+  loginFails.delete(key);
   return { token: startSession(user), user: publicUser(user) };
 }, { auth: false });
 route('POST', '/logout', ({ token }) => { sessions.delete(token); return { ok: true }; });
@@ -147,16 +164,16 @@ route('GET', '/me', ({ user }) => publicUser(user));
 
 // المحلات
 route('GET', '/tenants', () => registry().tenants.map(withStats));
-route('POST', '/tenants', ({ body, user }) => {
+route('POST', '/tenants', async ({ body, user }) => {
   const r = registry();
   const name = str(body?.name, 40);
   if (!name) throw new HttpError(400, 'اكتب اسم المحل.');
   const type = body?.type === 'restaurant' ? 'restaurant' : 'cafe';
-  const pin = str(body?.pin, 8) || String(Math.floor(1000 + Math.random() * 9000));
+  const pin = str(body?.pin, 8) || randomPin(6); // رمز عشوائي آمن من 6 أرقام
   if (!/^\d{4,8}$/.test(pin)) throw new HttpError(400, 'رمز لوحة الكاشير لازم يكون من 4 لـ 8 أرقام.');
   const id = String(r.nextId++);
   createTenantData(id, buildSeed({ type, name, demo: body?.demo === true }));
-  setTenantPin(id, pin);
+  await setTenantPin(id, pin);
   const tenant = { id, name, type, ownerName: str(body?.ownerName, 40), ownerPhone: str(body?.ownerPhone, 20), status: 'active', notes: str(body?.notes, 300), createdAt: now(), createdBy: user.username };
   r.tenants.push(tenant);
   write();
@@ -197,9 +214,9 @@ route('POST', '/tenants/:id/unfreeze', ({ p, user }) => {
   write();
   return withStats(t);
 });
-route('POST', '/tenants/:id/pin', ({ p, body }) => {
+route('POST', '/tenants/:id/pin', async ({ p, body }) => {
   if (!tenantInfo(p.id)) throw new HttpError(404, 'المحل مش موجود.');
-  setTenantPin(p.id, body?.pin);
+  await setTenantPin(p.id, body?.pin);
   return { ok: true };
 });
 // "افتح لوحة الكاشير" من المنصة بدون رمز المحل
@@ -221,16 +238,18 @@ route('DELETE', '/users/:id', ({ p, user }) => {
   write();
   return { ok: true };
 });
-route('POST', '/me/password', ({ body, user }) => {
+route('POST', '/me/password', ({ body, user, token }) => {
   if (!checkPassword(user, body?.current ?? '')) throw new HttpError(401, 'كلمة السر الحالية غلط.');
-  if (String(body?.next ?? '').length < 6) throw new HttpError(400, 'كلمة السر الجديدة لازم تكون 6 أحرف أو أكثر.');
+  if (String(body?.next ?? '').length < 8) throw new HttpError(400, 'كلمة السر الجديدة لازم تكون 8 أحرف أو أكثر.');
   Object.assign(user, hashPassword(body.next));
   write();
+  // كلمة السر تغيّرت: كل الأجهزة الثانية الداخلة بهالحساب بتطلع
+  for (const [t, sess] of sessions) if (sess.userId === user.id && t !== token) sessions.delete(t);
   return { ok: true };
 });
 
 /** ينفّذ طلب على API المنصة ويرجع { status, data } */
-export async function platformHandle(method, fullPath, body, { token = null } = {}) {
+export async function platformHandle(method, fullPath, body, { token = null, client = null } = {}) {
   const pathOnly = String(fullPath).split('?')[0];
   for (const r of routes) {
     if (r.method !== method) continue;
@@ -240,7 +259,7 @@ export async function platformHandle(method, fullPath, body, { token = null } = 
     try {
       const user = sessionUser(token);
       if (r.auth && !user) throw new HttpError(401, 'سجّل دخول للمنصة.');
-      const out = await r.fn({ p, body, token, user });
+      const out = await r.fn({ p, body, token, user, client });
       return out && typeof out === 'object' && 'data' in out && 'status' in out ? out : { status: 200, data: out };
     } catch (err) {
       if (err instanceof HttpError) return { status: err.status, data: { error: err.message } };

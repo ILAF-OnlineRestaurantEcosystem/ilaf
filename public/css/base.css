@@ -187,3 +187,13 @@ h1, h2, h3, h4, h5, p { margin: 0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+
+/* ألوان حالات الطلب: كل لون إله معنى واحد بكل مكان (الكاشير والزبون)
+   برتقالي جديد · أزرق تحضير · أخضر جاهز · بني تم التقديم · أحمر نداء */
+:root {
+  --st-new: #d97a14; --st-new-bg: #fdf0dc; --st-new-ink: #8a4a06;
+  --st-prep: #2f6fbf; --st-prep-bg: #e4eefb; --st-prep-ink: #1d4a85;
+  --st-ready: #23895a; --st-ready-bg: #def2e7; --st-ready-ink: #17623f;
+  --st-served: #8a6d55; --st-served-bg: #efe6dc; --st-served-ink: #5a4433;
+  --st-call: #cf3d2e; --st-call-bg: #fde4e0; --st-call-ink: #9c2418;
+}

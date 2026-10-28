@@ -53,7 +53,8 @@ const CAT_HUE = { hot: 28, cold: 34, juice: 38, dessert: 26, bakery: 32 };
 
 // ───────── التنقل بين الشاشات ─────────
 const TAB_SCREENS = ['home', 'category', 'cart', 'bill', 'more'];
-const FAB_SCREENS = ['home', 'category', 'more'];
+const FAB_SCREENS = ['category', 'more']; // بالرئيسية نديم جوا البطاقات (ما بيغطي اشي)
+const CART_BAR_SCREENS = ['home', 'category'];
 const trail = [];
 let current = null;
 
@@ -106,6 +107,7 @@ function render(name, param, dir) {
     if (b.dataset.tab === tabName) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
   });
   $('#fab').classList.toggle('is-hidden', !FAB_SCREENS.includes(name));
+  updateCartBar(name);
   revealOnScroll(el);
 }
 
@@ -294,8 +296,23 @@ function renderHome() {
     ? `${weatherIcon(w)}<span>${greetingWord()} · ${esc(w.city)} ${w.temp}° ${esc(w.desc)}</span>`
     : `${icon('sun')}<span>${greetingWord()}، شو حابب اليوم؟</span>`;
   const cats = categories.filter((c) => items.some((i) => i.categoryId === c.id));
+  // اختيار اليوم: أكثر صنف بينطلب ومتوفر، بصورته الكبيرة وزر إضافة مباشر
+  const pick = popular.map(itemById).find((i) => i?.available) ?? items.find((i) => i.available);
+  $('#todayPick').innerHTML = pick ? `
+    <article class="today-pick" data-item="${esc(pick.id)}">
+      <button class="item-hit" type="button" data-open-item="${esc(pick.id)}" aria-label="${esc(pick.name)}، التفاصيل"></button>
+      ${artTile(pick, 'big')}
+      <div class="tp-info">
+        <span class="tp-tag">${icon('star')}اختيار اليوم</span>
+        <h3>${esc(pick.name)}</h3>
+        <p>${esc(pick.desc ?? '')}</p>
+        <div class="tp-foot"><span class="tp-price">${priceText(pick.price)}</span>
+          <button class="btn btn-brass btn-sm tp-add" type="button" data-quick-add="${esc(pick.id)}">${icon('plus')}أضف</button></div>
+      </div>
+    </article>` : '';
+  const CAT_TINT = [28, 200, 340, 18, 140, 260, 45];
   $('#catGrid').innerHTML = cats.map((c, i) => `
-    <button class="cat-tile ${cats.length % 2 === 1 && i === cats.length - 1 ? 'wide' : ''}" type="button" data-go="category" data-param="${esc(c.id)}" data-reveal>
+    <button class="cat-tile ${cats.length % 2 === 1 && i === cats.length - 1 ? 'wide' : ''}" type="button" data-go="category" data-param="${esc(c.id)}" style="--ch:${CAT_TINT[i % CAT_TINT.length]}" data-reveal>
       ${artTile({ image: c.image, art: c.icon, hue: CAT_HUE[c.id] ?? 30 })}
       <span class="cat-meta"><span><strong>${esc(c.name)}</strong>${c.en ? `<small>${esc(c.en)}</small>` : ''}</span><span class="chev">${icon('chev')}</span></span>
     </button>`).join('');
@@ -325,6 +342,7 @@ function renderHome() {
       </div>
     </article>`).join('');
   $('#baristaAva').innerHTML = dallahIcon();
+  if ($('#helperAva')) $('#helperAva').innerHTML = dallahIcon();
   $('#baristaTitle').textContent = `اسأل ${S().baristaName}، ${W().hostSmart}`;
   doHomeSearch();
 }
@@ -375,9 +393,20 @@ function cartTotals() {
   }
   return { total, saving, count };
 }
+/** شريط الطلب الثابت تحت: كم صنف والمجموع، وكبسة وحدة للسلة */
+function updateCartBar(screen = current?.dataset.screen) {
+  const bar = $('#cartBar');
+  if (!bar || !state.menu) return;
+  const { total, count } = cartTotals();
+  const show = count > 0 && CART_BAR_SCREENS.includes(screen);
+  bar.hidden = !show;
+  document.body.classList.toggle('has-cartbar', show);
+  if (show) bar.innerHTML = `<span class="cb-count">${count}</span><span class="cb-text"><b>طلبك</b><small>${count === 1 ? 'صنف واحد' : `${count} أصناف`}</small></span><span class="cb-total">${priceText(total)}</span><span class="cb-go">كمّل ${icon('arrow', 'arrow')}</span>`;
+}
 function saveCart() {
   state.cart = state.cart.filter((l) => (l.kind === 'offer' ? offerById(l.id) : itemById(l.id)));
   LS.set('cart', state.cart);
+  updateCartBar();
   const { count } = cartTotals();
   const badge = $('#cartCount');
   badge.hidden = !count;
@@ -1141,7 +1170,8 @@ async function boot() {
   try {
     state.menu = await api('/menu');
   } catch (err) {
-    document.body.innerHTML = `<div class="empty" style="min-height:100vh;align-content:center"><p>${esc(err.message)}</p><button class="btn btn-brass" onclick="location.reload()">جرّب كمان مرة</button></div>`;
+    document.body.innerHTML = `<div class="empty" style="min-height:100vh;align-content:center"><p>${esc(err.message)}</p><button class="btn btn-brass" type="button" id="retryBoot">جرّب كمان مرة</button></div>`;
+    $('#retryBoot').addEventListener('click', () => location.reload());
     return;
   }
   enrichMenu();

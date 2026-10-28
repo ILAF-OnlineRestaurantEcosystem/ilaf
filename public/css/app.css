@@ -482,3 +482,49 @@
 .track-note { margin: 0; padding: 10px 14px; border-radius: 14px; background: var(--gold-soft); color: var(--foam-2); font-size: 13px; text-align: center; }
 #trackBody { display: flex; flex-direction: column; gap: 12px; }
 .pick-zone.busy { color: var(--coral); font-weight: 600; }
+
+/* ═════ المنيو: أوضح وأسرع (اقتراحات التصميم) ═════ */
+.cat-tile small { color: var(--foam-2); font-size: 12px; font-weight: 500; }
+/* إذا صورة القسم ما تحمّلت: خلفية ملوّنة حلوة بدل البيج الباهت */
+.cat-tile .art { background: radial-gradient(90% 80% at 25% 15%, hsl(var(--ch, 30) 55% 82% / .9), transparent 60%), linear-gradient(150deg, hsl(var(--ch, 30) 40% 64%), hsl(calc(var(--ch, 30) - 10) 38% 38%)); color: #fff8ef; }
+.cat-tile .art svg { filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .25)); }
+
+/* اختيار اليوم */
+.today-pick { position: relative; display: grid; min-height: 196px; border-radius: 24px; overflow: hidden; box-shadow: var(--shadow-deep); isolation: isolate; }
+.today-pick > .art { position: absolute; inset: 0; height: 100%; border-radius: 0; }
+.today-pick::after { content: ''; position: absolute; inset: 0; z-index: 1; background: linear-gradient(to top, rgba(20, 12, 8, .88) 8%, rgba(20, 12, 8, .35) 55%, transparent); pointer-events: none; }
+.today-pick .item-hit { position: absolute; inset: 0; z-index: 2; }
+.tp-info { position: relative; z-index: 3; align-self: end; display: grid; gap: 4px; padding: 16px; color: #fff8ef; pointer-events: none; }
+.tp-tag { justify-self: start; display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700; background: rgba(255, 255, 255, .18); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.tp-tag svg { width: 13px; height: 13px; color: #f6c76a; }
+.tp-info h3 { font-size: 22px; font-weight: 800; line-height: 1.3; }
+.tp-info p { font-size: 12.5px; opacity: .85; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tp-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
+.tp-price { font-size: 18px; font-weight: 800; }
+.tp-add { pointer-events: auto; }
+
+/* ساعدنا نختارك + نديم جوا البطاقة (بدل الزر العائم فوقها) */
+.helper-card { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 10px 10px 10px 14px; }
+.helper-main { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 12px; text-align: start; padding: 6px 4px; color: inherit; }
+.helper-ask { display: grid; justify-items: center; gap: 4px; padding: 8px 10px; border-radius: 16px; background: var(--brass); color: var(--on-brass); font-size: 11.5px; font-weight: 700; box-shadow: 0 8px 18px -12px var(--brass); }
+.helper-ask svg, .helper-ask img { width: 26px; height: 30px; object-fit: contain; }
+
+/* شريط الطلب الثابت فوق الشريط السفلي */
+.cart-bar { position: absolute; z-index: 21; inset-inline: 14px; bottom: calc(max(12px, env(safe-area-inset-bottom)) + 96px); min-height: 58px; display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 12px; padding: 8px 10px 8px 14px; border-radius: 20px; background: var(--brass); color: var(--on-brass); text-align: start; box-shadow: 0 16px 32px -16px rgba(var(--tint), .9); animation: msgIn .35s var(--ease-out) both; }
+.cart-bar[hidden] { display: none; }
+.cb-count { width: 34px; height: 34px; border-radius: 12px; display: grid; place-items: center; font-weight: 800; background: rgba(255, 255, 255, .2); }
+.cb-text b { display: block; font-size: 14.5px; }
+.cb-text small { display: block; font-size: 11.5px; opacity: .85; }
+.cb-total { font-size: 16px; font-weight: 800; }
+.cb-go { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 14px; font-size: 13px; font-weight: 700; background: rgba(255, 255, 255, .18); }
+.cb-go svg { width: 16px; height: 16px; }
+[data-theme="dark"] .cb-count, [data-theme="dark"] .cb-go { background: rgba(0, 0, 0, .14); }
+body.has-cartbar .fab { bottom: calc(max(12px, env(safe-area-inset-bottom)) + 166px); }
+body.has-cartbar .pending-bar { bottom: calc(max(12px, env(safe-area-inset-bottom)) + 164px); }
+body.has-cartbar .s-home, body.has-cartbar .s-category { padding-bottom: 260px; }
+
+/* حالات الطلب عند الزبون بنفس ألوان الكاشير */
+.status-chip.new { background: var(--st-new-bg); color: var(--st-new-ink); }
+.status-chip.preparing { background: var(--st-prep-bg); color: var(--st-prep-ink); }
+.status-chip.ready { background: var(--st-ready-bg); color: var(--st-ready-ink); }
+.status-chip.served { background: var(--st-served-bg); color: var(--st-served-ink); }
