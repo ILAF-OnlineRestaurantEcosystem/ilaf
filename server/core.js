@@ -436,6 +436,19 @@ function cleanLogo(v) {
   if (/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(x) && x.length < 450_000) return x;
   throw new HttpError(400, 'صورة الشعار مش مقبولة (PNG أو JPG أو WEBP، وحجم صغير).');
 }
+/**
+ * الشريط المتحرك أول صفحة الزبون: عنوان + أصناف بترتيب الكاشير + كم ثانية على كل صنف.
+ * بدون أصناف = الأكثر طلباً لحاله.
+ */
+function cleanFeatured(f) {
+  const known = new Set(db().items.map((i) => i.id));
+  const items = [...new Set((Array.isArray(f?.items) ? f.items : []).map((x) => String(x)))].filter((id) => known.has(id)).slice(0, 10);
+  return {
+    title: str(f?.title, 30) || 'الأكثر طلباً',
+    items,
+    seconds: Math.round(num(f?.seconds ?? 4, { min: 2, max: 10 })),
+  };
+}
 route('PUT', '/admin/settings', async ({ body: b = {} }) => {
   const s = db().settings;
   if (b.cafeName != null) s.cafeName = str(b.cafeName, 40) || s.cafeName;
@@ -451,6 +464,7 @@ route('PUT', '/admin/settings', async ({ body: b = {} }) => {
   if (b.theme != null) s.theme = cleanTheme(b.theme);
   if (b.logoIcon != null) s.logoIcon = cleanLogo(b.logoIcon); // بدل الدلّة/القدرة
   if (b.logoName != null) s.logoName = cleanLogo(b.logoName); // صورة بدل كتابة اسم المحل
+  if (b.featured != null) s.featured = cleanFeatured(b.featured);
   if (b.city != null) s.city = str(b.city, 40);
   if (b.lat != null && b.lat !== '') s.lat = num(b.lat, { min: -90, max: 90 });
   if (b.lon != null && b.lon !== '') s.lon = num(b.lon, { min: -180, max: 180 });
@@ -474,6 +488,7 @@ route('POST', '/admin/menu-template', ({ body }) => {
   d.items = t.items;
   d.offers = t.offers;
   d.settings.businessType = type;
+  if (d.settings.featured) d.settings.featured.items = []; // الأصناف القديمة راحت، فالشريط بيرجع للأكثر طلباً
   save();
   return { data: { ok: true, items: t.items.length, categories: t.categories.length }, events: [toAll('menu:changed')] };
 }, { admin: true });

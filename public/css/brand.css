@@ -82,19 +82,25 @@
 /* بطاقات العروض */
 .offer {
   position: relative; overflow: hidden; border-radius: var(--r-lg); padding: 18px; display: grid; gap: 10px;
-  background: linear-gradient(150deg, #f3ead9, #ece0c9); box-shadow: var(--shadow-card), inset 0 0 0 1px rgba(168, 131, 79, .3);
+  background: linear-gradient(150deg, var(--promo-a), var(--promo-b)); color: var(--promo-ink); box-shadow: 0 16px 30px -20px var(--promo-b);
 }
 .offer-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.offer-title { font-size: 19px; font-weight: 700; line-height: 1.3; color: var(--brass-hi); }
-.offer-desc { color: var(--foam-2); font-size: 13.5px; }
+.offer-title { font-size: 20px; font-weight: 800; line-height: 1.3; }
+.offer-desc { font-size: 13.5px; opacity: .9; }
 .offer-arts { display: flex; }
-.offer-arts .art { width: 52px; height: 52px; border-radius: 50%; box-shadow: 0 0 0 3px #f1e7d4; }
+.offer-arts .art { width: 52px; height: 52px; border-radius: 50%; box-shadow: 0 0 0 3px var(--promo-a); }
 .offer-arts .art + .art { margin-inline-start: -12px; }
 .offer-arts .art svg { width: 58%; height: 58%; }
 .offer-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .offer-price { display: flex; align-items: baseline; gap: 8px; font-weight: 700; }
 .offer-price .num { font-size: 22px; }
-.offer-price s { color: var(--foam-3); font-weight: 400; font-size: 13px; }
+.offer-price s { opacity: .7; font-weight: 400; font-size: 13px; }
+/* أزرار جوا بطاقة العرض الملوّنة: أبيض على لون المحل */
+.btn-promo { background: var(--promo-ink); color: var(--promo-a); box-shadow: 0 8px 18px -10px rgba(0, 0, 0, .55); }
+.btn-promo:hover { filter: brightness(.96); }
+.btn-promo-line { background: transparent; color: var(--promo-ink); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--promo-ink) 65%, transparent); }
+.btn-promo-line:hover { background: rgba(255, 255, 255, .1); }
+.offer .badge-mute { background: rgba(255, 255, 255, .18); color: var(--promo-ink); }
 
 /* زخرفة الأوراق في الزوايا */
 .leaves { position: absolute; pointer-events: none; color: var(--gold); opacity: .32; width: 150px; }

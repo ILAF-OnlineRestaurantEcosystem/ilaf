@@ -90,20 +90,14 @@
     <!-- 3. القائمة -->
     <section class="screen s-home" data-screen="home" aria-label="القائمة">
       <header class="appbar" data-appbar></header>
+      <!-- الشريط المتحرك: أول شي بيشوفه الزبون، والكاشير بيختار أصنافه -->
+      <section class="feat" id="featured" aria-roledescription="carousel" aria-label="اقتراحات المحل" hidden></section>
       <p class="greet" id="greet"></p>
       <label class="search"><span data-icon="search"></span><input class="search-input" id="homeSearch" type="search" placeholder="ابحث في المنيو…" aria-label="ابحث في المنيو"></label>
       <div id="homeResults" hidden></div>
       <div id="homeMain">
         <button class="track-banner" type="button" id="homeTrack" data-go="track" hidden></button>
-        <div id="todayPick"></div>
         <div class="cat-grid" id="catGrid"></div>
-        <div class="helper-card" data-cafe-only>
-          <button class="helper-main" type="button" data-go="helper">
-            <span class="helper-ic" data-icon="sparkle"></span>
-            <span><strong>ساعدنا نختارك</strong><small id="helperSub">ثلاث أسئلة ومنقترحلك</small></span>
-          </button>
-          <button class="helper-ask" type="button" data-open-chat><span id="helperAva"></span><span>اسأل نديم</span></button>
-        </div>
         <section class="block" id="popBlock">
           <header class="block-head"><h2>الأكثر طلباً</h2><span class="muted">هالأسبوعين</span></header>
           <div class="pop-row" id="popRow"></div>
@@ -112,7 +106,14 @@
           <header class="block-head"><h2>العروض</h2><span class="muted">لفترة محدودة</span></header>
           <div class="offer-list" id="offerList"></div>
         </section>
-        <button class="barista-card" type="button" data-open-chat>
+        <div class="helper-card" data-cafe-only>
+          <button class="helper-main" type="button" data-go="helper">
+            <span class="helper-ic" data-icon="sparkle"></span>
+            <span><strong>ساعدنا نختارك</strong><small id="helperSub">ثلاث أسئلة ومنقترحلك</small></span>
+          </button>
+          <button class="helper-ask" type="button" data-open-chat><span id="helperAva"></span><span>اسأل نديم</span></button>
+        </div>
+        <button class="barista-card" type="button" data-open-chat data-rest-only>
           <span class="barista-ava" id="baristaAva"></span>
           <span><strong id="baristaTitle"></strong><small>بيشرحلك كل مشروب من شو بيتكوّن وبيقترح عليك</small></span>
           <span class="chev" data-icon="chev"></span>

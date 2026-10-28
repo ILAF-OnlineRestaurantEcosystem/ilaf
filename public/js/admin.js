@@ -585,8 +585,11 @@ function renderMenuView() {
       </span>`).join('');
   const q = S.search.trim();
   const list = items.filter((i) => (S.menuCat === 'all' || i.categoryId === S.menuCat) && (!q || i.name.includes(q) || (i.tags ?? []).some((t) => t.includes(q))));
+  renderFeatPanel();
+  const featIds = featOf().items;
   $('#itemRows').innerHTML = list.length ? list.map((it) => {
     const cat = categories.find((c) => c.id === it.categoryId);
+    const inFeat = featIds.includes(it.id);
     return `
       <div class="irow ${it.available ? '' : 'is-off'}">
         ${artTile(it)}
@@ -594,9 +597,50 @@ function renderMenuView() {
         <span class="irow-cat muted">${esc(cat?.name ?? '')}</span>
         <span>${money(it.price, cur())}${stockBadge(it)}</span>
         <label class="switch"><input type="checkbox" data-avail="${esc(it.id)}" ${it.available ? 'checked' : ''}><span class="track"></span><span class="lbl">${it.available ? 'متوفر' : 'نفد'}</span></label>
+        <button class="icon-btn feat-star" type="button" data-feat-toggle="${esc(it.id)}" aria-pressed="${inFeat}" aria-label="${inFeat ? 'شيل' : 'حط'} ${esc(it.name)} ${inFeat ? 'من' : 'بـ'}الشريط المتحرك" title="${inFeat ? 'بالشريط المتحرك (اكبس لتشيله)' : 'حطه بالشريط المتحرك'}">${icon('star')}</button>
         <button class="icon-btn" type="button" data-edit-item="${esc(it.id)}" aria-label="تعديل ${esc(it.name)}">${icon('edit')}</button>
       </div>`;
   }).join('') : '<div class="empty"><p>ما في أصناف هون. ضيف صنف جديد من الزر فوق.</p></div>';
+}
+
+// ───────── الشريط المتحرك أول صفحة الزبون: الكاشير بيختار الأصناف وترتيبها ─────────
+const featOf = () => ({ title: 'الأكثر طلباً', items: [], seconds: 4, ...(S.data.settings.featured ?? {}) });
+function renderFeatPanel() {
+  const f = featOf();
+  const items = f.items.map((id) => S.data.items.find((i) => i.id === id)).filter(Boolean);
+  $('#featPanel').innerHTML = `
+    <section class="feat-panel" aria-label="الشريط المتحرك">
+      <div class="fp-head">
+        <span class="fp-ic">${icon('star')}</span>
+        <div><h3>الشريط المتحرك بصفحة الزبون</h3>
+          <p>أول شي بيشوفه الزبون: صنف ورا صنف، كل واحد ${f.seconds} ثواني. اختار الأصناف من النجمة ${icon('star')} جنب كل صنف تحت.</p></div>
+      </div>
+      <div class="fp-items">${items.length ? items.map((it, k) => `
+        <span class="fp-chip"><span class="fp-n">${k + 1}</span>${artTile(it)}<b>${esc(it.name)}</b>
+          ${k ? `<button type="button" class="icon-btn" data-feat-move="${esc(it.id)}" aria-label="قدّم ${esc(it.name)}" title="قدّمه">${icon('back')}</button>` : ''}
+          <button type="button" class="icon-btn" data-feat-toggle="${esc(it.id)}" aria-label="شيل ${esc(it.name)} من الشريط" title="شيله">${icon('close')}</button></span>`).join('')
+        : `<p class="fp-auto">${icon('flame')}<span>هلق بيطلع <b>الأكثر طلباً</b> لحاله. اكبس النجمة جنب أي صنف عشان تختار انت شو يطلع.</span></p>`}</div>
+      <div class="fp-form">
+        <label class="field"><span>العنوان فوق الصنف</span><input class="input" id="featTitle" maxlength="30" value="${esc(f.title)}" placeholder="الأكثر طلباً"></label>
+        <label class="field"><span>كل صنف بيوقف</span><select class="input" id="featSecs">${[3, 4, 5, 6, 8].map((n) => `<option value="${n}" ${n === f.seconds ? 'selected' : ''}>${n} ثواني</option>`).join('')}</select></label>
+        <button class="btn btn-brass btn-sm" type="button" id="featSave">${icon('check')}احفظ</button>
+      </div>
+    </section>`;
+}
+async function saveFeatured(patch, msg) {
+  try {
+    S.data.settings = await call('/settings', { method: 'PUT', body: { featured: { ...featOf(), ...patch } } });
+    renderMenuView();
+    if (msg) toast(msg, 'ok');
+  } catch (err) { toast(err.message, 'err'); }
+}
+function toggleFeatured(id) {
+  const f = featOf();
+  const it = S.data.items.find((i) => i.id === id);
+  if (f.items.includes(id)) return saveFeatured({ items: f.items.filter((x) => x !== id) }, `شلت ${it?.name ?? 'الصنف'} من الشريط`);
+  if (f.items.length >= 10) return toast('الحد 10 أصناف بالشريط. شيل واحد أول.', 'err');
+  if (it && !it.available) toast(`${it.name} مش متوفر هلق، فما رح يطلع للزبون لحد ما يرجع`);
+  return saveFeatured({ items: [...f.items, id] }, `${it?.name ?? 'الصنف'} صار بالشريط ⭐`);
 }
 
 /** شارة المخزن بقائمة الأصناف: باقي كم، أو نفد */
@@ -1559,8 +1603,8 @@ function renderPalPicker() {
         <div class="pal-opt pal-custom" aria-pressed="${th.palette === 'custom'}">
           <button type="button" class="pal-pick" data-pal="custom"><span class="pal-sw" id="palCustomSw" style="background:linear-gradient(135deg, ${esc(th.color)} 0 55%, ${esc(th.accent)} 55%)"></span><span>لون محلك</span></button>
           <div class="pal-colors">
-            <label title="اللون الأساسي (الأزرار والعناوين)"><input type="color" id="palColor" value="${esc(th.color)}"><span>أساسي</span></label>
-            <label title="اللون الثاني (اللمسات والأيقونات)"><input type="color" id="palAccent" value="${esc(th.accent)}"><span>ثاني</span></label>
+            <label title="اللون الأساسي (الأزرار والعناوين)"><input type="color" id="palColor" value="${esc(th.color)}"><span>الأساسي</span></label>
+            <label title="اللون الثاني (اللمسات والأيقونات)"><input type="color" id="palAccent" value="${esc(th.accent)}"><span>الثاني</span></label>
           </div>
         </div>
       </div>
@@ -1822,9 +1866,19 @@ function bind() {
     if (d.palTarget) { S.themeTarget = d.palTarget; return renderPalPicker(); }
     if (d.pal) {
       S.themeDraft[S.themeTarget].palette = d.pal;
-      return syncPalPicker();
+      syncPalPicker();
+      if (d.pal === 'custom') { const inp = $('#palColor'); try { inp.showPicker(); } catch { inp.click(); } } // نافذة اللون بتنفتح فوراً
+      return;
     }
     if (d.palApply) return applyThemeNow(d.palApply);
+    if (d.featToggle) return toggleFeatured(d.featToggle);
+    if (d.featMove) {
+      const a = [...featOf().items];
+      const k = a.indexOf(d.featMove);
+      if (k > 0) { [a[k - 1], a[k]] = [a[k], a[k - 1]]; return saveFeatured({ items: a }); }
+      return;
+    }
+    if (t.id === 'featSave') return saveFeatured({ title: $('#featTitle').value.trim() || 'الأكثر طلباً', seconds: Number($('#featSecs').value) }, 'انحفظ الشريط ✓ الزباين بيشوفوه هلق');
     if (d.logoDel) {
       try { S.data.settings = await call('/settings', { method: 'PUT', body: { [d.logoDel]: '' } }); renderShell(); renderSettings(); toast('رجع الشعار الافتراضي', 'ok'); } catch (err) { toast(err.message, 'err'); }
       return;

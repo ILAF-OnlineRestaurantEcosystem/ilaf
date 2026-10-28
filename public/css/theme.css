@@ -58,14 +58,12 @@
 [data-theme="dark"] .status-chip.preparing, [data-theme="dark"] .status-pill.preparing { background: rgba(217, 165, 82, .16); color: #ecc27e; }
 
 /* العروض */
-[data-theme="dark"] .offer { background: linear-gradient(150deg, #2c1b12, #22150e); box-shadow: var(--shadow-card), inset 0 0 0 1px rgba(212, 163, 89, .25); }
-[data-theme="dark"] .offer-arts .art { box-shadow: 0 0 0 3px #2c1b12; }
 
 /* ───── صفحة الزبون ───── */
 [data-theme="dark"] .app-body { background: radial-gradient(80% 60% at 50% 0%, #26160d, transparent 70%), var(--abyss); }
 
 /* الأسعار والأيقونات النشطة بالغامق: ذهبي (بيبرز ومقروء) */
-[data-theme="dark"] .item-row .price b, [data-theme="dark"] .pop-card .price, [data-theme="dark"] .offer-price .num { color: var(--brass-hi); }
+[data-theme="dark"] .item-row .price b, [data-theme="dark"] .pop-card .price { color: var(--brass-hi); }
 /* زر نديم: الدلّة ذهبية، فخلفيته بني عشان تبيّن */
 [data-theme="dark"] .fab { background: #3a2417; box-shadow: 0 14px 28px -12px rgba(0, 0, 0, .9), inset 0 0 0 1px rgba(212, 163, 89, .35); }
 [data-theme="dark"] .fab::after { box-shadow: 0 0 0 2px #3a2417; }
@@ -169,13 +167,14 @@
 [data-theme="dark"][data-biz="restaurant"] .btn-brass:hover { background: #f0936a; }
 [data-biz="restaurant"] .btn-ghost { box-shadow: inset 0 0 0 1.5px rgba(168, 72, 42, .45); }
 [data-theme="dark"][data-biz="restaurant"] .btn-ghost { box-shadow: inset 0 0 0 1.5px rgba(224, 120, 78, .5); }
-[data-biz="restaurant"] .offer { background: linear-gradient(150deg, #fbeee2, #f3e0cd); }
-[data-theme="dark"][data-biz="restaurant"] .offer { background: linear-gradient(150deg, #2c1d15, #21160f); }
 [data-theme="dark"][data-biz="restaurant"] .fab { background: #3a2016; }
 [data-biz="restaurant"] .side { background: linear-gradient(180deg, #8a3a20, #4a1d0e); }
 [data-theme="dark"][data-biz="restaurant"] .side { background: linear-gradient(180deg, #2c1b14, #1a100c); }
 [data-theme="dark"][data-biz="restaurant"] .tabbar button[aria-current="page"] { color: #a8482a; }
 [data-biz="restaurant"] [data-cafe-only] { display: none !important; }
+:root:not([data-biz="restaurant"]) [data-rest-only] { display: none !important; }
+/* بالغامق: العروض والشريط المتحرك أغمق شوي بلون المحل (مش أصفر فاقع) */
+[data-theme="dark"] { --promo-a: color-mix(in srgb, var(--brass) 46%, var(--tide)); --promo-b: color-mix(in srgb, var(--brass) 20%, var(--harbor)); --promo-ink: #fff8ef; }
 
 /* ─────────────────────────────────────────────
    ثيم الألوان اللي اختاره الكاشير (palette.js بيحط المتغيرات على :root[data-palette])
@@ -185,8 +184,6 @@
 :root[data-palette] .side-brand .brand-mark-name { color: var(--side-ink); }
 :root[data-palette] .nav-btn[aria-current="page"] { background: var(--harbor); color: var(--brass-hi); }
 :root[data-palette][data-theme="dark"] .nav-btn[aria-current="page"] { background: color-mix(in srgb, var(--brass) 18%, transparent); color: var(--brass); }
-:root[data-palette] .offer, :root[data-palette][data-theme="dark"] .offer { background: linear-gradient(150deg, var(--offer-a), var(--offer-b)); box-shadow: var(--shadow-card), inset 0 0 0 1px var(--line); }
-:root[data-palette] .offer-arts .art, :root[data-palette][data-theme="dark"] .offer-arts .art { box-shadow: 0 0 0 3px var(--offer-a); }
 :root[data-palette] .fab, :root[data-palette][data-theme="dark"] .fab { background: var(--fab-bg); }
 :root[data-palette] .fab::after, :root[data-palette][data-theme="dark"] .fab::after { box-shadow: 0 0 0 2px var(--fab-bg); }
 :root[data-palette] .btn-brass:hover, :root[data-palette][data-theme="dark"] .btn-brass:hover { background: var(--brass-hi); }

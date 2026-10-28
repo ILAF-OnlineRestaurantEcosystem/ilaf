@@ -67,6 +67,15 @@ function fit(h, s, l, against, min, dir) {
   return c;
 }
 
+/**
+ * ألوان الأساس ثابتة بكل المحلات (الخلفية، البطاقات، الكتابة) عشان الكلام يضل واضح،
+ * ولون المحل بيطلع مليان على الهوية بس: الأزرار، الشريط المتحرك، العروض، الشريط المختار.
+ */
+const NEUTRAL = {
+  light: { abyss: '#e7e4de', harbor: '#f4f2ee', line: '#e4e0d9', lineStrong: '#d2cdc4', inset: '#faf9f7', foam: '#1c1a17', foam2: '#565049', foam3: '#78726a' },
+  dark: { abyss: '#0a0908', harbor: '#121110', tide: '#1c1a18', swell: '#252320', line: '#2e2b28', lineStrong: '#3a3632', inset: '#171513', foam: '#f3f0ec', foam2: '#b8b1a8', foam3: '#8e877e' },
+};
+
 /** كل متغيرات الواجهة من لون واحد: { light: {...}, dark: {...} } */
 export function paletteFrom(color, accent = null) {
   const [h0, s0, l0] = rgbToHsl(hexToRgb(color));
@@ -76,22 +85,22 @@ export function paletteFrom(color, accent = null) {
   const st = grey ? Math.min(sa, 0.35) * 0.5 : Math.min(s0, 0.6); // تشبّع الخلفيات (هادي)
 
   // ── الفاتح ──
-  const harbor = hsl(h, st * 0.45, 0.95);
-  const foam = hsl(h, st * 0.55, 0.12);
+  const N = NEUTRAL.light;
+  const harbor = N.harbor;
   const brass = fit(h0, s0, Math.min(l0, 0.5), '#ffffff', 4.8, -1);
   const [bh, bs, bl] = rgbToHsl(hexToRgb(brass));
   const light = {
-    '--abyss': hsl(h, st * 0.45, 0.89),
+    '--abyss': N.abyss,
     '--harbor': harbor,
     '--tide': '#ffffff',
     '--swell': '#ffffff',
-    '--tint': rgbList(foam),
-    '--line': hsl(h, st * 0.3, 0.88),
-    '--line-strong': hsl(h, st * 0.3, 0.8),
-    '--inset': hsl(h, st * 0.3, 0.975),
-    '--foam': foam,
-    '--foam-2': fit(h, st * 0.3, 0.42, harbor, 4.8, -1),
-    '--foam-3': hsl(h, st * 0.25, 0.55),
+    '--tint': rgbList(N.foam),
+    '--line': N.line,
+    '--line-strong': N.lineStrong,
+    '--inset': N.inset,
+    '--foam': N.foam,
+    '--foam-2': N.foam2,
+    '--foam-3': N.foam3,
     '--brass': brass,
     '--brass-hi': fit(bh, bs, bl - 0.08, harbor, 6, -1),
     '--brass-lo': hsl(bh, bs * 0.45, 0.72),
@@ -109,24 +118,25 @@ export function paletteFrom(color, accent = null) {
   };
 
   // ── الغامق ──
-  const dHarbor = hsl(h, st * 0.5, 0.07);
+  const D = NEUTRAL.dark;
+  const dHarbor = D.harbor;
   const dBrassBase = grey && accent ? accent : color;
   const [dh, ds, dl] = rgbToHsl(hexToRgb(dBrassBase));
   const dSat = grey && !accent ? 0 : Math.max(ds, 0.35); // رمادي بدون لمسة: بيضل رمادي
   const dBrass = fit(dh, dSat, Math.max(dl, 0.5), dHarbor, 6, 1);
-  const dFoam = hsl(h, st * 0.3, 0.93);
+  const dFoam = D.foam;
   const dark = {
-    '--abyss': hsl(h, st * 0.5, 0.04),
+    '--abyss': D.abyss,
     '--harbor': dHarbor,
-    '--tide': hsl(h, st * 0.45, 0.11),
-    '--swell': hsl(h, st * 0.45, 0.14),
+    '--tide': D.tide,
+    '--swell': D.swell,
     '--tint': rgbList(dFoam),
-    '--line': hsl(h, st * 0.35, 0.18),
-    '--line-strong': hsl(h, st * 0.35, 0.24),
-    '--inset': hsl(h, st * 0.45, 0.09),
+    '--line': D.line,
+    '--line-strong': D.lineStrong,
+    '--inset': D.inset,
     '--foam': dFoam,
-    '--foam-2': fit(h, st * 0.2, 0.66, hsl(h, st * 0.45, 0.11), 5, 1),
-    '--foam-3': hsl(h, st * 0.18, 0.55),
+    '--foam-2': D.foam2,
+    '--foam-3': D.foam3,
     '--brass': dBrass,
     '--brass-hi': fit(dh, dSat, rgbToHsl(hexToRgb(dBrass))[2] + 0.07, dHarbor, 7, 1),
     '--brass-lo': hsl(dh, ds * 0.45, 0.35),

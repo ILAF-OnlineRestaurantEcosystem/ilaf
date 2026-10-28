@@ -153,7 +153,7 @@ function itemRow(it) {
         <span class="badges">
           ${!it.available ? '<span class="badge badge-mute">مش متوفر حالياً</span>' : ''}
           ${it.available && it.left ? `<span class="badge badge-coral">باقي ${it.left} بس</span>` : ''}
-          ${it.was ? '<span class="badge badge-coral">عرض</span>' : ''}
+          ${it.was ? `<span class="badge badge-sale">${icon('tag')}عرض</span>` : ''}
           ${popular && it.available ? `<span class="badge badge-gold">${icon('star')}مطلوب</span>` : ''}
         </span>
       </div>
@@ -296,20 +296,7 @@ function renderHome() {
     ? `${weatherIcon(w)}<span>${greetingWord()} · ${esc(w.city)} ${w.temp}° ${esc(w.desc)}</span>`
     : `${icon('sun')}<span>${greetingWord()}، شو حابب اليوم؟</span>`;
   const cats = categories.filter((c) => items.some((i) => i.categoryId === c.id));
-  // اختيار اليوم: أكثر صنف بينطلب ومتوفر، بصورته الكبيرة وزر إضافة مباشر
-  const pick = popular.map(itemById).find((i) => i?.available) ?? items.find((i) => i.available);
-  $('#todayPick').innerHTML = pick ? `
-    <article class="today-pick" data-item="${esc(pick.id)}">
-      <button class="item-hit" type="button" data-open-item="${esc(pick.id)}" aria-label="${esc(pick.name)}، التفاصيل"></button>
-      ${artTile(pick, 'big')}
-      <div class="tp-info">
-        <span class="tp-tag">${icon('star')}اختيار اليوم</span>
-        <h3>${esc(pick.name)}</h3>
-        <p>${esc(pick.desc ?? '')}</p>
-        <div class="tp-foot"><span class="tp-price">${priceText(pick.price)}</span>
-          <button class="btn btn-brass btn-sm tp-add" type="button" data-quick-add="${esc(pick.id)}">${icon('plus')}أضف</button></div>
-      </div>
-    </article>` : '';
+  const featAuto = renderFeatured();
   const CAT_TINT = [28, 200, 340, 18, 140, 260, 45];
   $('#catGrid').innerHTML = cats.map((c, i) => `
     <button class="cat-tile ${cats.length % 2 === 1 && i === cats.length - 1 ? 'wide' : ''}" type="button" data-go="category" data-param="${esc(c.id)}" style="--ch:${CAT_TINT[i % CAT_TINT.length]}" data-reveal>
@@ -317,7 +304,7 @@ function renderHome() {
       <span class="cat-meta"><span><strong>${esc(c.name)}</strong>${c.en ? `<small>${esc(c.en)}</small>` : ''}</span><span class="chev">${icon('chev')}</span></span>
     </button>`).join('');
   const pops = popular.map(itemById).filter((i) => i?.available);
-  $('#popBlock').hidden = !pops.length;
+  $('#popBlock').hidden = !pops.length || featAuto; // الشريط فوق بيعرضهم أصلاً
   $('#popRow').innerHTML = pops.map((it, idx) => `
     <article class="pop-card" data-item="${esc(it.id)}">
       <button class="item-hit" type="button" data-open-item="${esc(it.id)}" aria-label="${esc(it.name)}"></button>
@@ -331,14 +318,14 @@ function renderHome() {
   $('#offerList').innerHTML = offers.map((o) => `
     <article class="offer" data-reveal>
       <div class="offer-top"><h3 class="offer-title">${esc(o.title)}</h3>
-        ${o.type === 'combo' ? `<div class="offer-arts">${o.itemIds.map(itemById).filter(Boolean).map((i) => artTile(i)).join('')}</div>` : `<span class="badge badge-coral">خصم ${o.percent}%</span>`}</div>
+        ${o.type === 'combo' ? `<div class="offer-arts">${o.itemIds.map(itemById).filter(Boolean).map((i) => artTile(i)).join('')}</div>` : `<span class="sale-tag">${icon('tag')}خصم ${o.percent}%</span>`}</div>
       <p class="offer-desc">${esc(o.description)}</p>
       <div class="offer-foot">
         ${o.type === 'combo'
           ? `<div class="offer-price"><span>${priceText(o.price)}</span>${o.value > o.price ? `<s>${priceText(o.value)}</s>` : ''}</div>
-             ${o.available ? `<button class="btn btn-brass btn-sm" type="button" data-add-offer="${esc(o.id)}">${icon('plus')}أضف العرض</button>` : '<span class="badge badge-mute">غير متوفر حالياً</span>'}`
+             ${o.available ? `<button class="btn btn-promo btn-sm" type="button" data-add-offer="${esc(o.id)}">${icon('plus')}أضف العرض</button>` : '<span class="badge badge-mute">غير متوفر حالياً</span>'}`
           : `<div class="offer-arts">${o.itemIds.map(itemById).filter(Boolean).map((i) => artTile(i)).join('')}</div>
-             <button class="btn btn-ghost btn-sm" type="button" data-open-item="${esc(o.itemIds[0])}">شوف الأصناف</button>`}
+             <button class="btn btn-promo-line btn-sm" type="button" data-open-item="${esc(o.itemIds[0])}">شوف الأصناف</button>`}
       </div>
     </article>`).join('');
   $('#baristaAva').innerHTML = dallahIcon();
@@ -346,9 +333,100 @@ function renderHome() {
   $('#baristaTitle').textContent = `اسأل ${S().baristaName}، ${W().hostSmart}`;
   doHomeSearch();
 }
+// ───────── الشريط المتحرك أول المنيو ─────────
+// أصناف بيختارها الكاشير (settings.featured)، وإذا ما اختار: الأكثر طلباً لحاله. كل صنف بيوقف ثواني وبيلف عالي بعده.
+const feat = { ids: '', i: 0, n: 0, ms: 4000, timer: null, paused: false };
+function featuredItems() {
+  const chosen = (S().featured?.items ?? []).map(itemById).filter((i) => i?.available);
+  if (chosen.length) return { list: chosen, auto: false };
+  const pops = state.menu.popular.map(itemById).filter((i) => i?.available);
+  return { list: (pops.length ? pops : state.menu.items.filter((i) => i.available)).slice(0, 6), auto: true };
+}
+/** بيرسم الشريط وبيرجّع true إذا هو تلقائي (الأكثر طلباً) */
+function renderFeatured() {
+  const box = $('#featured');
+  const { list, auto } = featuredItems();
+  const f = S().featured ?? {};
+  const title = f.title || 'الأكثر طلباً';
+  box.hidden = !list.length;
+  const ids = list.map((i) => i.id).join(',');
+  if (ids !== feat.ids) { feat.ids = ids; feat.i = 0; }
+  feat.n = list.length;
+  feat.ms = Math.min(10, Math.max(2, Number(f.seconds) || 4)) * 1000;
+  box.style.setProperty('--feat-dur', `${feat.ms}ms`);
+  box.innerHTML = `
+    <div class="feat-view"><div class="feat-track">${list.map((it, k) => `
+      <article class="feat-slide" data-item="${esc(it.id)}" aria-roledescription="slide" aria-label="${k + 1} من ${list.length}: ${esc(it.name)}">
+        <button class="item-hit" type="button" data-open-item="${esc(it.id)}" aria-label="${esc(it.name)}، التفاصيل"></button>
+        ${artTile(it, 'big')}
+        <div class="fs-info">
+          <span class="fs-tag">${icon(auto ? 'flame' : 'star')}${esc(title)}${auto && list.length > 1 ? ` <b>#${k + 1}</b>` : ''}</span>
+          <h3>${esc(it.name)}</h3>
+          <p>${esc(it.desc ?? '')}</p>
+          <div class="fs-foot"><span class="fs-price">${priceText(it.price)}${it.was ? ` <s>${priceText(it.was)}</s>` : ''}</span>
+            <button class="fs-add" type="button" data-quick-add="${esc(it.id)}">${icon('plus')}أضف</button></div>
+        </div>
+      </article>`).join('')}</div></div>
+    ${list.length > 1 ? `<div class="feat-dots">${list.map((it, k) => `<button type="button" data-feat="${k}" aria-label="${esc(it.name)}"></button>`).join('')}</div>` : ''}`;
+  featShow(feat.i);
+  featStart();
+  return auto;
+}
+function featShow(i) {
+  const box = $('#featured');
+  const track = box.querySelector('.feat-track');
+  if (!track || !feat.n) return;
+  feat.i = ((i % feat.n) + feat.n) % feat.n;
+  const rtl = getComputedStyle(box).direction === 'rtl'; // بالعربي الصنف الجاي على اليسار
+  track.style.transform = `translateX(${(rtl ? 1 : -1) * feat.i * 100}%)`;
+  box.querySelectorAll('.feat-slide').forEach((el, k) => { el.inert = k !== feat.i; });
+  box.querySelectorAll('[data-feat]').forEach((el) => el.removeAttribute('aria-current'));
+  const dot = box.querySelector(`[data-feat="${feat.i}"]`);
+  if (dot) { void dot.offsetWidth; dot.setAttribute('aria-current', 'true'); } // شريط التقدّم بيبلّش من جديد
+}
+function featStart() {
+  clearInterval(feat.timer);
+  if (feat.n < 2) return;
+  feat.timer = setInterval(() => {
+    if (feat.paused || document.hidden || current?.dataset.screen !== 'home' || $('#featured').hidden) return;
+    featShow(feat.i + 1);
+  }, feat.ms);
+}
+/** السحب باليد (يمين/يسار) والنقاط، والشريط بيوقف وانت ماسكه */
+function bindFeatured() {
+  const box = $('#featured');
+  let x0 = null, y0 = 0, swiped = false;
+  const pause = (on) => { feat.paused = on; box.classList.toggle('is-paused', on); };
+  box.addEventListener('pointerdown', (e) => {
+    if (!e.target.closest('.feat-view')) return;
+    x0 = e.clientX; y0 = e.clientY; swiped = false; pause(true);
+  });
+  const end = (e) => {
+    if (x0 == null) return;
+    const dx = e.clientX - x0, dy = e.clientY - y0;
+    x0 = null; pause(false);
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+      swiped = true;
+      const rtl = getComputedStyle(box).direction === 'rtl';
+      featShow(feat.i + ((dx > 0) === rtl ? 1 : -1));
+    } else featShow(feat.i);
+    featStart();
+  };
+  box.addEventListener('pointerup', end);
+  box.addEventListener('pointercancel', end);
+  box.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') pause(true); });
+  box.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse' && x0 == null) { pause(false); featShow(feat.i); featStart(); } });
+  box.addEventListener('click', (e) => {
+    if (swiped) { swiped = false; e.preventDefault(); e.stopPropagation(); return; } // السحب مش كبسة على الصنف
+    const dot = e.target.closest('[data-feat]');
+    if (dot) { featShow(Number(dot.dataset.feat)); featStart(); }
+  }, true);
+}
+
 function doHomeSearch() {
   const q = $('#homeSearch').value.trim();
   $('#homeMain').hidden = !!q;
+  $('#featured').classList.toggle('is-off', !!q);
   $('#homeResults').hidden = !q;
   if (!q) return;
   const list = state.menu.items.filter((i) => i.name.includes(q) || i.desc.includes(q) || (i.tags ?? []).some((t) => t.includes(q)));
@@ -1194,6 +1272,7 @@ async function boot() {
   $('#chatWaiter').innerHTML = `${icon('bell')}نادِ نادل إنسان`;
   saveCart();
   bind();
+  bindFeatured();
   connectLive();
   window.__CAFE_DEMO__?.link?.onChange(renderLink);
   renderPending();
