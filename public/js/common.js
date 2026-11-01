@@ -181,6 +181,13 @@ export function applyBusiness(type) {
   try { localStorage.setItem(storeKey('biz'), biz); } catch { /* */ } // للزيارة الجاية (سكربت الرأس)
 }
 
+/** المزايا الاختيارية من الإعدادات: لما تنطفي بتختفي عناصرها من الصفحة (theme.css) */
+export function applyFeatures(settings) {
+  const root = document.documentElement;
+  root.toggleAttribute('data-no-assistant', settings?.assistantOn === false);
+  root.toggleAttribute('data-no-helper', settings?.helperOn === false);
+}
+
 export const STATUS = {
   new: { label: 'طلب جديد', short: 'جديد' },
   preparing: { label: 'قيد التحضير', short: 'تحضير' },

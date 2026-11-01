@@ -172,7 +172,9 @@
 [data-theme="dark"][data-biz="restaurant"] .side { background: linear-gradient(180deg, #2c1b14, #1a100c); }
 [data-theme="dark"][data-biz="restaurant"] .tabbar button[aria-current="page"] { color: #a8482a; }
 [data-biz="restaurant"] [data-cafe-only] { display: none !important; }
-:root:not([data-biz="restaurant"]) [data-rest-only] { display: none !important; }
+/* الكاشير طفى المساعد الذكي أو "ساعدنا نختارك" من الإعدادات: بيختفوا من كل الواجهات */
+[data-no-assistant] [data-open-chat], [data-no-assistant] [data-ask-about], [data-no-assistant] .fab, [data-no-assistant] .chat, [data-no-assistant] .assistant-only { display: none !important; }
+[data-no-helper] [data-go="helper"] { display: none !important; }
 /* بالغامق: العروض والشريط المتحرك أغمق شوي بلون المحل (مش أصفر فاقع) */
 [data-theme="dark"] { --promo-a: color-mix(in srgb, var(--brass) 46%, var(--tide)); --promo-b: color-mix(in srgb, var(--brass) 20%, var(--harbor)); --promo-ink: #fff8ef; }
 

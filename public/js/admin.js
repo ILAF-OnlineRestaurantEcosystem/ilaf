@@ -1,4 +1,4 @@
-import { $, $$, esc, api, money, moneyText, toast, openSheet, closeSheet, chime, unlockAudio, timeAgo, STATUS, SUGAR, THEMES, themePref, setTheme, TENANT, tenantPath, storeKey, frozenNow, bizWords, applyBusiness } from './common.js';
+import { $, $$, esc, api, money, moneyText, toast, openSheet, closeSheet, chime, unlockAudio, timeAgo, STATUS, SUGAR, THEMES, themePref, setTheme, TENANT, tenantPath, storeKey, frozenNow, bizWords, applyBusiness, applyFeatures } from './common.js';
 import { brandLogo, fitLogo, brandMark, artTile, itemArt, icon, ART_KEYS, ART_LABELS, setBusiness, setStoreLogo } from './art.js';
 import { PALETTES, TARGETS, normalizeTheme, previewVars, varsToStyle, applyPalette } from './palette.js';
 
@@ -128,6 +128,7 @@ function renderShell() {
   weak.hidden = !s.pinWeak;
   weak.innerHTML = `${icon('lock')}<span><b>رمز الدخول لسا 1234 (الافتراضي)</b> وأي حد بيعرفه. غيّره لرمز من 6 أرقام.</span><button class="btn btn-sm" type="button" data-view-btn="settings">غيّره هلق</button>`;
   applyPalette(s.theme, 'admin', storeKey('palette.admin')); // ثيم الألوان (إذا مطبّق على اللوحة)
+  applyFeatures(s);
   renderThemeBtn();
   document.title = `لوحة الكاشير — ${s.cafeName}`;
   $('#sideBrand').innerHTML = `${brandMark(s.cafeName)}<small>لوحة الكاشير</small>`;
@@ -291,7 +292,7 @@ function orderCard(o, { inKanban = false } = {}) {
         <span class="num">#${o.no}</span>
         ${inKanban ? (takeaway ? `<span class="badge badge-gold">${icon('bag')}خارجي</span>` : `<span class="badge badge-mute">طاولة <span class="num" style="font-size:13px">${o.table}</span></span>`) : ''}
         <span class="status-pill ${o.status}">${STATUS[o.status].label}</span>
-        ${o.source === 'barista' ? `<span class="badge badge-brass" title="الطلب اقترحه الباريستا الذكي">${icon('sparkle')}باريستا</span>` : ''}
+        ${o.source === 'barista' && S.data.settings.assistantOn !== false ? `<span class="badge badge-brass" title="الطلب اقترحه الباريستا الذكي">${icon('sparkle')}باريستا</span>` : ''}
         ${o.source === 'cashier' ? `<span class="badge badge-mute" title="الكاشير أدخل الطلب">كاشير</span>` : ''}
         ${o.edited ? `<span class="badge badge-mute" title="الكاشير عدّل الطلب">معدّل</span>` : ''}
         <time datetime="${o.createdAt}" class="${inKanban && isLate(o) ? 'late' : ''}">${inKanban && isLate(o) ? '⚠ ' : ''}${timeAgo(statusSince(o))}</time>
@@ -755,7 +756,7 @@ function openItemEditor(it) {
         <label class="field"><span>التكلفة على المحل (${esc(cur())})</span><input class="input" id="f_cost" type="number" min="0" step="0.1" value="${esc(d.cost ?? '')}" inputmode="decimal" placeholder="مثلاً 3.5"></label>
         <p class="margin-hint" id="marginHint"></p>
         <label class="field"><span>الكمية بالمخزن (اتركها فاضية إذا مش بدك تحسبها)</span><input class="input" id="f_stock" type="number" min="0" step="1" value="${esc(d.stock ?? '')}" inputmode="numeric" placeholder="مثلاً 20"></label>
-        <p class="muted" style="margin-top:-6px;font-size:12.5px">كل طلب بينقص منها، ولما تخلص الصنف بيصير "نفد" عند الزبائن لحاله، ونديم بيحكيلهم إنه مش متوفر حالياً.</p>
+        <p class="muted" style="margin-top:-6px;font-size:12.5px">كل طلب بينقص منها، ولما تخلص الصنف بيصير "نفد" عند الزبائن لحاله<span class="assistant-only">، ونديم بيحكيلهم إنه مش متوفر حالياً</span>.</p>
         <label class="field full"><span>وصف قصير</span><input class="input" id="f_desc" value="${esc(d.desc)}" maxlength="200"></label>
         <label class="field full"><span>من شو بيتكوّن (بيظهر للزبون وبيشرحه الباريستا)</span><textarea class="textarea" id="f_recipe" maxlength="400">${esc(d.recipe ?? '')}</textarea></label>
         <div class="field"><span>الحلاوة</span>${segmented('sugar', [[0, 'بدون'], [1, 'خفيف'], [2, 'وسط'], [3, 'حلو']], d.sugar)}</div>
@@ -1516,6 +1517,13 @@ function renderSettings() {
       <div id="palPicker"></div>
       <div class="pal-preview" id="palPreview"></div>
     </section>
+    <section class="panel feature-panel">
+      <div class="panel-head"><h2>مزايا صفحة الزبون</h2></div>
+      <div class="feature-rows">
+        ${featureRow('s_assistant', `${bizWords(s.businessType).hostSmart} (${esc(s.baristaName)})`, 'محادثة بتجاوب الزباين وبتقترح عليهم. لما تطفيها بتختفي من كل الواجهات، مع كل إعداداتها.', s.assistantOn !== false)}
+        ${featureRow('s_helper', 'ساعدنا نختارك', 'ثلاث أسئلة وبنقترح على الزبون صنف. بتشتغل لحالها، حتى لو المساعد الذكي مطفي.', s.helperOn !== false)}
+      </div>
+    </section>
     <div class="settings-grid">
       <section class="panel">
         <div class="panel-head"><h2>الهوية</h2></div>
@@ -1526,7 +1534,7 @@ function renderSettings() {
         <div class="field">
           <span>نوع المحل</span>
           <div class="segmented" style="--n:2" role="radiogroup" aria-label="نوع المحل">${[['cafe', 'كافيه', 'cup'], ['restaurant', 'مطعم', 'utensils']].map(([k, label, ic]) => `<button type="button" role="radio" data-biz-set="${k}" aria-pressed="${(s.businessType ?? 'cafe') === k}" aria-checked="${(s.businessType ?? 'cafe') === k}" style="display:inline-flex;align-items:center;justify-content:center;gap:6px">${icon(ic)}${label}</button>`).join('')}</div>
-          <small class="muted">بيغيّر الهوية والألوان وكلام صفحة الزباين ونديم. الأصناف بتضل زي ما هي إلا إذا حمّلت القائمة الجاهزة.</small>
+          <small class="muted">بيغيّر الهوية والألوان وكلام صفحة الزباين<span class="assistant-only"> ونديم</span>. الأصناف بتضل زي ما هي إلا إذا حمّلت القائمة الجاهزة.</small>
           <button class="btn btn-ghost btn-sm" type="button" id="loadTemplate" style="justify-self:start;margin-top:6px">${icon('download')}${templateLabel(s.businessType ?? 'cafe')}</button>
         </div>
         <div class="logo-preview" id="logoPreview"></div>
@@ -1551,19 +1559,20 @@ function renderSettings() {
           <label class="field"><span>اسم المحل</span><input class="input" id="s_name" value="${esc(s.cafeName)}" maxlength="40"></label>
           <label class="field"><span>الكلمة اللي بتتعبّى بالشعار</span><input class="input" id="s_word" value="${esc(s.brandWord)}" maxlength="12"></label>
           <label class="field full"><span>الجملة تحت الشعار</span><input class="input" id="s_tagline" value="${esc(s.tagline)}" maxlength="80"></label>
-          <label class="field"><span>اسم ${bizWords(s.businessType).hostSmart}</span><input class="input" id="s_barista" value="${esc(s.baristaName)}" maxlength="20"></label>
+          <label class="field assistant-only"><span>اسم ${bizWords(s.businessType).hostSmart}</span><input class="input" id="s_barista" value="${esc(s.baristaName)}" maxlength="20"></label>
           <label class="field"><span>رمز العملة</span><input class="input" id="s_cur" value="${esc(s.currency)}" maxlength="4"></label>
         </div>
       </section>
       <section class="panel">
         <div class="panel-head"><h2>الطقس والموقع</h2></div>
-        <p class="muted">${esc(s.baristaName)} بيقرأ طقس هالمدينة ليقترح ${(s.businessType ?? 'cafe') === 'restaurant' ? 'شوربة وطبخات سخنة بالبرد، وسلطات ومشروبات باردة بالحر' : 'سخن أو بارد'}.</p>
+        <p class="muted assistant-only">${esc(s.baristaName)} بيقرأ طقس هالمدينة ليقترح ${(s.businessType ?? 'cafe') === 'restaurant' ? 'شوربة وطبخات سخنة بالبرد، وسلطات ومشروبات باردة بالحر' : 'سخن أو بارد'}.</p>
         <div class="inline-form"><input class="input" id="s_city" value="${esc(s.city)}" placeholder="اسم المدينة"><button class="btn btn-ghost btn-sm" type="button" id="geoBtn">دوّر</button></div>
         <div class="geo-results" id="geoResults"></div>
         <div class="form-grid">
           <label class="field"><span>خط العرض</span><input class="input" id="s_lat" value="${s.lat}" dir="ltr"></label>
           <label class="field"><span>خط الطول</span><input class="input" id="s_lon" value="${s.lon}" dir="ltr"></label>
         </div>
+        <div class="assistant-block assistant-only">
         <div class="panel-head" style="margin-top:8px"><h2>${bizWords(s.businessType).hostSmart}</h2></div>
         <div class="ai-status"><i style="background:${ai.configured && !ai.lastError ? 'var(--seaglass)' : 'var(--amber)'}"></i>
           <span>${aiText}</span></div>
@@ -1582,6 +1591,7 @@ function renderSettings() {
           <label class="field"><span>الواي فاي (الاسم وكلمة السر)</span><input class="input" id="s_wifi" value="${esc(s.wifi ?? '')}" maxlength="100" placeholder="مثلاً: Cafe-Mohammad / 12345678"></label>
           <label class="field"><span>ساعات الدوام</span><input class="input" id="s_hours" value="${esc(s.hours ?? '')}" maxlength="100" placeholder="مثلاً: كل يوم من 8 الصبح لـ 12 بالليل"></label>
           <label class="field full"><span>ملاحظات عن المحل (اختياري)</span><textarea class="textarea" id="s_notes" maxlength="600" placeholder="مثلاً: في جلسات عائلية فوق، الدفع كاش أو تطبيق، ما عنا أراكيل">${esc(s.cafeNotes ?? '')}</textarea></label>
+        </div>
         </div>
         <div class="panel-head" style="margin-top:8px"><h2>الأمان والبيانات</h2></div>
         <label class="field"><span>رمز دخول جديد (اتركه فاضي إذا ما بدك تغيّره)</span><input class="input" id="s_pin" inputmode="numeric" maxlength="8" placeholder="4 إلى 8 أرقام" autocomplete="new-password"></label>
@@ -1621,6 +1631,23 @@ function renderSettings() {
       syncPalPicker();
     }
   };
+}
+/** سطر مزية اختيارية: اسمها وشرحها ومفتاح تشغيلها */
+const featureRow = (id, title, desc, on) => `
+  <div class="feature-row">
+    <div><strong>${title}</strong><small>${desc}</small></div>
+    <label class="switch"><input type="checkbox" id="${id}" ${on ? 'checked' : ''} aria-label="${title}"><span class="track"></span><span class="lbl">${on ? 'شغّال' : 'مطفي'}</span></label>
+  </div>`;
+/** المفتاح بينحفظ أول ما ينكبس، والواجهات بتتحدّث فوراً */
+async function setFeature(el) {
+  const key = el.id === 's_assistant' ? 'assistantOn' : 'helperOn';
+  const name = el.id === 's_assistant' ? bizWords(S.data.settings.businessType).hostSmart : '"ساعدنا نختارك"';
+  try {
+    S.data.settings = await call('/settings', { method: 'PUT', body: { [key]: el.checked } });
+    applyFeatures(S.data.settings);
+    el.closest('.switch').querySelector('.lbl').textContent = el.checked ? 'شغّال' : 'مطفي';
+    toast(el.checked ? `${name} اشتغل ✓` : `${name} انطفى، واختفى من صفحة الزبون`, 'ok');
+  } catch (err) { el.checked = !el.checked; toast(err.message, 'err'); }
 }
 /** زر القائمة الجاهزة: إذا نفس نوع المحل بيرجّع القائمة الأصلية، وإذا نوع ثاني بيبدّلها */
 function templateLabel(type) {
@@ -1996,6 +2023,7 @@ function bind() {
 
   document.addEventListener('change', async (e) => {
     const el = e.target;
+    if (el.id === 's_assistant' || el.id === 's_helper') return setFeature(el);
     // الشرائط المتحركة: العدد والمكان والسرعة واللفات بينحفظوا أول ما تختار
     if (el.id === 'stripCount') return setStripCount(Number(el.value));
     if (['featPlace', 'featSecs', 'featLoops'].includes(el.id)) return saveCurStrip(stripForm(), 'انحفظ ✓');

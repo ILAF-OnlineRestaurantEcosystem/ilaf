@@ -328,7 +328,7 @@ const LIVE = 150_000; // إذا ما في نبضة من الكاشير من دق
  * request(..., { queue }) — الطلب والنداء (queue) بينحفظوا على الوسيط إذا الكاشير مش فاتح، وبيرمي { queued, reqId }
  * onLate(reqId, res): رد وصل بعد ما انحفظ الطلب · onStatus: 'connecting' | 'online' | 'offline'
  */
-export function createClient({ code, me, onEvent = () => {}, onStatus = () => {}, onLate = () => {} }) {
+export function createClient({ code, me, onEvent = () => {}, onMenu = () => {}, onStatus = () => {}, onLate = () => {} }) {
   const base = ROOT + code;
   const pending = new Map();
   const tracked = new Set();
@@ -352,7 +352,12 @@ export function createClient({ code, me, onEvent = () => {}, onStatus = () => {}
 
   function onMessage(topic, msg) {
     if (topic === base + '/admin') { admin = msg; report(); }
-    else if (topic === base + '/menu') menu = msg;
+    else if (topic === base + '/menu') {
+      // المنيو الجديد بيوصل بعد حدث التغيير بشوي، فالصفحة المفتوحة لازم تتحدّث لما يوصل هو نفسه
+      const changed = menu && JSON.stringify(menu) !== JSON.stringify(msg);
+      menu = msg;
+      if (changed) onMenu();
+    }
     else if (topic.startsWith(`${base}/r/${me}/`)) {
       const id = topic.slice(topic.lastIndexOf('/') + 1);
       link.clear(topic); // وصلنا، بنشيله عن الوسيط

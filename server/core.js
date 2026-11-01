@@ -154,9 +154,10 @@ route('POST', '/tables/:n/call', ({ p, body }) => {
   }
   return { status: 201, data: { ok: true }, events: [toAdmin('call:new', call)] };
 });
-route('POST', '/barista', ({ body }) => chat({
-  history: body?.history, table: body?.table, cart: body?.cart, greeting: str(body?.greeting, 400),
-}));
+route('POST', '/barista', ({ body }) => {
+  if (db().settings.assistantOn === false) throw new HttpError(403, 'المساعد الذكي مطفي بهالمحل.');
+  return chat({ history: body?.history, table: body?.table, cart: body?.cart, greeting: str(body?.greeting, 400) });
+});
 
 // الكاشير
 // محاولات الدخول الغلط: بعد 5 غلطات من نفس الجهاز بيتسكّر الدخول 10 دقايق (ضد تخمين الرمز)
@@ -468,6 +469,9 @@ route('PUT', '/admin/settings', async ({ body: b = {} }) => {
   if (b.cafeNotes != null) s.cafeNotes = str(b.cafeNotes, 600);
   if (b.businessType != null) s.businessType = b.businessType === 'restaurant' ? 'restaurant' : 'cafe';
   if (b.theme != null) s.theme = cleanTheme(b.theme);
+  // مزايا اختيارية لصفحة الزبون: لما تنطفي بتختفي من كل الواجهات
+  if (b.assistantOn != null) s.assistantOn = b.assistantOn === true;
+  if (b.helperOn != null) s.helperOn = b.helperOn === true;
   if (b.logoIcon != null) s.logoIcon = cleanLogo(b.logoIcon); // بدل الدلّة/القدرة
   if (b.logoName != null) s.logoName = cleanLogo(b.logoName); // صورة بدل كتابة اسم المحل
   if (b.strips != null) { s.strips = cleanStrips(b.strips); delete s.featured; }

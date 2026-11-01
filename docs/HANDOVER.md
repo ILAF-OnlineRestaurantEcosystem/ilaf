@@ -98,6 +98,7 @@ data/               ← (مش بالـ git) البيانات الحالية
                 pinHash, pinSalt, pinWeak, baristaName, wifi, hours, cafeNotes, dayOpenedAt,
                 theme: { menu: { palette, color, accent }, admin: { palette, color, accent } },  // ثيم كل واجهة لحالها
                 logoIcon, logoName,  // صور شعار المحل (بدل الأيقونة وبدل كتابة الاسم)، فاضي = الافتراضي
+                assistantOn, helperOn,  // مفاتيح المساعد الذكي و"ساعدنا نختارك" (false = مطفي؛ فاضي = شغّال)
                 strips: [{ title, items, seconds, place, loops }] },  // الشرائط المتحركة بصفحة الزبون (لحد 3): place = top|cats|offers|bottom، loops 0 = دايماً، items فاضية = الأكثر طلباً
   categories: [{ id, name, en, desc, temp, icon, image, order }],
   items:      [{ id, categoryId, name, desc, price, cost, image, available, stock, recipe, art, hue,
@@ -177,7 +178,7 @@ data/               ← (مش بالـ git) البيانات الحالية
 المحل المجمّد بيرجع **423** لكل شي. المحل مش موجود: **404**.
 
 **الزبون:**
-`GET /menu` · `GET /weather` · `GET /tables/:n` · `GET /tables/:n/bill` · `GET /devices/:id/orders` · `POST /orders` · `GET /orders/:id` · `POST /tables/:n/call` · `POST /barista`
+`GET /menu` · `GET /weather` · `GET /tables/:n` · `GET /tables/:n/bill` · `GET /devices/:id/orders` · `POST /orders` · `GET /orders/:id` · `POST /tables/:n/call` · `POST /barista` (403 إذا المساعد الذكي مطفي)
 
 **الكاشير:**
 `POST /admin/login` · `POST /admin/logout` · `GET /admin/bootstrap` ·

@@ -1,4 +1,4 @@
-import { $, $$, esc, api, moneyText, toast, openSheet, closeSheet, reducedMotion, revealOnScroll, chime, SUGAR, STATUS, THEMES, themePref, setTheme, TENANT, storeKey, bizWords, applyBusiness, frozenNow } from './common.js';
+import { $, $$, esc, api, moneyText, toast, openSheet, closeSheet, reducedMotion, revealOnScroll, chime, SUGAR, STATUS, THEMES, themePref, setTheme, TENANT, storeKey, bizWords, applyBusiness, applyFeatures, frozenNow } from './common.js';
 import { brandLogo, fitLogo, brandMark, dallahIcon, artTile, itemArt, icon, weatherIcon, leavesArt, setBusiness, isRestaurant, setStoreLogo } from './art.js';
 import { recommend, MOODS, SWEETNESS, PEOPLE } from './chooser.js';
 import { applyPalette } from './palette.js';
@@ -77,6 +77,7 @@ function onHash() {
   // ما في اشي قبل رقم الطاولة
   if (!state.table && !['welcome', 'track', 'sent'].includes(name)) { go('welcome'); return; }
   if (!name || !document.querySelector(`[data-screen="${name}"]`)) { go(state.table ? 'home' : 'welcome'); return; }
+  if (S().helperOn === false && ['helper', 'result'].includes(name)) { go('home'); return; } // الكاشير طفاها
   const h = location.hash;
   let dir = 'fwd';
   if (trail.length > 1 && trail[trail.length - 2] === h) { trail.pop(); dir = 'back'; } else trail.push(h);
@@ -329,7 +330,6 @@ function renderHome() {
       </div>
     </article>`).join('');
   $('#baristaAva').innerHTML = dallahIcon();
-  if ($('#helperAva')) $('#helperAva').innerHTML = dallahIcon();
   $('#baristaTitle').textContent = `اسأل ${S().baristaName}، ${W().hostSmart}`;
   doHomeSearch();
 }
@@ -465,7 +465,7 @@ function doHomeSearch() {
   const list = state.menu.items.filter((i) => i.name.includes(q) || i.desc.includes(q) || (i.tags ?? []).some((t) => t.includes(q)));
   $('#homeResults').innerHTML = list.length
     ? `<div class="item-list">${list.map(itemRow).join('')}</div>`
-    : `<div class="empty"><p>ما لقينا "${esc(q)}". جرّب كلمة ثانية، أو اسأل ${W().host}.</p><button class="btn btn-ghost btn-sm" type="button" data-open-chat>اسأل ${esc(S().baristaName)}</button></div>`;
+    : `<div class="empty"><p>ما لقينا "${esc(q)}". جرّب كلمة ثانية${S().assistantOn === false ? '' : `، أو اسأل ${W().host}`}.</p><button class="btn btn-ghost btn-sm" type="button" data-open-chat>اسأل ${esc(S().baristaName)}</button></div>`;
   revealOnScroll($('#homeResults'));
 }
 
@@ -1028,6 +1028,7 @@ function greetingText() {
   return `أهلين! أنا ${s.baristaName}، ${W().host} تبعك ${isRestaurant() ? '🍽️' : '☕'} قبل كل اشي، طاولتك رقم كم؟`;
 }
 function openChat(prefill) {
+  if (S().assistantOn === false) return;
   const chat = $('#chat');
   if (!state.chat.length) {
     const g = greetingText();
@@ -1235,6 +1236,9 @@ async function refreshMenu() {
   state.menu = await api('/menu');
   enrichMenu();
   applyPalette(S().theme, 'menu', storeKey('palette.menu')); // الكاشير ممكن غيّر الثيم
+  applyFeatures(S()); // أو طفى المساعد الذكي أو "ساعدنا نختارك"
+  if (S().assistantOn === false) closeChat();
+  if (S().helperOn === false && ['helper', 'result'].includes(current?.dataset.screen)) go('home');
   saveCart();
   const scr = current?.dataset.screen;
   if (scr === 'home') renderHome();
@@ -1290,6 +1294,7 @@ async function boot() {
   setStoreLogo({ icon: S().logoIcon, name: S().logoName }); // شعار المحل الخاص إذا رفعه الكاشير
   applyBusiness(S().businessType);
   applyPalette(S().theme, 'menu', storeKey('palette.menu')); // ثيم الألوان اللي اختاره الكاشير
+  applyFeatures(S());
   $('#chatSub').textContent = `${W().host} · ${W().sub}`;
   $('#chatText').placeholder = W().placeholder;
   $('#fab').setAttribute('aria-label', `اسأل ${W().host}`);

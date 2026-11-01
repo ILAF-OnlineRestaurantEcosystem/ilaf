@@ -144,6 +144,7 @@ function getClient() {
     code: CODE,
     me: persistentId(ME_KEY),
     onEvent: deliver,
+    onMenu: () => deliver({ id: 'menu-' + randomId(10), event: 'menu:changed', payload: null }),
     onStatus: (st) => { linkState = st; linkListeners.forEach((fn) => { try { fn(st); } catch { /* */ } }); },
     onLate: lateReply,
   });
